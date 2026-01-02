@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { syncSocials } from '../actions/social'
+import { SignOutButton } from '@/components/SignOutButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +27,10 @@ export default async function ProfilePage() {
 
     return (
         <div className="container mx-auto py-10">
-            <h1 className="text-4xl font-bold mb-8">My Profile</h1>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-4xl font-bold">My Profile</h1>
+                <SignOutButton />
+            </div>
 
             <div className="grid gap-6 md:grid-cols-2">
                 <Card>

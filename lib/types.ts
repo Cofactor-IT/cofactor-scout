@@ -2,9 +2,9 @@
  * Social Stats interface for type-safe social media metrics
  */
 export interface SocialStats {
-    instagram: number
-    tiktok: number
-    linkedin: number
+    instagram?: number
+    tiktok?: number
+    linkedin?: number
 }
 
 /**
@@ -35,5 +35,5 @@ export function parseSocialStats(data: unknown): SocialStats {
  * Calculate total social reach from stats
  */
 export function calculateSocialReach(stats: SocialStats): number {
-    return stats.instagram + stats.tiktok + stats.linkedin
+    return (stats.instagram || 0) + (stats.tiktok || 0) + (stats.linkedin || 0)
 }

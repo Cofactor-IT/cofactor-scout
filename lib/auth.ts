@@ -1,26 +1,14 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth-config"
 
 /**
- * Mock session check - In production, use NextAuth getServerSession
- * For now, we check for an admin cookie or first user being admin
+ * Get current session user
  */
 export async function getCurrentUser() {
-    // In production, replace with: getServerSession(authOptions)
-    // For demo, we get the first user or check for admin cookie
-    const cookieStore = await cookies()
-    const adminCookie = cookieStore.get('admin_session')
-
-    if (adminCookie) {
-        return await prisma.user.findFirst({
-            where: { role: 'ADMIN' }
-        })
-    }
-
-    // Fallback to first user for demo
-    return await prisma.user.findFirst()
+    const session = await getServerSession(authOptions)
+    return session?.user
 }
 
 /**

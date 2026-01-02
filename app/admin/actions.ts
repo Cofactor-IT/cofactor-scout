@@ -8,32 +8,41 @@ import { parseSocialStats, calculateSocialReach, POWER_SCORE } from '@/lib/types
 /**
  * Approve a wiki revision - ADMIN ONLY
  * Updates revision status, applies content to UniPage, and increments author's power score
+ * USES TRANSACTION FOR ATOMICITY
  */
 export async function approveRevision(revisionId: string) {
     // Security check: Verify admin access
     await requireAdmin()
 
+    // 1. Fetch revision details
     const revision = await prisma.wikiRevision.findUnique({
-        where: { id: revisionId },
-        include: { author: true }
+        where: { id: revisionId }
     })
 
     if (!revision) throw new Error("Revision not found")
 
-    // Update Revision Status
-    await prisma.wikiRevision.update({
-        where: { id: revisionId },
-        data: { status: 'APPROVED' }
-    })
+    // 2. Perform Atomic Transaction
+    await prisma.$transaction([
+        // Update Revision Status -> APPROVED
+        prisma.wikiRevision.update({
+            where: { id: revisionId },
+            data: { status: 'APPROVED' }
+        }),
 
-    // Update UniPage Content
-    await prisma.uniPage.update({
-        where: { id: revision.uniPageId },
-        data: { content: revision.content }
-    })
+        // Update UniPage Content with new text
+        prisma.uniPage.update({
+            where: { id: revision.uniPageId },
+            data: { content: revision.content }
+        }),
 
-    // Incremental Power Score update - add points for this approval
-    await incrementPowerScore(revision.authorId, POWER_SCORE.WIKI_APPROVAL_POINTS)
+        // Increment Power Score for Author (+20)
+        prisma.user.update({
+            where: { id: revision.authorId },
+            data: {
+                powerScore: { increment: POWER_SCORE.WIKI_APPROVAL_POINTS }
+            }
+        })
+    ])
 
     revalidatePath('/admin/dashboard')
     revalidatePath(`/wiki`)
@@ -54,8 +63,36 @@ export async function rejectRevision(revisionId: string) {
 }
 
 /**
+ * Approve a pending staff member - ADMIN ONLY
+ */
+export async function approveStaff(userId: string) {
+    await requireAdmin()
+
+    await prisma.user.update({
+        where: { id: userId },
+        data: { role: 'STAFF' }
+    })
+
+    revalidatePath('/admin/dashboard')
+}
+
+/**
+ * Reject a pending staff member - ADMIN ONLY
+ * Downgrades them to STUDENT
+ */
+export async function rejectStaff(userId: string) {
+    await requireAdmin()
+
+    await prisma.user.update({
+        where: { id: userId },
+        data: { role: 'STUDENT' }
+    })
+
+    revalidatePath('/admin/dashboard')
+}
+
+/**
  * Increment power score atomically
- * Used for individual actions (referral, wiki approval) instead of full recalculation
  */
 export async function incrementPowerScore(userId: string, points: number) {
     await prisma.user.update({
@@ -69,8 +106,7 @@ export async function incrementPowerScore(userId: string, points: number) {
 }
 
 /**
- * Full power score recalculation
- * Use sparingly - only when social stats are synced or for data consistency checks
+ * Full power score recalculation (Legacy/Sync fallback)
  */
 export async function recalculatePowerScore(userId: string) {
     const user = await prisma.user.findUnique({
@@ -79,12 +115,10 @@ export async function recalculatePowerScore(userId: string) {
 
     if (!user) return
 
-    // Count referrals made by this user
     const referralsCount = await prisma.referral.count({
         where: { referrerId: userId }
     })
 
-    // Count approved wiki edits
     const approvedEditsCount = await prisma.wikiRevision.count({
         where: {
             authorId: userId,
@@ -92,7 +126,6 @@ export async function recalculatePowerScore(userId: string) {
         }
     })
 
-    // Parse social stats with type safety
     const socialStats = parseSocialStats(user.socialStats)
     const socialReach = calculateSocialReach(socialStats)
 
@@ -105,20 +138,4 @@ export async function recalculatePowerScore(userId: string) {
         where: { id: userId },
         data: { powerScore }
     })
-}
-
-/**
- * Process a new referral and increment referrer's power score
- */
-export async function processReferral(referrerId: string, refereeId: string) {
-    // Create the referral record
-    await prisma.referral.create({
-        data: {
-            referrerId,
-            refereeId
-        }
-    })
-
-    // Increment referrer's power score
-    await incrementPowerScore(referrerId, POWER_SCORE.REFERRAL_POINTS)
 }
