@@ -2,9 +2,17 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import { requireAdmin } from '@/lib/auth'
+import { parseSocialStats, calculateSocialReach, POWER_SCORE } from '@/lib/types'
 
+/**
+ * Approve a wiki revision - ADMIN ONLY
+ * Updates revision status, applies content to UniPage, and increments author's power score
+ */
 export async function approveRevision(revisionId: string) {
+    // Security check: Verify admin access
+    await requireAdmin()
+
     const revision = await prisma.wikiRevision.findUnique({
         where: { id: revisionId },
         include: { author: true }
@@ -24,13 +32,20 @@ export async function approveRevision(revisionId: string) {
         data: { content: revision.content }
     })
 
-    // Recalculate Power Score
-    await updatePowerScore(revision.authorId)
+    // Incremental Power Score update - add points for this approval
+    await incrementPowerScore(revision.authorId, POWER_SCORE.WIKI_APPROVAL_POINTS)
 
     revalidatePath('/admin/dashboard')
+    revalidatePath(`/wiki`)
 }
 
+/**
+ * Reject a wiki revision - ADMIN ONLY
+ */
 export async function rejectRevision(revisionId: string) {
+    // Security check: Verify admin access
+    await requireAdmin()
+
     await prisma.wikiRevision.update({
         where: { id: revisionId },
         data: { status: 'REJECTED' }
@@ -38,26 +53,38 @@ export async function rejectRevision(revisionId: string) {
     revalidatePath('/admin/dashboard')
 }
 
-async function updatePowerScore(userId: string) {
-    // PowerScore = (Referrals * 50) + (ApprovedWikiEdits * 20) + (SocialReach / 100)
-
-    const user = await prisma.user.findUnique({
+/**
+ * Increment power score atomically
+ * Used for individual actions (referral, wiki approval) instead of full recalculation
+ */
+export async function incrementPowerScore(userId: string, points: number) {
+    await prisma.user.update({
         where: { id: userId },
-        include: {
-            _count: {
-                select: {
-                    referralsMade: true,
-                    revisions: { where: { status: 'APPROVED' } }
-                }
+        data: {
+            powerScore: {
+                increment: points
             }
         }
+    })
+}
+
+/**
+ * Full power score recalculation
+ * Use sparingly - only when social stats are synced or for data consistency checks
+ */
+export async function recalculatePowerScore(userId: string) {
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
     })
 
     if (!user) return
 
-    const referals = user._count.referralsMade
-    const approvedEdits = user._count.revisions // Filtered in include query? No, Prisma _count doesn't support complex filters in top level include easily sometimes, let's check.
-    // Actually, correct prisma syntax for count with where:
+    // Count referrals made by this user
+    const referralsCount = await prisma.referral.count({
+        where: { referrerId: userId }
+    })
+
+    // Count approved wiki edits
     const approvedEditsCount = await prisma.wikiRevision.count({
         where: {
             authorId: userId,
@@ -65,21 +92,33 @@ async function updatePowerScore(userId: string) {
         }
     })
 
-    // Social Reach
-    // Mock social stats structure: { instagram: { followers: 1000 }, ... }
-    // Logic: "Mock an API integration... fetch followerCount"
-    // Let's assume user.socialStats has a total follower count or we sum it.
-    let socialReach = 0
-    if (user.socialStats && typeof user.socialStats === 'object') {
-        // rudimentary parsing of Json
-        const stats = user.socialStats as any
-        socialReach = (stats.instagram || 0) + (stats.tiktok || 0) + (stats.linkedin || 0)
-    }
+    // Parse social stats with type safety
+    const socialStats = parseSocialStats(user.socialStats)
+    const socialReach = calculateSocialReach(socialStats)
 
-    const powerScore = (referals * 50) + (approvedEditsCount * 20) + Math.floor(socialReach / 100)
+    const powerScore =
+        (referralsCount * POWER_SCORE.REFERRAL_POINTS) +
+        (approvedEditsCount * POWER_SCORE.WIKI_APPROVAL_POINTS) +
+        Math.floor(socialReach / POWER_SCORE.SOCIAL_DIVISOR)
 
     await prisma.user.update({
         where: { id: userId },
         data: { powerScore }
     })
+}
+
+/**
+ * Process a new referral and increment referrer's power score
+ */
+export async function processReferral(referrerId: string, refereeId: string) {
+    // Create the referral record
+    await prisma.referral.create({
+        data: {
+            referrerId,
+            refereeId
+        }
+    })
+
+    // Increment referrer's power score
+    await incrementPowerScore(referrerId, POWER_SCORE.REFERRAL_POINTS)
 }

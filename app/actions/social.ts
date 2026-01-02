@@ -2,49 +2,45 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { SocialStats, POWER_SCORE } from '@/lib/types'
+import { recalculatePowerScore } from '@/app/admin/actions'
 
-function getRandomInt(min: number, max: number) {
+function getRandomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min)) + min
 }
 
+/**
+ * Sync social media stats for the current user
+ * In production, this would fetch real data from Instagram/TikTok/LinkedIn APIs
+ */
 export async function syncSocials(formData: FormData) {
-    // Mock Logic
-    // In reality, we'd use oauth tokens stored in DB to fetch from Instagram/TikTok/LinkedIn API
+    // Mock Logic - In reality, we'd use OAuth tokens to fetch from social APIs
 
-    // Update the First User (current session mock)
+    // Get current user (mock session)
     const user = await prisma.user.findFirst()
     if (!user) return
 
     // Mock API call delay
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    const newStats = {
+    // Type-safe social stats
+    const newStats: SocialStats = {
         instagram: getRandomInt(500, 5000),
         tiktok: getRandomInt(1000, 10000),
         linkedin: getRandomInt(200, 1500)
     }
 
-    const socialReach = newStats.instagram + newStats.tiktok + newStats.linkedin
-
-    // PowerScore update logic for social part
-    // Recalculate full score to be safe
-    const approvedEditsCount = await prisma.wikiRevision.count({
-        where: { authorId: user.id, status: 'APPROVED' }
-    })
-
-    const referralsCount = await prisma.referral.count({
-        where: { referrerId: user.id }
-    })
-
-    const powerScore = (referralsCount * 50) + (approvedEditsCount * 20) + Math.floor(socialReach / 100)
-
+    // Update social stats first
     await prisma.user.update({
         where: { id: user.id },
         data: {
-            socialStats: newStats,
-            powerScore
+            socialStats: newStats
         }
     })
+
+    // Social stats changed, so recalculate full power score
+    // This is one of the few cases where full recalculation is needed
+    await recalculatePowerScore(user.id)
 
     revalidatePath('/profile')
     revalidatePath('/leaderboard')
