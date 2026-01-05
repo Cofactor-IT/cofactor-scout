@@ -4,7 +4,7 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install dependencies for Prisma
+# Install dependencies for Prisma (openssl and libc6-compat for ARM64)
 RUN apk add --no-cache libc6-compat openssl
 
 COPY package.json package-lock.json* ./
@@ -16,10 +16,13 @@ RUN npm ci --legacy-peer-deps
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Install openssl for Prisma generate
+RUN apk add --no-cache openssl
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client
+# Generate Prisma Client with ARM64 binary targets
 RUN npx prisma generate
 
 # Build Next.js
@@ -35,10 +38,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Install openssl for Prisma runtime on ARM64
+RUN apk add --no-cache openssl
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built assets
+# Copy built assets (using standalone output for minimal image size)
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
