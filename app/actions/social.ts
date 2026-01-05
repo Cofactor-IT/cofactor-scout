@@ -34,7 +34,7 @@ export async function syncSocials(formData: FormData) {
     await prisma.user.update({
         where: { id: user.id },
         data: {
-            socialStats: newStats
+            socialStats: newStats as unknown as Record<string, number>
         }
     })
 

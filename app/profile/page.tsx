@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { syncSocials } from '../actions/social'
 import { SignOutButton } from '@/components/SignOutButton'
+import { SocialStats } from '@/lib/types'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,7 @@ export default async function ProfilePage() {
         })
     }
 
-    const socialStats = (user.socialStats as any) || {}
+    const socialStats = (user.socialStats as SocialStats) || {}
 
     return (
         <div className="container mx-auto py-10">
