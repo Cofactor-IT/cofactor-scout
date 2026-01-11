@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
 import { saveSocialApiKeys } from './actions'
+import { SocialStats } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +27,7 @@ export default async function SocialConnectPage() {
         redirect('/api/auth/signin')
     }
 
-    const socialStats = (user.socialStats as any) || {}
+    const socialStats = (user.socialStats as SocialStats | null) || {}
 
     return (
         <div className="container mx-auto py-10 max-w-2xl">

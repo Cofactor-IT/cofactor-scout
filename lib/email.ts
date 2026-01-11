@@ -1,5 +1,18 @@
+import nodemailer from 'nodemailer'
 
-import nodemailer from 'nodemailer';
+// Logger utility for consistent logging
+function log(level: 'info' | 'error', message: string, meta?: Record<string, unknown>) {
+    const timestamp = new Date().toISOString()
+    const logEntry = { timestamp, level, message, ...meta }
+
+    if (process.env.NODE_ENV === 'production') {
+        // In production, you'd send this to a logging service
+        // For now, use structured console output
+        console[level === 'error' ? 'error' : 'log'](JSON.stringify(logEntry))
+    } else {
+        console[level === 'error' ? 'error' : 'log'](`[${level.toUpperCase()}] ${message}`, meta || '')
+    }
+}
 
 // Configure SMTP Transporter
 const transporter = nodemailer.createTransport({
@@ -10,10 +23,13 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
-});
+})
 
 export async function sendWelcomeEmail(toEmail: string, name: string) {
-    if (!process.env.SMTP_USER) return; // Skip if no SMTP configured
+    if (!process.env.SMTP_USER) {
+        log('info', 'SMTP not configured, skipping welcome email', { toEmail })
+        return
+    }
 
     const mailOptions = {
         from: process.env.SMTP_FROM || '"Cofactor Club" <no-reply@cofactor.world>',
@@ -34,17 +50,17 @@ export async function sendWelcomeEmail(toEmail: string, name: string) {
                 <p>Best,<br>The Cofactor Team</p>
             </div>
         `
-    };
+    }
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log(`Welcome email sent to ${toEmail}`);
+        await transporter.sendMail(mailOptions)
+        log('info', 'Welcome email sent successfully', { toEmail })
     } catch (error) {
-        console.error('Error sending welcome email:', error);
+        log('error', 'Failed to send welcome email', { toEmail, error: error instanceof Error ? error.message : String(error) })
     }
 }
 
-export async function sendPasswordResetEmail(toEmail: string, resetToken: string) {
-    // Placeholder for future implementation
-    console.log(`[Mock] Sending password reset to ${toEmail} with token ${resetToken}`);
+export async function sendPasswordResetEmail(toEmail: string, _resetToken: string) {
+    log('info', 'Password reset requested', { toEmail })
+    // TODO: Implement password reset email functionality
 }

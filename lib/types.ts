@@ -3,8 +3,11 @@
  */
 export interface SocialStats {
     instagram?: number
+    instagramUsername?: string
     tiktok?: number
+    tiktokUsername?: string
     linkedin?: number
+    linkedinUrl?: string
 }
 
 /**

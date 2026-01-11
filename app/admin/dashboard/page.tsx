@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import Link from 'next/link'
 import { approveRevision, rejectRevision, approveStaff, rejectStaff } from '../actions'
+import { SocialStats } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,6 @@ export default async function AdminDashboard() {
         pendingStaff,
         totalUsers,
         totalReferrals,
-        totalEdits,
         topPerformers,
         recentSignups,
         // New Analytics
@@ -37,9 +37,7 @@ export default async function AdminDashboard() {
         prisma.user.count(),
         // 4. Total Referrals
         prisma.referral.count(),
-        // 5. Total Approved Edits
-        prisma.wikiRevision.count({ where: { status: 'APPROVED' } }),
-        // 6. Top Performers (Top 10 by PowerScore)
+        // 5. Top Performers (Top 10 by PowerScore)
         prisma.user.findMany({
             orderBy: { powerScore: 'desc' },
             take: 10,
@@ -52,16 +50,16 @@ export default async function AdminDashboard() {
                 }
             }
         }),
-        // 7. Recent Signups (Last 5)
+        // 6. Recent Signups (Last 5)
         prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
             take: 5
         }),
-        // 8. All Users Social Stats (for aggregation)
+        // 7. All Users Social Stats (for aggregation)
         prisma.user.findMany({
             select: { socialStats: true }
         }),
-        // 9. Top Wiki Pages by Revision Count
+        // 8. Top Wiki Pages by Revision Count
         prisma.uniPage.findMany({
             orderBy: { revisions: { _count: 'desc' } },
             take: 5,
@@ -83,7 +81,7 @@ export default async function AdminDashboard() {
 
     let totalSocialReach = 0
     allUsersSocials.forEach(u => {
-        const stats = u.socialStats as any
+        const stats = u.socialStats as SocialStats | null
         if (stats) {
             totalSocialReach += (stats.instagram || 0) + (stats.tiktok || 0) + (stats.linkedin || 0)
         }

@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
 import { User } from '@prisma/client'
+import { SocialStats } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +46,7 @@ export default async function MembersPage() {
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {members.map((member: User & { _count: { referralsMade: number, revisions: number } }, index: number) => {
-                    const socialStats = (member.socialStats as any) || {}
+                    const socialStats = (member.socialStats as SocialStats | null) || {}
 
                     return (
                         <Card key={member.id} className="overflow-hidden">

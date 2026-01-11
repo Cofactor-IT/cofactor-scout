@@ -19,10 +19,15 @@ model User {
   powerScore    Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
+
   revisions     WikiRevision[]
   referralsMade Referral[] @relation("Referrer")
   referredBy    Referral?  @relation("Referee")
+
+  @@index([email])
+  @@index([referralCode])
+  @@index([powerScore(sort = Desc)])
+  @@index([createdAt(sort = Desc)])
 }
 
 enum Role {
@@ -53,6 +58,11 @@ model WikiRevision {
   content   String
   status    RevisionStatus @default(PENDING)
   createdAt DateTime       @default(now())
+
+  @@index([status])
+  @@index([authorId])
+  @@index([uniPageId])
+  @@index([createdAt(sort = Desc)])
 }
 
 enum RevisionStatus {
@@ -68,4 +78,6 @@ model Referral {
   refereeId  String   @unique
   referee    User     @relation("Referee", fields: [refereeId], references: [id])
   createdAt  DateTime @default(now())
+
+  @@index([referrerId])
 }

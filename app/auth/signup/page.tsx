@@ -42,7 +42,7 @@ export default function SignUpPage() {
                             <Label htmlFor="referralCode">Referral Code</Label>
                             <Input id="referralCode" name="referralCode" placeholder="Enter code" required />
                             <p className="text-xs text-muted-foreground">
-                                Use a friend's code or the staff secret code to join.
+                                Use a friend&apos;s code or the staff secret code to join.
                             </p>
                         </div>
 

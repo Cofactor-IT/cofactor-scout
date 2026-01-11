@@ -3,23 +3,57 @@
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import bcrypt from 'bcryptjs'
+import { signUpSchema, type SignUpInput } from '@/lib/validation'
+import { RateLimits } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
-export async function signUp(prevState: any, formData: FormData) {
+// Simple in-memory store for rate limiting by email
+const signupAttempts = new Map<string, { count: number; resetTime: number }>()
+
+export async function signUp(prevState: { error?: string } | undefined, formData: FormData) {
+    // Extract form data first to get email for rate limiting
     const email = formData.get('email') as string
-    const password = formData.get('password') as string
-    const name = formData.get('name') as string
-    const referralCode = formData.get('referralCode') as string
+    const rawEmail = email?.toLowerCase().trim()
 
-    // Validations
-    if (!email || !password || !name || !referralCode) {
-        return { error: 'All fields are required' }
+    // Rate limiting check
+    if (rawEmail) {
+        const now = Date.now()
+        const attempt = signupAttempts.get(rawEmail)
+
+        if (!attempt || now > attempt.resetTime) {
+            signupAttempts.set(rawEmail, { count: 1, resetTime: now + RateLimits.SIGNUP.window })
+        } else {
+            attempt.count++
+            if (attempt.count > RateLimits.SIGNUP.limit) {
+                logger.warn('Rate limit exceeded for signup', { email: rawEmail })
+                return { error: `Too many signup attempts. Please try again later.` }
+            }
+        }
     }
+
+    // Extract and validate form data
+    const rawData = {
+        email: formData.get('email'),
+        password: formData.get('password'),
+        name: formData.get('name'),
+        referralCode: formData.get('referralCode')
+    }
+
+    const validationResult = signUpSchema.safeParse(rawData)
+    if (!validationResult.success) {
+        const errors = validationResult.error.issues.map((e: { message: string }) => e.message).join(', ')
+        logger.warn('Validation failed for signup', { errors })
+        return { error: errors }
+    }
+
+    const { email: validatedEmail, password, name, referralCode } = validationResult.data as SignUpInput
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-        where: { email }
+        where: { email: validatedEmail }
     })
     if (existingUser) {
+        logger.warn('Signup attempt with existing email', { email: validatedEmail })
         return { error: 'Email already exists' }
     }
 
@@ -50,7 +84,7 @@ export async function signUp(prevState: any, formData: FormData) {
     const newReferralCode = name.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 10000).toString()
 
     try {
-        const newUser = await prisma.user.create({
+        await prisma.user.create({
             data: {
                 email,
                 name,
@@ -78,13 +112,16 @@ export async function signUp(prevState: any, formData: FormData) {
 
         // Send Welcome Email (Non-blocking)
         const { sendWelcomeEmail } = await import('@/lib/email')
-        // Fire and forget, don't await completion to speed up UX
-        sendWelcomeEmail(email, name).catch(err => console.error("Failed to send welcome email", err))
+        sendWelcomeEmail(validatedEmail, name).catch(err =>
+            logger.error('Failed to send welcome email', { email: validatedEmail, error: err })
+        )
+
+        logger.info('User registered successfully', { email: validatedEmail, role })
 
     } catch (e) {
-        console.error(e)
+        logger.error('Registration failed', { error: e })
         return { error: 'Registration failed' }
     }
 
-    redirect('/api/auth/signin') // Redirect to login
+    redirect('/api/auth/signin')
 }

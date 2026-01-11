@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { revalidatePath } from 'next/cache'
 import { recalculatePowerScore } from '@/app/admin/actions'
+import { SocialStats } from '@/lib/types'
+import { socialConnectSchema } from '@/lib/validation'
 
 /**
  * Save social media username/URL and simulate fetching follower count
@@ -14,10 +16,20 @@ export async function saveSocialApiKeys(formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) return
 
-    const platform = formData.get('platform') as string
-    const username = formData.get('username') as string
+    // Extract and validate input
+    const rawData = {
+        platform: formData.get('platform'),
+        username: formData.get('username'),
+        followers: formData.get('followers')
+    }
 
-    if (!platform || !username) return
+    const validationResult = socialConnectSchema.safeParse(rawData)
+    if (!validationResult.success) {
+        const errors = validationResult.error.issues.map((e: { message: string }) => e.message).join(', ')
+        throw new Error(errors)
+    }
+
+    const { platform, username, followers } = validationResult.data
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email }
@@ -26,24 +38,23 @@ export async function saveSocialApiKeys(formData: FormData) {
     if (!user) return
 
     // Get existing stats
-    const existingStats = (user.socialStats as any) || {}
+    const existingStats = (user.socialStats as SocialStats | null) || {}
 
     // Save username/URL - follower count is entered by user or left blank for admin verification
-    const followerCount = parseInt(formData.get('followers') as string) || 0
-    let updatedStats = { ...existingStats }
+    const updatedStats = { ...existingStats }
 
     switch (platform) {
         case 'instagram':
             updatedStats.instagramUsername = username
-            updatedStats.instagram = followerCount
+            updatedStats.instagram = followers
             break
         case 'tiktok':
             updatedStats.tiktokUsername = username
-            updatedStats.tiktok = followerCount
+            updatedStats.tiktok = followers
             break
         case 'linkedin':
             updatedStats.linkedinUrl = username
-            updatedStats.linkedin = followerCount
+            updatedStats.linkedin = followers
             break
     }
 

@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { SocialStats, POWER_SCORE } from '@/lib/types'
+import { SocialStats } from '@/lib/types'
 import { recalculatePowerScore } from '@/app/admin/actions'
 
 function getRandomInt(min: number, max: number): number {
@@ -13,7 +13,7 @@ function getRandomInt(min: number, max: number): number {
  * Sync social media stats for the current user
  * In production, this would fetch real data from Instagram/TikTok/LinkedIn APIs
  */
-export async function syncSocials(formData: FormData) {
+export async function syncSocials() {
     // Mock Logic - In reality, we'd use OAuth tokens to fetch from social APIs
 
     // Get current user (mock session)
