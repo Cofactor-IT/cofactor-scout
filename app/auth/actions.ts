@@ -16,6 +16,43 @@ function generateToken(): string {
     return randomBytes(32).toString('hex')
 }
 
+// Generate a unique referral code based on username
+async function generateUniqueReferralCode(name: string): Promise<string> {
+    // Clean the name: remove spaces, special chars, convert to uppercase
+    const cleanName = name
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .substring(0, 6) // Take first 6 chars
+
+    // Generate a random 4 character suffix
+    const randomSuffix = randomBytes(2).toString('hex').toUpperCase()
+
+    // Combine: prefix + random suffix
+    let code = `${cleanName}${randomSuffix}`
+
+    // Ensure code is at least 4 characters
+    if (code.length < 4) {
+        code = code + randomBytes(3).toString('hex').toUpperCase()
+    }
+
+    // Check for uniqueness and regenerate if needed
+    let attempts = 0
+    while (attempts < 10) {
+        const existing = await prisma.user.findUnique({
+            where: { referralCode: code }
+        })
+        if (!existing) {
+            return code
+        }
+        // Generate new code with different random part
+        code = `${cleanName}${randomBytes(2).toString('hex').toUpperCase()}`
+        attempts++
+    }
+
+    // Fallback: use timestamp + random
+    return `USER${Date.now().toString(36).toUpperCase()}${randomBytes(2).toString('hex').toUpperCase()}`
+}
+
 export async function signUp(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
     // Extract form data first to get email for rate limiting
     const email = formData.get('email') as string
@@ -85,8 +122,8 @@ export async function signUp(prevState: { error?: string; success?: string } | u
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Generate own referral code (simple mock logic)
-    const newReferralCode = name.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 10000).toString()
+    // Generate unique referral code based on username
+    const newReferralCode = await generateUniqueReferralCode(name)
 
     // Generate email verification token (expires in 24 hours)
     const verificationToken = generateToken()
@@ -126,7 +163,7 @@ export async function signUp(prevState: { error?: string; success?: string } | u
             logger.error('Failed to send verification email', { email: validatedEmail, error: err })
         )
 
-        logger.info('User registered successfully', { email: validatedEmail, role })
+        logger.info('User registered successfully', { email: validatedEmail, role, referralCode: newReferralCode })
 
     } catch (e) {
         logger.error('Registration failed', { error: e })
