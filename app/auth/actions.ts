@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 import { signUpSchema, type SignUpInput } from '@/lib/validation'
 import { RateLimits } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
-import { randomBytes } from 'crypto'
+import { randomBytes, randomInt } from 'crypto'
 
 // Simple in-memory store for rate limiting by email
 const signupAttempts = new Map<string, { count: number; resetTime: number }>()
@@ -14,7 +14,7 @@ const passwordResetAttempts = new Map<string, { count: number; resetTime: number
 
 // Generate a cryptographically secure 6-digit code for password reset
 function generateToken(): string {
-    return crypto.randomInt(100000, 1000000).toString()
+    return randomInt(100000, 1000000).toString()
 }
 
 function generateSecureToken(): string {

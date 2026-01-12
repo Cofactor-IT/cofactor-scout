@@ -19,7 +19,7 @@ export async function syncSocials() {
     // Get current authenticated user
     const session = await getServerSession(authOptions)
     if (!session || !session.user?.email) {
-        return { error: 'Unauthorized' }
+        throw new Error('Unauthorized')
     }
 
     const user = await prisma.user.findUnique({

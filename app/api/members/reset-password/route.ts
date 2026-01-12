@@ -3,10 +3,11 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { randomInt } from 'crypto'
 
 function generateResetCode(): string {
     // Generate a cryptographically secure 6-digit code
-    return crypto.randomInt(100000, 1000000).toString()
+    return randomInt(100000, 1000000).toString()
 }
 
 export async function POST(request: NextRequest) {
