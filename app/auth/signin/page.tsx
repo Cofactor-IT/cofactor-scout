@@ -15,6 +15,8 @@ function SignInForm() {
     const error = searchParams.get('error')
     const message = searchParams.get('message')
     const [isLoading, setIsLoading] = useState(false)
+    const [signInError, setSignInError] = useState<string | null>(null)
+    const [email, setEmail] = useState('')
     const [showMessage, setShowMessage] = useState(true)
 
     // Hide message after 5 seconds
@@ -28,21 +30,23 @@ function SignInForm() {
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
         setIsLoading(true)
+        setSignInError(null)
 
         const formData = new FormData(event.currentTarget)
-        const email = formData.get('email') as string
+        const emailValue = formData.get('email') as string
         const password = formData.get('password') as string
 
         const result = await signIn('credentials', {
-            email,
+            email: emailValue,
             password,
             redirect: false,
         })
 
         if (result?.error) {
-            // Handle error (we could just let the URL param handle it on refresh, but client side better)
-            // Ideally we show local error state
-            console.error(result.error)
+            // For NextAuth, Credentials provider always returns 'CredentialsSignin' error
+            // regardless of whether user exists or password is wrong
+            // Show a helpful message directing to sign up
+            setSignInError('Invalid email or password. If you don\'t have an account, please sign up.')
         } else {
             router.push('/profile')
             router.refresh()
@@ -62,7 +66,15 @@ function SignInForm() {
                 <form onSubmit={onSubmit} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" name="email" type="email" placeholder="john@example.com" required />
+                        <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            placeholder="john@example.com"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -74,7 +86,19 @@ function SignInForm() {
                         <Input id="password" name="password" type="password" required />
                     </div>
 
-                    {error && (
+                    {signInError && (
+                        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                            <p className="text-sm text-destructive">{signInError}</p>
+                            <Link
+                                href={`/auth/signup?email=${encodeURIComponent(email)}`}
+                                className="text-sm underline mt-1 inline-block"
+                            >
+                                Create an account with this email →
+                            </Link>
+                        </div>
+                    )}
+
+                    {error && !signInError && (
                         <p className="text-sm text-destructive">
                             {error === 'AccessDenied' ? 'Access Denied: You do not have permission.' : 'Invalid credentials. Please try again.'}
                         </p>

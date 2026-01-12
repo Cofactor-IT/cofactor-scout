@@ -11,20 +11,18 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
-                // For demo purposes, we allow any user in the DB to login
-                // In production, verify password hash with bcryptjs
                 if (!credentials?.email || !credentials?.password) return null
 
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email }
                 })
 
-                if (!user || user.password === null) {
-                    // Backwards compatibility for mock users or if no password set
-                    // Fallback to simplistic check or allow mock (REMOVE IN PROD)
-                    // Actually, if user has no password (old users), we might want to fail 
-                    // OR allow if password is "password" (mock)
-                    // Let's assume old users are invalid for Credentials login if they don't have password.
+                // User not found - return null with a specific indicator
+                if (!user) {
+                    return null
+                }
+
+                if (user.password === null) {
                     return null
                 }
 
@@ -56,10 +54,20 @@ export const authOptions: NextAuthOptions = {
                 token.role = (user as { id: string; role?: string }).role
             }
             return token
+        },
+        // Redirect to sign-up page if user doesn't exist
+        async signIn({ user, account }) {
+            // user is defined only when sign in is successful
+            // If we get here with credentials provider but no user, redirect to signup
+            if (!user && account?.provider === 'credentials') {
+                return Promise.resolve(false) // This will cause an error
+            }
+            return Promise.resolve(true)
         }
     },
     pages: {
         signIn: '/auth/signin',
+        newUser: '/auth/signup'
     },
     session: {
         strategy: "jwt",
