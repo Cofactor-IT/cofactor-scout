@@ -96,7 +96,9 @@ export function ActionButtons({ memberId, userName, userEmail, currentUserId }: 
         <div className="flex flex-col gap-2">
             <a
                 href={`mailto:${userEmail}`}
-                className="text-blue-500 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline inline-block w-full"
             >
                 Email
             </a>
