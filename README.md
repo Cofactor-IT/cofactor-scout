@@ -2,6 +2,8 @@
 
 A student ambassador network platform for managing referrals, tracking viral growth, and building a moderated University Wiki with a gamified Power Score system.
 
+> **📚 Documentation:** For detailed technical documentation, see the [docs/](./docs/README.md) directory.
+
 ## Branches
 
 | Branch | Purpose |
