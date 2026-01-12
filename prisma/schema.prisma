@@ -56,9 +56,9 @@ model UniPage {
 model WikiRevision {
   id        String         @id @default(cuid())
   uniPageId String
-  uniPage   UniPage        @relation(fields: [uniPageId], references: [id])
+  uniPage   UniPage        @relation(fields: [uniPageId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User           @relation(fields: [authorId], references: [id])
+  author    User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   content   String
   status    RevisionStatus @default(PENDING)
   createdAt DateTime       @default(now())
@@ -78,9 +78,9 @@ enum RevisionStatus {
 model Referral {
   id         String   @id @default(cuid())
   referrerId String
-  referrer   User     @relation("Referrer", fields: [referrerId], references: [id])
+  referrer   User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
   refereeId  String   @unique
-  referee    User     @relation("Referee", fields: [refereeId], references: [id])
+  referee    User     @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
 
   @@index([referrerId])
