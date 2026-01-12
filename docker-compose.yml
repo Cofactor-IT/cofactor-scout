@@ -44,15 +44,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-  # Optional: Cloudflare Tunnel for production
-  # tunnel:
-  #   image: cloudflare/cloudflared:latest
-  #   restart: always
-  #   command: tunnel run
-  #   environment:
-  #     - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN}
-  #   networks:
-  #     - cofactor-net
+  # Cloudflare Tunnel for production (set CLOUDFLARE_TOKEN in .env)
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: always
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN}
+    networks:
+      - cofactor-net
+    depends_on:
+      web:
+        condition: service_healthy
 
 networks:
   cofactor-net:
