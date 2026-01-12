@@ -3,7 +3,7 @@ set -e
 
 # Run Prisma migrations/create tables
 echo "Running Prisma db push..."
-npx prisma db push --skip-generate
+node ./node_modules/prisma/build/index.js db push --skip-generate
 
 # Start the Next.js server
 echo "Starting Next.js server..."

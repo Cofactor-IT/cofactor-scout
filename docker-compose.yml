@@ -5,11 +5,11 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-cofactor}:${POSTGRES_PASSWORD:-securepassword}@db:5432/${POSTGRES_DB:-cofactor_db}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-changeme_in_production}
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3001}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@cofactor.world}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - STAFF_SECRET_CODE=${STAFF_SECRET_CODE:-STAFF_2026}
@@ -19,10 +19,11 @@ services:
     networks:
       - cofactor-net
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health" ]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
 
   db:
     image: postgres:15-alpine
