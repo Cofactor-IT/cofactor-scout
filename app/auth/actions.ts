@@ -10,11 +10,11 @@ import { randomBytes } from 'crypto'
 
 // Simple in-memory store for rate limiting by email
 const signupAttempts = new Map<string, { count: number; resetTime: number }>()
+const passwordResetAttempts = new Map<string, { count: number; resetTime: number }>()
 
-// Generate a secure random token
+// Generate a cryptographically secure 6-digit code for password reset
 function generateToken(): string {
-    // Generate a 6-digit numeric code for password reset
-    return Math.floor(100000 + Math.random() * 900000).toString()
+    return crypto.randomInt(100000, 1000000).toString()
 }
 
 function generateSecureToken(): string {
@@ -185,6 +185,22 @@ export async function requestPasswordReset(prevState: { error?: string; success?
         return { error: 'Email is required' }
     }
 
+    const rawEmail = email.toLowerCase().trim()
+
+    // Rate limiting check for password reset
+    const now = Date.now()
+    const resetAttempt = passwordResetAttempts.get(rawEmail)
+
+    if (!resetAttempt || now > resetAttempt.resetTime) {
+        passwordResetAttempts.set(rawEmail, { count: 1, resetTime: now + RateLimits.PASSWORD_RESET.window })
+    } else {
+        resetAttempt.count++
+        if (resetAttempt.count > RateLimits.PASSWORD_RESET.limit) {
+            logger.warn('Rate limit exceeded for password reset', { email: rawEmail })
+            return { error: 'Too many password reset attempts. Please try again later.' }
+        }
+    }
+
     const user = await prisma.user.findUnique({
         where: { email: email.toLowerCase().trim() }
     })
@@ -287,7 +303,7 @@ export async function resendVerificationEmail(prevState: { error?: string; succe
     }
 
     // Generate new verification token
-    const verificationToken = generateToken()
+    const verificationToken = generateSecureToken()
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     await prisma.user.update({

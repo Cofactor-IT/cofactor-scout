@@ -20,6 +20,8 @@ model User {
   emailVerified     DateTime?
   verificationToken String?  @unique
   verificationExpires DateTime?
+  failedLoginAttempts Int    @default(0)
+  lockedUntil       DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -32,6 +34,7 @@ model User {
   @@index([referralCode])
   @@index([powerScore(sort: Desc)])
   @@index([createdAt(sort: Desc)])
+  @@index([role])
 }
 
 enum Role {
@@ -84,6 +87,7 @@ model Referral {
   createdAt  DateTime @default(now())
 
   @@index([referrerId])
+  @@unique([referrerId, refereeId])
 }
 
 model PasswordReset {

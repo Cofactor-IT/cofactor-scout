@@ -4,20 +4,27 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { SocialStats } from '@/lib/types'
 import { recalculatePowerScore } from '@/app/admin/actions'
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth-config"
 
 function getRandomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min)) + min
 }
 
 /**
- * Sync social media stats for the current user
+ * Sync social media stats for the current authenticated user
  * In production, this would fetch real data from Instagram/TikTok/LinkedIn APIs
  */
 export async function syncSocials() {
-    // Mock Logic - In reality, we'd use OAuth tokens to fetch from social APIs
+    // Get current authenticated user
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user?.email) {
+        return { error: 'Unauthorized' }
+    }
 
-    // Get current user (mock session)
-    const user = await prisma.user.findFirst()
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email }
+    })
     if (!user) return
 
     // Mock API call delay

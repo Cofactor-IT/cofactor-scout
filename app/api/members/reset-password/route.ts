@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 
 function generateResetCode(): string {
-    // Generate a 6-digit numeric code
-    return Math.floor(100000 + Math.random() * 900000).toString()
+    // Generate a cryptographically secure 6-digit code
+    return crypto.randomInt(100000, 1000000).toString()
 }
 
 export async function POST(request: NextRequest) {

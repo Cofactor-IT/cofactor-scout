@@ -7,17 +7,19 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-cofactor}:${POSTGRES_PASSWORD:-securepassword}@db:5432/${POSTGRES_DB:-cofactor_db}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-changeme_in_production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-cofactor}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cofactor_db}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3001}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@cofactor.world}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - STAFF_SECRET_CODE=${STAFF_SECRET_CODE:-STAFF_2026}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM}
+    volumes:
+      - backup-data:/backup
     depends_on:
       db:
         condition: service_healthy
@@ -34,13 +36,14 @@ services:
     image: postgres:15-alpine
     restart: always
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"  # Only accessible from localhost
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cofactor}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securepassword}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-cofactor_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - backup-data:/backup
     networks:
       - cofactor-net
     healthcheck:
@@ -48,6 +51,46 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Automated backup service - runs every 6 hours
+  backup:
+    image: postgres:15-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:ro  # Read-only access to data
+      - backup-data:/backup
+      - ./scripts:/backup-scripts:ro
+    networks:
+      - cofactor-net
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cofactor}
+      POSTGRES_DB: ${POSTGRES_DB:-cofactor_db}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        # Install docker-cli for backup
+        apk add --no-cache docker-cli
+        # Wait for docker socket to be available
+        while ! docker info >/dev/null 2>&1; do
+          echo "Waiting for docker..."
+          sleep 5
+        done
+        # Run backup every 6 hours
+        while true; do
+          echo "[$$(date)] Starting scheduled backup..."
+          /backup-scripts/backup.sh
+          echo "[$$(date)] Backup complete. Next backup in 6 hours."
+          sleep 21600  # 6 hours
+        done
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount docker socket
+      - postgres_data:/var/lib/postgresql/data:ro
+      - backup-data:/backup
+      - ./scripts:/backup-scripts:ro
+
   # Cloudflare Tunnel for production (set CLOUDFLARE_TOKEN in .env)
   tunnel:
     image: cloudflare/cloudflared:latest
@@ -57,6 +100,8 @@ services:
       - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN}
     networks:
       - cofactor-net
+    profiles:
+      - production  # Only start with: docker compose --profile production up
     depends_on:
       web:
         condition: service_healthy
@@ -67,3 +112,4 @@ networks:
 
 volumes:
   postgres_data:
+  backup-data:
