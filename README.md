@@ -83,6 +83,9 @@ SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 SMTP_FROM="Cofactor Club" <no-reply@cofactor.world>
+
+# Cloudflare Tunnel (Required for production)
+CLOUDFLARE_TOKEN=eyJhIjoi...
 ```
 
 ### 3. Deploy with Docker Compose
