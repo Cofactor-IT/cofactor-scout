@@ -26,8 +26,8 @@ model User {
 
   @@index([email])
   @@index([referralCode])
-  @@index([powerScore(sort = Desc)])
-  @@index([createdAt(sort = Desc)])
+  @@index([powerScore(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
 }
 
 enum Role {
@@ -62,7 +62,7 @@ model WikiRevision {
   @@index([status])
   @@index([authorId])
   @@index([uniPageId])
-  @@index([createdAt(sort = Desc)])
+  @@index([createdAt(sort: Desc)])
 }
 
 enum RevisionStatus {
