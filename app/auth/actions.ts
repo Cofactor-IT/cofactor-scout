@@ -13,6 +13,12 @@ const signupAttempts = new Map<string, { count: number; resetTime: number }>()
 
 // Generate a secure random token
 function generateToken(): string {
+    // Generate a 6-digit numeric code for password reset
+    return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+function generateSecureToken(): string {
+    // Generate a secure random token for email verification
     return randomBytes(32).toString('hex')
 }
 
@@ -126,7 +132,7 @@ export async function signUp(prevState: { error?: string; success?: string } | u
     const newReferralCode = await generateUniqueReferralCode(name)
 
     // Generate email verification token (expires in 24 hours)
-    const verificationToken = generateToken()
+    const verificationToken = generateSecureToken()
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     try {
@@ -185,7 +191,7 @@ export async function requestPasswordReset(prevState: { error?: string; success?
 
     // Always show success message even if user doesn't exist (security)
     if (!user) {
-        return { success: 'If an account exists with this email, you will receive a password reset link.' }
+        return { success: 'If an account exists with this email, you will receive a password reset code.' }
     }
 
     // Generate reset token (expires in 1 hour)
@@ -214,7 +220,7 @@ export async function requestPasswordReset(prevState: { error?: string; success?
 
     logger.info('Password reset requested', { email: user.email })
 
-    return { success: 'If an account exists with this email, you will receive a password reset link.' }
+    return { success: 'If an account exists with this email, you will receive a password reset code.' }
 }
 
 export async function resetPassword(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
@@ -236,13 +242,13 @@ export async function resetPassword(prevState: { error?: string; success?: strin
     })
 
     if (!resetRecord) {
-        return { error: 'Invalid or expired reset link' }
+        return { error: 'Invalid or expired reset code' }
     }
 
     if (resetRecord.expires < new Date()) {
         // Delete expired token
         await prisma.passwordReset.delete({ where: { id: resetRecord.id } })
-        return { error: 'Reset link has expired' }
+        return { error: 'Reset code has expired' }
     }
 
     // Hash new password

@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { prisma } from '@/lib/prisma'
-import { randomBytes } from 'crypto'
 import { logger } from '@/lib/logger'
 
-function generateToken(): string {
-    return randomBytes(32).toString('hex')
+function generateResetCode(): string {
+    // Generate a 6-digit numeric code
+    return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
 export async function POST(request: NextRequest) {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const resetToken = generateToken()
+    const resetCode = generateResetCode()
     const expires = new Date(Date.now() + 60 * 60 * 1000)
 
     await prisma.passwordReset.deleteMany({
@@ -39,14 +39,14 @@ export async function POST(request: NextRequest) {
 
     await prisma.passwordReset.create({
         data: {
-            token: resetToken,
+            token: resetCode,
             userId: user.id,
             expires
         }
     })
 
     const { sendPasswordResetEmail } = await import('@/lib/email')
-    sendPasswordResetEmail(user.email, resetToken).catch(err =>
+    sendPasswordResetEmail(user.email, resetCode).catch(err =>
         logger.error('Failed to send password reset email', { email: user.email, error: err })
     )
 

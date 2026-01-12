@@ -103,29 +103,30 @@ export async function sendVerificationEmail(toEmail: string, name: string, token
     }
 }
 
-export async function sendPasswordResetEmail(toEmail: string, resetToken: string) {
+export async function sendPasswordResetEmail(toEmail: string, resetCode: string) {
     if (!process.env.SMTP_USER) {
         log('info', 'SMTP not configured, skipping password reset email', { toEmail })
         return
     }
 
-    const resetUrl = `${getAppUrl()}/auth/reset-password?token=${resetToken}`
+    const resetUrl = `${getAppUrl()}/auth/reset-password`
 
     const mailOptions = {
         from: process.env.SMTP_FROM || '"Cofactor Club" <no-reply@cofactor.world>',
         to: toEmail,
         subject: 'Reset your password',
-        text: `Hi,\n\nYou requested to reset your password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nBest,\nThe Cofactor Team`,
+        text: `Hi,\n\nYou requested to reset your password. Use the code below to set a new password:\n\nReset Code: ${resetCode}\n\nGo to: ${resetUrl}\n\nThis code will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nBest,\nThe Cofactor Team`,
         html: `
             <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
                 <h1 style="color: #6366f1;">Reset your password</h1>
-                <p>You requested to reset your password. Click the button below to set a new password:</p>
+                <p>You requested to reset your password. Use the code below to set a new password:</p>
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="${resetUrl}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
+                    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; display: inline-block;">
+                        <span style="font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #6366f1;">${resetCode}</span>
+                    </div>
                 </div>
-                <p>Or copy and paste this link into your browser:</p>
-                <p style="word-break: break-all; color: #6366f1;">${resetUrl}</p>
-                <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+                <p>Go to <a href="${resetUrl}" style="color: #6366f1;">this page</a> and enter the code.</p>
+                <p style="color: #666; font-size: 14px;">This code will expire in 1 hour.</p>
                 <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
                 <p>Best,<br>The Cofactor Team</p>
             </div>
