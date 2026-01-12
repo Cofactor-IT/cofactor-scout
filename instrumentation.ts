@@ -5,18 +5,19 @@ export async function register() {
         const adminEmail = process.env.ADMIN_EMAIL
         const adminPassword = process.env.ADMIN_PASSWORD
 
-        // Require both environment variables to be set
+        // Skip if env vars not set - log warning but don't crash startup
         if (!adminEmail || !adminPassword) {
-            throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be set for initial admin setup')
+            console.warn('ADMIN_EMAIL and ADMIN_PASSWORD not set - skipping initial admin setup')
+            return
         }
 
-        // Check if admin already exists
-        const existingAdmin = await prisma.user.findUnique({
-            where: { email: adminEmail }
-        })
+        try {
+            // Check if admin already exists
+            const existingAdmin = await prisma.user.findUnique({
+                where: { email: adminEmail }
+            })
 
-        if (!existingAdmin) {
-            try {
+            if (!existingAdmin) {
                 const bcrypt = await import('bcryptjs')
                 const hashedPassword = await bcrypt.hash(adminPassword, 10)
 
@@ -30,10 +31,15 @@ export async function register() {
                         powerScore: 9999
                     }
                 })
-            } catch (error) {
-                console.error('Failed to create admin user:', error)
-                throw error
+                console.log('Admin user created successfully')
             }
+        } catch (error: any) {
+            // If tables don't exist yet (P2021), skip silently - migrations will run via entrypoint
+            if (error.code === 'P2021') {
+                console.log('Database tables not yet created. Admin user will be created after migrations run.')
+                return
+            }
+            console.error('Failed to create admin user:', error)
         }
     }
 }
