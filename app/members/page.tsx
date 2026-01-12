@@ -2,126 +2,9 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
-import { Role } from '@prisma/client'
-import { randomBytes } from 'crypto'
-import { logger } from '@/lib/logger'
+import { RoleForm, ActionButtons } from './member-row'
 
 export const dynamic = 'force-dynamic'
-
-// Generate a secure random token
-function generateToken(): string {
-    return randomBytes(32).toString('hex')
-}
-
-// Server action to update user role
-export async function updateRole(formData: FormData) {
-    'use server'
-
-    const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'ADMIN') {
-        throw new Error('Unauthorized')
-    }
-
-    const userId = formData.get('userId') as string
-    const newRole = formData.get('role') as Role
-
-    if (!userId || !newRole) {
-        throw new Error('Missing required fields')
-    }
-
-    // Prevent admin from changing their own role
-    if (userId === session.user.id) {
-        throw new Error('Cannot change your own role')
-    }
-
-    await prisma.user.update({
-        where: { id: userId },
-        data: { role: newRole }
-    })
-
-    revalidatePath('/members')
-}
-
-// Server action to delete a user
-export async function deleteUser(formData: FormData) {
-    'use server'
-
-    const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'ADMIN') {
-        throw new Error('Unauthorized')
-    }
-
-    const userId = formData.get('userId') as string
-
-    if (!userId) {
-        throw new Error('Missing user ID')
-    }
-
-    // Prevent admin from deleting themselves
-    if (userId === session.user.id) {
-        throw new Error('Cannot delete your own account')
-    }
-
-    // Delete user (cascade will handle related records)
-    await prisma.user.delete({
-        where: { id: userId }
-    })
-
-    logger.info('User deleted by admin', { deletedUserId: userId, adminId: session.user.id })
-
-    revalidatePath('/members')
-}
-
-// Server action to request password reset for a user
-export async function requestPasswordResetForUser(formData: FormData) {
-    'use server'
-
-    const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'ADMIN') {
-        throw new Error('Unauthorized')
-    }
-
-    const userId = formData.get('userId') as string
-
-    if (!userId) {
-        throw new Error('Missing user ID')
-    }
-
-    const user = await prisma.user.findUnique({
-        where: { id: userId }
-    })
-
-    if (!user) {
-        throw new Error('User not found')
-    }
-
-    // Generate reset token (expires in 1 hour)
-    const resetToken = generateToken()
-    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-    // Delete any existing tokens for this user
-    await prisma.passwordReset.deleteMany({
-        where: { userId: user.id }
-    })
-
-    // Create new reset token
-    await prisma.passwordReset.create({
-        data: {
-            token: resetToken,
-            userId: user.id,
-            expires
-        }
-    })
-
-    // Send reset email (Non-blocking)
-    const { sendPasswordResetEmail } = await import('@/lib/email')
-    sendPasswordResetEmail(user.email, resetToken).catch(err =>
-        logger.error('Failed to send password reset email', { email: user.email, error: err })
-    )
-
-    logger.info('Password reset requested by admin', { targetUserId: userId, adminId: session.user.id })
-}
 
 export default async function MembersPage() {
     // Admin only access
@@ -250,36 +133,11 @@ export default async function MembersPage() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <form action={updateRole} className="inline">
-                                            <input type="hidden" name="userId" value={member.id} />
-                                            <select
-                                                name="role"
-                                                className={`h-8 rounded px-2 text-sm border-0 cursor-pointer ${
-                                                    member.role === 'ADMIN' ? 'bg-red-500/20 text-red-500' :
-                                                    member.role === 'STAFF' ? 'bg-blue-500/20 text-blue-500' :
-                                                    member.role === 'PENDING_STAFF' ? 'bg-yellow-500/20 text-yellow-500' :
-                                                    'bg-gray-500/20 text-gray-500'
-                                                }`}
-                                                onChange={(e) => {
-                                                    const form = e.target.closest('form')
-                                                    if (form) form.requestSubmit()
-                                                }}
-                                                disabled={member.id === session.user.id}
-                                            >
-                                                <option value="STUDENT" selected={member.role === 'STUDENT'}>
-                                                    Student
-                                                </option>
-                                                <option value="STAFF" selected={member.role === 'STAFF'}>
-                                                    Staff Editor
-                                                </option>
-                                                <option value="PENDING_STAFF" selected={member.role === 'PENDING_STAFF'}>
-                                                    Pending Staff
-                                                </option>
-                                                <option value="ADMIN" selected={member.role === 'ADMIN'}>
-                                                    Admin
-                                                </option>
-                                            </select>
-                                        </form>
+                                        <RoleForm
+                                            memberId={member.id}
+                                            currentRole={member.role}
+                                            currentUserId={session.user.id}
+                                        />
                                     </td>
                                     <td className="px-4 py-3 text-sm">
                                         {new Date(member.createdAt).toLocaleDateString()}
@@ -359,42 +217,12 @@ export default async function MembersPage() {
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-sm">
-                                        <div className="flex flex-col gap-2">
-                                            <a
-                                                href={`mailto:${member.email}`}
-                                                className="text-blue-500 hover:underline"
-                                            >
-                                                Email
-                                            </a>
-                                            <div className="flex gap-2">
-                                                <form action={requestPasswordResetForUser} className="inline">
-                                                    <input type="hidden" name="userId" value={member.id} />
-                                                    <button
-                                                        type="submit"
-                                                        className="text-xs text-yellow-600 hover:underline disabled:opacity-50"
-                                                        disabled={member.id === session.user.id}
-                                                    >
-                                                        Reset PW
-                                                    </button>
-                                                </form>
-                                                <form action={deleteUser} className="inline"
-                                                    onSubmit={(e) => {
-                                                        if (!confirm(`Are you sure you want to delete ${member.name || member.email}? This action cannot be undone.`)) {
-                                                            e.preventDefault()
-                                                        }
-                                                    }}
-                                                >
-                                                    <input type="hidden" name="userId" value={member.id} />
-                                                    <button
-                                                        type="submit"
-                                                        className="text-xs text-red-500 hover:underline disabled:opacity-50"
-                                                        disabled={member.id === session.user.id}
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
+                                        <ActionButtons
+                                            memberId={member.id}
+                                            userName={member.name}
+                                            userEmail={member.email}
+                                            currentUserId={session.user.id}
+                                        />
                                     </td>
                                 </tr>
                             ))}
