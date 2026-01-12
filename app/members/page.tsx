@@ -4,8 +4,15 @@ import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { Role } from '@prisma/client'
+import { randomBytes } from 'crypto'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
+
+// Generate a secure random token
+function generateToken(): string {
+    return randomBytes(32).toString('hex')
+}
 
 // Server action to update user role
 export async function updateRole(formData: FormData) {
@@ -13,19 +20,19 @@ export async function updateRole(formData: FormData) {
 
     const session = await getServerSession(authOptions)
     if (!session?.user || session.user.role !== 'ADMIN') {
-        return { error: 'Unauthorized' }
+        throw new Error('Unauthorized')
     }
 
     const userId = formData.get('userId') as string
     const newRole = formData.get('role') as Role
 
     if (!userId || !newRole) {
-        return { error: 'Missing required fields' }
+        throw new Error('Missing required fields')
     }
 
     // Prevent admin from changing their own role
     if (userId === session.user.id) {
-        return { error: 'Cannot change your own role' }
+        throw new Error('Cannot change your own role')
     }
 
     await prisma.user.update({
@@ -34,7 +41,86 @@ export async function updateRole(formData: FormData) {
     })
 
     revalidatePath('/members')
-    return { success: true }
+}
+
+// Server action to delete a user
+export async function deleteUser(formData: FormData) {
+    'use server'
+
+    const session = await getServerSession(authOptions)
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        throw new Error('Unauthorized')
+    }
+
+    const userId = formData.get('userId') as string
+
+    if (!userId) {
+        throw new Error('Missing user ID')
+    }
+
+    // Prevent admin from deleting themselves
+    if (userId === session.user.id) {
+        throw new Error('Cannot delete your own account')
+    }
+
+    // Delete user (cascade will handle related records)
+    await prisma.user.delete({
+        where: { id: userId }
+    })
+
+    logger.info('User deleted by admin', { deletedUserId: userId, adminId: session.user.id })
+
+    revalidatePath('/members')
+}
+
+// Server action to request password reset for a user
+export async function requestPasswordResetForUser(formData: FormData) {
+    'use server'
+
+    const session = await getServerSession(authOptions)
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        throw new Error('Unauthorized')
+    }
+
+    const userId = formData.get('userId') as string
+
+    if (!userId) {
+        throw new Error('Missing user ID')
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    })
+
+    if (!user) {
+        throw new Error('User not found')
+    }
+
+    // Generate reset token (expires in 1 hour)
+    const resetToken = generateToken()
+    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    // Delete any existing tokens for this user
+    await prisma.passwordReset.deleteMany({
+        where: { userId: user.id }
+    })
+
+    // Create new reset token
+    await prisma.passwordReset.create({
+        data: {
+            token: resetToken,
+            userId: user.id,
+            expires
+        }
+    })
+
+    // Send reset email (Non-blocking)
+    const { sendPasswordResetEmail } = await import('@/lib/email')
+    sendPasswordResetEmail(user.email, resetToken).catch(err =>
+        logger.error('Failed to send password reset email', { email: user.email, error: err })
+    )
+
+    logger.info('Password reset requested by admin', { targetUserId: userId, adminId: session.user.id })
 }
 
 export default async function MembersPage() {
@@ -49,17 +135,25 @@ export default async function MembersPage() {
         include: {
             referredBy: {
                 select: {
-                    name: true,
-                    email: true,
-                    referralCode: true
+                    referrer: {
+                        select: {
+                            name: true,
+                            email: true,
+                            referralCode: true
+                        }
+                    }
                 }
             },
             referralsMade: {
                 select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    createdAt: true
+                    referee: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            createdAt: true
+                        }
+                    }
                 }
             },
             revisions: {
@@ -195,11 +289,11 @@ export default async function MembersPage() {
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-sm">
-                                        {member.referredBy ? (
+                                        {member.referredBy?.referrer ? (
                                             <div>
-                                                <div>{member.referredBy.name}</div>
+                                                <div>{member.referredBy.referrer.name}</div>
                                                 <div className="text-xs text-muted-foreground">
-                                                    ({member.referredBy.referralCode})
+                                                    ({member.referredBy.referrer.referralCode})
                                                 </div>
                                             </div>
                                         ) : (
@@ -215,8 +309,8 @@ export default async function MembersPage() {
                                                 </summary>
                                                 <div className="absolute z-10 bg-popover border rounded p-2 mt-1 shadow-lg max-w-48">
                                                     {member.referralsMade.map(ref => (
-                                                        <div key={ref.id} className="text-xs">
-                                                            {ref.name} ({ref.email})
+                                                        <div key={ref.referee.id} className="text-xs">
+                                                            {ref.referee.name} ({ref.referee.email})
                                                         </div>
                                                     ))}
                                                 </div>
@@ -227,9 +321,9 @@ export default async function MembersPage() {
                                         <div className="text-sm">
                                             <div className="font-medium">{member.stats.totalRevisions}</div>
                                             <div className="text-xs text-muted-foreground">
-                                                <span className="text-green-500">{member.stats.approved}</span> /
-                                                <span className="text-yellow-500">{member.stats.pending}</span> /
-                                                <span className="text-red-500">{member.stats.rejected}</span>
+                                                <span className="text-green-500">{member.stats.approvedRevisions}</span> /
+                                                <span className="text-yellow-500">{member.stats.pendingRevisions}</span> /
+                                                <span className="text-red-500">{member.stats.rejectedRevisions}</span>
                                             </div>
                                         </div>
                                         {member.stats.totalRevisions > 0 && (
@@ -265,12 +359,42 @@ export default async function MembersPage() {
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-sm">
-                                        <a
-                                            href={`mailto:${member.email}`}
-                                            className="text-blue-500 hover:underline"
-                                        >
-                                            Email
-                                        </a>
+                                        <div className="flex flex-col gap-2">
+                                            <a
+                                                href={`mailto:${member.email}`}
+                                                className="text-blue-500 hover:underline"
+                                            >
+                                                Email
+                                            </a>
+                                            <div className="flex gap-2">
+                                                <form action={requestPasswordResetForUser} className="inline">
+                                                    <input type="hidden" name="userId" value={member.id} />
+                                                    <button
+                                                        type="submit"
+                                                        className="text-xs text-yellow-600 hover:underline disabled:opacity-50"
+                                                        disabled={member.id === session.user.id}
+                                                    >
+                                                        Reset PW
+                                                    </button>
+                                                </form>
+                                                <form action={deleteUser} className="inline"
+                                                    onSubmit={(e) => {
+                                                        if (!confirm(`Are you sure you want to delete ${member.name || member.email}? This action cannot be undone.`)) {
+                                                            e.preventDefault()
+                                                        }
+                                                    }}
+                                                >
+                                                    <input type="hidden" name="userId" value={member.id} />
+                                                    <button
+                                                        type="submit"
+                                                        className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                                                        disabled={member.id === session.user.id}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

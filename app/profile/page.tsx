@@ -6,22 +6,25 @@ import { Label } from '@/components/ui/label'
 import { syncSocials } from '../actions/social'
 import { SocialStats } from '@/lib/types'
 import Link from 'next/link'
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth-config"
+import { redirect } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ProfilePage() {
-    let user = await prisma.user.findFirst()
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+        redirect('/auth/signin')
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id }
+    })
 
     if (!user) {
-        // Auto-create for demo if missing
-        user = await prisma.user.create({
-            data: {
-                email: 'student@cofactor.world',
-                referralCode: 'STUDENT1',
-                role: 'STUDENT',
-                name: 'Demo Student'
-            }
-        })
+        redirect('/auth/signin')
     }
 
     const socialStats = (user.socialStats as SocialStats) || {}
