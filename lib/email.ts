@@ -14,6 +14,11 @@ function log(level: 'info' | 'error', message: string, meta?: Record<string, unk
     }
 }
 
+// Get app URL from environment or use default
+function getAppUrl() {
+    return process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'
+}
+
 // Configure SMTP Transporter
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -37,8 +42,8 @@ export async function sendWelcomeEmail(toEmail: string, name: string) {
         subject: 'Welcome to Cofactor Club',
         text: `Hi ${name},\n\nWelcome to Cofactor Club! We're excited to have you join our student ambassador network.\n\nStart referring friends and contributing to the Wiki to climb the leaderboard!\n\nBest,\nThe Cofactor Team`,
         html: `
-            <div style="font-family: Arial, sans-serif; color: #333;">
-                <h1>Welcome to Cofactor Club! 🚀</h1>
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #6366f1;">Welcome to Cofactor Club! 🚀</h1>
                 <p>Hi ${name},</p>
                 <p>We're excited to have you join our student ambassador network.</p>
                 <p><strong>Next Steps:</strong></p>
@@ -60,7 +65,77 @@ export async function sendWelcomeEmail(toEmail: string, name: string) {
     }
 }
 
-export async function sendPasswordResetEmail(toEmail: string, _resetToken: string) {
-    log('info', 'Password reset requested', { toEmail })
-    // TODO: Implement password reset email functionality
+export async function sendVerificationEmail(toEmail: string, name: string, token: string) {
+    if (!process.env.SMTP_USER) {
+        log('info', 'SMTP not configured, skipping verification email', { toEmail })
+        return
+    }
+
+    const verifyUrl = `${getAppUrl()}/auth/verify?token=${token}`
+
+    const mailOptions = {
+        from: process.env.SMTP_FROM || '"Cofactor Club" <no-reply@cofactor.world>',
+        to: toEmail,
+        subject: 'Verify your email address',
+        text: `Hi ${name},\n\nPlease verify your email address by clicking the link below:\n\n${verifyUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create an account, please ignore this email.\n\nBest,\nThe Cofactor Team`,
+        html: `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #6366f1;">Verify your email address</h1>
+                <p>Hi ${name},</p>
+                <p>Please click the button below to verify your email address:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${verifyUrl}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">Verify Email</a>
+                </div>
+                <p>Or copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; color: #6366f1;">${verifyUrl}</p>
+                <p style="color: #666; font-size: 14px;">This link will expire in 24 hours.</p>
+                <p style="color: #666; font-size: 14px;">If you didn't create an account, please ignore this email.</p>
+                <p>Best,<br>The Cofactor Team</p>
+            </div>
+        `
+    }
+
+    try {
+        await transporter.sendMail(mailOptions)
+        log('info', 'Verification email sent successfully', { toEmail })
+    } catch (error) {
+        log('error', 'Failed to send verification email', { toEmail, error: error instanceof Error ? error.message : String(error) })
+    }
+}
+
+export async function sendPasswordResetEmail(toEmail: string, resetToken: string) {
+    if (!process.env.SMTP_USER) {
+        log('info', 'SMTP not configured, skipping password reset email', { toEmail })
+        return
+    }
+
+    const resetUrl = `${getAppUrl()}/auth/reset-password?token=${resetToken}`
+
+    const mailOptions = {
+        from: process.env.SMTP_FROM || '"Cofactor Club" <no-reply@cofactor.world>',
+        to: toEmail,
+        subject: 'Reset your password',
+        text: `Hi,\n\nYou requested to reset your password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nBest,\nThe Cofactor Team`,
+        html: `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #6366f1;">Reset your password</h1>
+                <p>You requested to reset your password. Click the button below to set a new password:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${resetUrl}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
+                </div>
+                <p>Or copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; color: #6366f1;">${resetUrl}</p>
+                <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+                <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+                <p>Best,<br>The Cofactor Team</p>
+            </div>
+        `
+    }
+
+    try {
+        await transporter.sendMail(mailOptions)
+        log('info', 'Password reset email sent successfully', { toEmail })
+    } catch (error) {
+        log('error', 'Failed to send password reset email', { toEmail, error: error instanceof Error ? error.message : String(error) })
+    }
 }

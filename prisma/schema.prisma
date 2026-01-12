@@ -9,20 +9,24 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String?
-  password      String?
-  role          Role     @default(STUDENT)
-  referralCode  String   @unique
-  socialStats   Json?
-  powerScore    Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String   @id @default(cuid())
+  email             String   @unique
+  name              String?
+  password          String?
+  role              Role     @default(STUDENT)
+  referralCode      String   @unique
+  socialStats       Json?
+  powerScore        Int      @default(0)
+  emailVerified     DateTime?
+  verificationToken String?  @unique
+  verificationExpires DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   revisions     WikiRevision[]
   referralsMade Referral[] @relation("Referrer")
   referredBy    Referral?  @relation("Referee")
+  passwordResetTokens PasswordReset[]
 
   @@index([email])
   @@index([referralCode])
@@ -80,4 +84,16 @@ model Referral {
   createdAt  DateTime @default(now())
 
   @@index([referrerId])
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
 }

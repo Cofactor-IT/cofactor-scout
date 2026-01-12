@@ -6,11 +6,17 @@ import bcrypt from 'bcryptjs'
 import { signUpSchema, type SignUpInput } from '@/lib/validation'
 import { RateLimits } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { randomBytes } from 'crypto'
 
 // Simple in-memory store for rate limiting by email
 const signupAttempts = new Map<string, { count: number; resetTime: number }>()
 
-export async function signUp(prevState: { error?: string } | undefined, formData: FormData) {
+// Generate a secure random token
+function generateToken(): string {
+    return randomBytes(32).toString('hex')
+}
+
+export async function signUp(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
     // Extract form data first to get email for rate limiting
     const email = formData.get('email') as string
     const rawEmail = email?.toLowerCase().trim()
@@ -80,17 +86,22 @@ export async function signUp(prevState: { error?: string } | undefined, formData
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Generate own referral code (simple mock logic)
-    // In prod, ensure uniqueness
     const newReferralCode = name.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 10000).toString()
+
+    // Generate email verification token (expires in 24 hours)
+    const verificationToken = generateToken()
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     try {
         await prisma.user.create({
             data: {
-                email,
+                email: validatedEmail,
                 name,
                 password: hashedPassword,
                 role,
                 referralCode: newReferralCode,
+                verificationToken,
+                verificationExpires,
                 referredBy: referrerId ? {
                     create: {
                         referrerId: referrerId
@@ -102,18 +113,17 @@ export async function signUp(prevState: { error?: string } | undefined, formData
         // Referral record created via nested write, so we don't need manual create.
 
         if (referrerId) {
-            // Check if nested create worked? Yes it should.
-            // Just increment referrer power score (+50)
+            // Increment referrer power score (+50)
             await prisma.user.update({
                 where: { id: referrerId },
                 data: { powerScore: { increment: 50 } }
             })
         }
 
-        // Send Welcome Email (Non-blocking)
-        const { sendWelcomeEmail } = await import('@/lib/email')
-        sendWelcomeEmail(validatedEmail, name).catch(err =>
-            logger.error('Failed to send welcome email', { email: validatedEmail, error: err })
+        // Send Verification Email (Non-blocking)
+        const { sendVerificationEmail } = await import('@/lib/email')
+        sendVerificationEmail(validatedEmail, name, verificationToken).catch(err =>
+            logger.error('Failed to send verification email', { email: validatedEmail, error: err })
         )
 
         logger.info('User registered successfully', { email: validatedEmail, role })
@@ -123,5 +133,135 @@ export async function signUp(prevState: { error?: string } | undefined, formData
         return { error: 'Registration failed' }
     }
 
-    redirect('/api/auth/signin')
+    redirect('/auth/signin?message=Please check your email to verify your account')
+}
+
+export async function requestPasswordReset(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
+    const email = formData.get('email') as string
+    if (!email) {
+        return { error: 'Email is required' }
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase().trim() }
+    })
+
+    // Always show success message even if user doesn't exist (security)
+    if (!user) {
+        return { success: 'If an account exists with this email, you will receive a password reset link.' }
+    }
+
+    // Generate reset token (expires in 1 hour)
+    const resetToken = generateToken()
+    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    // Delete any existing tokens for this user
+    await prisma.passwordReset.deleteMany({
+        where: { userId: user.id }
+    })
+
+    // Create new reset token
+    await prisma.passwordReset.create({
+        data: {
+            token: resetToken,
+            userId: user.id,
+            expires
+        }
+    })
+
+    // Send reset email (Non-blocking)
+    const { sendPasswordResetEmail } = await import('@/lib/email')
+    sendPasswordResetEmail(user.email, resetToken).catch(err =>
+        logger.error('Failed to send password reset email', { email: user.email, error: err })
+    )
+
+    logger.info('Password reset requested', { email: user.email })
+
+    return { success: 'If an account exists with this email, you will receive a password reset link.' }
+}
+
+export async function resetPassword(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
+    const token = formData.get('token') as string
+    const password = formData.get('password') as string
+
+    if (!token || !password) {
+        return { error: 'Invalid request' }
+    }
+
+    if (password.length < 8) {
+        return { error: 'Password must be at least 8 characters' }
+    }
+
+    // Find valid reset token
+    const resetRecord = await prisma.passwordReset.findUnique({
+        where: { token },
+        include: { user: true }
+    })
+
+    if (!resetRecord) {
+        return { error: 'Invalid or expired reset link' }
+    }
+
+    if (resetRecord.expires < new Date()) {
+        // Delete expired token
+        await prisma.passwordReset.delete({ where: { id: resetRecord.id } })
+        return { error: 'Reset link has expired' }
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    // Update user password
+    await prisma.user.update({
+        where: { id: resetRecord.userId },
+        data: { password: hashedPassword }
+    })
+
+    // Delete used token
+    await prisma.passwordReset.delete({ where: { id: resetRecord.id } })
+
+    logger.info('Password reset successful', { email: resetRecord.user.email })
+
+    return { success: 'Your password has been reset. You can now sign in.' }
+}
+
+export async function resendVerificationEmail(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
+    const email = formData.get('email') as string
+    if (!email) {
+        return { error: 'Email is required' }
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase().trim() }
+    })
+
+    if (!user) {
+        return { error: 'No account found with this email' }
+    }
+
+    if (user.emailVerified) {
+        return { success: 'Email is already verified.' }
+    }
+
+    // Generate new verification token
+    const verificationToken = generateToken()
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            verificationToken,
+            verificationExpires
+        }
+    })
+
+    // Send verification email
+    const { sendVerificationEmail } = await import('@/lib/email')
+    sendVerificationEmail(user.email, user.name || 'User', verificationToken).catch(err =>
+        logger.error('Failed to send verification email', { email: user.email, error: err })
+    )
+
+    logger.info('Verification email resent', { email: user.email })
+
+    return { success: 'Verification email sent. Please check your inbox.' }
 }

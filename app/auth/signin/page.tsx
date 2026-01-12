@@ -6,14 +6,24 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 function SignInForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const error = searchParams.get('error')
+    const message = searchParams.get('message')
     const [isLoading, setIsLoading] = useState(false)
+    const [showMessage, setShowMessage] = useState(true)
+
+    // Hide message after 5 seconds
+    useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => setShowMessage(false), 5000)
+            return () => clearTimeout(timer)
+        }
+    }, [message])
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -55,13 +65,24 @@ function SignInForm() {
                         <Input id="email" name="email" type="email" placeholder="john@example.com" required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="password">Password</Label>
+                            <Link href="/auth/forgot-password" className="text-xs text-muted-foreground hover:underline">
+                                Forgot password?
+                            </Link>
+                        </div>
                         <Input id="password" name="password" type="password" required />
                     </div>
 
                     {error && (
                         <p className="text-sm text-destructive">
                             {error === 'AccessDenied' ? 'Access Denied: You do not have permission.' : 'Invalid credentials. Please try again.'}
+                        </p>
+                    )}
+
+                    {message && showMessage && (
+                        <p className="text-sm text-green-600">
+                            {message}
                         </p>
                     )}
 
