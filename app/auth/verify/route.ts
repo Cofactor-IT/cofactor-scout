@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Get the base URL for redirects
+function getBaseUrl(): string {
+    return process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'
+}
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
 
     if (!token) {
-        return NextResponse.redirect(new URL('/auth/signin?error=Invalid verification link', request.url))
+        return NextResponse.redirect(`${getBaseUrl()}/auth/signin?error=Invalid verification link`)
     }
 
     // Find user with this verification token
@@ -15,12 +20,12 @@ export async function GET(request: Request) {
     })
 
     if (!user) {
-        return NextResponse.redirect(new URL('/auth/signin?error=Invalid verification link', request.url))
+        return NextResponse.redirect(`${getBaseUrl()}/auth/signin?error=Invalid verification link`)
     }
 
     // Check if token has expired
     if (user.verificationExpires && user.verificationExpires < new Date()) {
-        return NextResponse.redirect(new URL('/auth/signin?error=Verification link has expired', request.url))
+        return NextResponse.redirect(`${getBaseUrl()}/auth/signin?error=Verification link has expired`)
     }
 
     // Verify email
@@ -34,5 +39,5 @@ export async function GET(request: Request) {
     })
 
     // Redirect to signin with success message
-    return NextResponse.redirect(new URL('/auth/signin?message=Email verified! Please sign in.', request.url))
+    return NextResponse.redirect(`${getBaseUrl()}/auth/signin?message=Email verified! Please sign in.`)
 }
