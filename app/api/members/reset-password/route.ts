@@ -53,5 +53,6 @@ export async function POST(request: NextRequest) {
 
     logger.info('Password reset requested by admin', { targetUserId: userId, adminId: session.user.id })
 
-    return NextResponse.redirect(new URL('/members', request.url))
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    return NextResponse.redirect(`${appUrl}/members`)
 }
