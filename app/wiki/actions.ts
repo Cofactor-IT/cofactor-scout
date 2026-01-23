@@ -37,18 +37,28 @@ export async function proposeEdit(formData: FormData) {
         where: { slug }
     })
 
+    // Access Control Logic
+    if (user.role === 'STUDENT') {
+        if (!user.universityId) {
+            throw new Error("You must belong to a university to edit wiki pages.")
+        }
+
+        if (uniPage && uniPage.universityId && uniPage.universityId !== user.universityId) {
+            throw new Error("You can only edit pages for your own university.")
+        }
+    }
+
     if (!uniPage) {
-        if (!uniName) throw new Error("University Name required for new page")
+        if (!uniName) throw new Error("Page Title required for new page")
+
+        // Determine University ID:
+        const targetUniversityId = user.universityId
+
         uniPage = await prisma.uniPage.create({
             data: {
                 name: uniName,
                 slug,
-                // Only publish immediately if Admin/Staff created it?
-                // Plan says: Initial pages hidden until approved.
-                // But if admin creates it, it should be published?
-                // Let's assume Admin edits = visible content = published?
-                // We will handle published flag in admin approval logic mostly.
-                // For direct Admin edits here, if they are auto-approved, we should probably ensure it's published?
+                universityId: targetUniversityId,
                 content: isAdminOrStaff ? content : '',
                 published: isAdminOrStaff ? true : false
             }
@@ -59,7 +69,7 @@ export async function proposeEdit(formData: FormData) {
             where: { id: uniPage.id },
             data: {
                 content,
-                published: true // If admin edits, ensure it's published accessible
+                published: true
             }
         })
     }

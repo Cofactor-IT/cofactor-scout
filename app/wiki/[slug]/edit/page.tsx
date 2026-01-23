@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { proposeEdit } from '../../actions'
 
-export default async function EditWikiPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function EditWikiPage({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams: Promise<{ title?: string }> }) {
     const { slug } = await params
+    const { title } = await searchParams
     const uniPage = await prisma.uniPage.findUnique({
         where: { slug }
     })
@@ -16,7 +17,7 @@ export default async function EditWikiPage({ params }: { params: Promise<{ slug:
         <div className="container mx-auto py-10 max-w-3xl">
             <Card>
                 <CardHeader>
-                    <CardTitle>Propose Edit for {uniPage ? uniPage.name : slug}</CardTitle>
+                    <CardTitle>Propose Edit for {uniPage ? uniPage.name : (title || slug)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form action={proposeEdit} className="space-y-6">
@@ -24,8 +25,14 @@ export default async function EditWikiPage({ params }: { params: Promise<{ slug:
 
                         {!uniPage && (
                             <div className="space-y-2">
-                                <Label htmlFor="uniName">University Name</Label>
-                                <Input id="uniName" name="uniName" placeholder="e.g. Stanford University" required />
+                                <Label htmlFor="uniName">Page Title</Label>
+                                <Input
+                                    id="uniName"
+                                    name="uniName"
+                                    placeholder="e.g. Introduction to Biochemistry"
+                                    defaultValue={title || ''}
+                                    required
+                                />
                             </div>
                         )}
 

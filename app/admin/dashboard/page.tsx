@@ -100,14 +100,21 @@ export default async function AdminDashboard() {
         <div className="container mx-auto py-10 space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-4xl font-bold">Admin Dashboard</h1>
-                <Link href="/admin/universities">
-                    <Button variant="outline">
-                        Manage Universities
-                        {pendingUniversities > 0 && (
-                            <Badge variant="destructive" className="ml-2">{pendingUniversities}</Badge>
-                        )}
-                    </Button>
-                </Link>
+                <div className="flex gap-2">
+                    <Link href="/admin/settings">
+                        <Button variant="outline">
+                            Settings
+                        </Button>
+                    </Link>
+                    <Link href="/admin/universities">
+                        <Button variant="outline">
+                            Manage Universities
+                            {pendingUniversities > 0 && (
+                                <Badge variant="destructive" className="ml-2">{pendingUniversities}</Badge>
+                            )}
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             {/* KPI Cards */}

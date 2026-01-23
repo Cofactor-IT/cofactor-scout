@@ -70,6 +70,9 @@ model UniPage {
   updatedAt DateTime @updatedAt
   
   revisions WikiRevision[]
+  
+  universityId String?
+  university   University? @relation(fields: [universityId], references: [id])
 }
 
 model WikiRevision {
@@ -117,3 +120,10 @@ model PasswordReset {
   @@index([token])
   @@index([userId])
 }
+
+model StaffDomain {
+  id        String   @id @default(cuid())
+  domain    String   @unique
+  createdAt DateTime @default(now())
+}
+

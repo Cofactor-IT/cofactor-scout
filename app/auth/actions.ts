@@ -115,15 +115,31 @@ export async function signUp(prevState: { error?: string; success?: string } | u
     if (STAFF_SECRET && referralCode === STAFF_SECRET) {
         role = 'PENDING_STAFF'
     } else {
-        // Must be a valid referrer code
-        const referrer = await prisma.user.findUnique({
-            where: { referralCode }
-        })
+        // Check if email domain is in staff domains list
+        const emailDomain = validatedEmail.split('@')[1]?.toLowerCase()
+        if (emailDomain) {
+            const staffDomain = await prisma.staffDomain.findUnique({
+                where: { domain: emailDomain }
+            })
 
-        if (!referrer) {
-            return { error: 'Invalid referral code' }
+            if (staffDomain) {
+                role = 'STAFF'
+                logger.info('User assigned STAFF role via domain match', { email: validatedEmail, domain: emailDomain })
+            }
         }
-        referrerId = referrer.id
+
+        // If not already staff, check referral code
+        if (role !== 'STAFF') {
+            // Must be a valid referrer code
+            const referrer = await prisma.user.findUnique({
+                where: { referralCode }
+            })
+
+            if (!referrer) {
+                return { error: 'Invalid referral code' }
+            }
+            referrerId = referrer.id
+        }
     }
 
     // University Logic

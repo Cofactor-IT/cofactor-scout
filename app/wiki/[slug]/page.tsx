@@ -21,6 +21,36 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
         }
     })
 
+    // Access Control Check
+    if (uniPage && uniPage.universityId) {
+        if (session?.user?.role === 'STUDENT') {
+            // We need to check the user's universityId. 
+            // Session might not have it, so let's fetch user or trust session if we added it to session callback.
+            // Safer to fetch user here or assume session update. 
+            // Let's fetch for now to be 100% secure.
+            const user = await prisma.user.findUnique({
+                where: { email: session.user.email! },
+                select: { universityId: true }
+            })
+
+            if (user?.universityId !== uniPage.universityId) {
+                return (
+                    <div className="container mx-auto py-10">
+                        <Card className="max-w-2xl mx-auto text-center p-10 border-destructive">
+                            <CardTitle className="text-3xl mb-4 text-destructive">Access Denied</CardTitle>
+                            <p className="text-muted-foreground mb-6">
+                                This wiki page belongs to another university. You do not have permission to view it.
+                            </p>
+                            <Link href="/wiki">
+                                <Button>Return to Wiki</Button>
+                            </Link>
+                        </Card>
+                    </div>
+                )
+            }
+        }
+    }
+
     // Page doesn't exist at all
     if (!uniPage) {
         return (
