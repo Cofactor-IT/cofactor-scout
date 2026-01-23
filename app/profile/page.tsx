@@ -20,7 +20,10 @@ export default async function ProfilePage() {
     }
 
     const user = await prisma.user.findUnique({
-        where: { id: session.user.id }
+        where: { id: session.user.id },
+        include: {
+            university: true
+        }
     })
 
     if (!user) {
@@ -34,6 +37,28 @@ export default async function ProfilePage() {
             <h1 className="text-4xl font-bold mb-8">My Profile</h1>
 
             <div className="grid gap-6 md:grid-cols-2">
+                {/* University Card */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>University</CardTitle>
+                        <CardDescription>Your academic affiliation.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {user.university ? (
+                            <div className="space-y-2">
+                                <p className="text-lg font-medium">{user.university.name}</p>
+                                {!user.university.approved && (
+                                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                                        Pending admin approval
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground">Not affiliated with a university</p>
+                        )}
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Referral Program</CardTitle>
@@ -88,3 +113,4 @@ export default async function ProfilePage() {
         </div>
     )
 }
+

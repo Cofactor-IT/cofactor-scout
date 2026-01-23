@@ -20,7 +20,10 @@ export default async function AdminDashboard() {
         recentSignups,
         // New Analytics
         allUsersSocials,
-        topWikiPages
+        topWikiPages,
+        // University data
+        totalUniversities,
+        pendingUniversities
     ] = await Promise.all([
         // 1. Pending Revisions
         prisma.wikiRevision.findMany({
@@ -42,6 +45,7 @@ export default async function AdminDashboard() {
             orderBy: { powerScore: 'desc' },
             take: 10,
             include: {
+                university: true,
                 _count: {
                     select: {
                         referralsMade: true,
@@ -53,7 +57,8 @@ export default async function AdminDashboard() {
         // 6. Recent Signups (Last 5)
         prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
-            take: 5
+            take: 5,
+            include: { university: true }
         }),
         // 7. All Users Social Stats (for aggregation)
         prisma.user.findMany({
@@ -66,7 +71,11 @@ export default async function AdminDashboard() {
             include: {
                 _count: { select: { revisions: true } }
             }
-        })
+        }),
+        // 9. Total Universities
+        prisma.university.count({ where: { approved: true } }),
+        // 10. Pending Universities
+        prisma.university.count({ where: { approved: false } })
     ])
 
     // Calculate Total Social Reach
@@ -89,7 +98,17 @@ export default async function AdminDashboard() {
 
     return (
         <div className="container mx-auto py-10 space-y-8">
-            <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+                <Link href="/admin/universities">
+                    <Button variant="outline">
+                        Manage Universities
+                        {pendingUniversities > 0 && (
+                            <Badge variant="destructive" className="ml-2">{pendingUniversities}</Badge>
+                        )}
+                    </Button>
+                </Link>
+            </div>
 
             {/* KPI Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -148,6 +167,7 @@ export default async function AdminDashboard() {
                                 <TableRow>
                                     <TableHead className="w-[100px]">Rank</TableHead>
                                     <TableHead>User</TableHead>
+                                    <TableHead>University</TableHead>
                                     <TableHead>Score</TableHead>
                                     <TableHead>Referrals</TableHead>
                                     <TableHead className="text-right">Edits</TableHead>
@@ -162,6 +182,13 @@ export default async function AdminDashboard() {
                                                 <span>{user.name || 'Anonymous'}</span>
                                                 <span className="text-xs text-muted-foreground">{user.email}</span>
                                             </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.university ? (
+                                                <Badge variant="outline" className="text-xs">{user.university.name}</Badge>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">-</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>{user.powerScore}</TableCell>
                                         <TableCell>{user._count.referralsMade}</TableCell>
@@ -188,9 +215,16 @@ export default async function AdminDashboard() {
                                         <div className="ml-4 space-y-1">
                                             <p className="text-sm font-medium leading-none">{user.name}</p>
                                             <p className="text-sm text-muted-foreground mb-1">{user.email}</p>
-                                            <Badge variant={user.role === 'ADMIN' ? 'destructive' : user.role === 'STAFF' ? 'default' : 'secondary'} className="text-[10px] h-5">
-                                                {user.role}
-                                            </Badge>
+                                            <div className="flex gap-1 flex-wrap">
+                                                <Badge variant={user.role === 'ADMIN' ? 'destructive' : user.role === 'STAFF' ? 'default' : 'secondary'} className="text-[10px] h-5">
+                                                    {user.role}
+                                                </Badge>
+                                                {user.university && (
+                                                    <Badge variant="outline" className="text-[10px] h-5">
+                                                        {user.university.name}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="ml-auto font-medium text-xs text-muted-foreground">
                                             {new Date(user.createdAt).toLocaleDateString()}

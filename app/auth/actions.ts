@@ -126,6 +126,41 @@ export async function signUp(prevState: { error?: string; success?: string } | u
         referrerId = referrer.id
     }
 
+    // University Logic
+    let universityId: string | null = null
+    const universityIdFromForm = formData.get('universityId') as string | null
+    const universityName = formData.get('universityName') as string | null
+
+    // Import university utilities
+    const { extractEmailDomain, isPersonalEmail, findUniversityByDomain, createPendingUniversity } = await import('@/lib/universityUtils')
+    const emailDomain = extractEmailDomain(validatedEmail)
+
+    if (universityIdFromForm) {
+        // University was detected client-side, verify it exists
+        const existingUni = await prisma.university.findUnique({
+            where: { id: universityIdFromForm }
+        })
+        if (existingUni) {
+            universityId = existingUni.id
+        }
+    } else if (!isPersonalEmail(validatedEmail) && emailDomain) {
+        // Try to find university by domain
+        const foundUniversity = await findUniversityByDomain(emailDomain)
+        if (foundUniversity) {
+            universityId = foundUniversity.id
+        } else if (universityName?.trim()) {
+            // Create a pending university with this domain
+            try {
+                const newUniversity = await createPendingUniversity(universityName.trim(), emailDomain)
+                universityId = newUniversity.id
+                logger.info('Created pending university', { name: universityName, domain: emailDomain })
+            } catch (e) {
+                // University creation failed (might be duplicate name), continue without university
+                logger.warn('Failed to create pending university', { name: universityName, error: e })
+            }
+        }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Generate unique referral code based on username
@@ -145,6 +180,7 @@ export async function signUp(prevState: { error?: string; success?: string } | u
                 referralCode: newReferralCode,
                 verificationToken,
                 verificationExpires,
+                universityId,
                 referredBy: referrerId ? {
                     create: {
                         referrerId: referrerId
@@ -169,7 +205,7 @@ export async function signUp(prevState: { error?: string; success?: string } | u
             logger.error('Failed to send verification email', { email: validatedEmail, error: err })
         )
 
-        logger.info('User registered successfully', { email: validatedEmail, role, referralCode: newReferralCode })
+        logger.info('User registered successfully', { email: validatedEmail, role, referralCode: newReferralCode, universityId })
 
     } catch (e) {
         logger.error('Registration failed', { error: e })
