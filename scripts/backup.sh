@@ -43,10 +43,12 @@ if docker compose exec -T db pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > "$BACK
     if [[ -s "$BACKUP_FILE" ]]; then
         FILESIZE=$(stat --printf="%s" "$BACKUP_FILE" 2>/dev/null || stat -f%z "$BACKUP_FILE" 2>/dev/null || echo "unknown")
         log "Backup successful: ${BACKUP_FILE} (${FILESIZE} bytes)"
+        chown 1001:1001 "$BACKUP_FILE"
 
         # Compress the backup
         gzip "$BACKUP_FILE"
         BACKUP_FILE="${BACKUP_FILE}.gz"
+        chown 1001:1001 "$BACKUP_FILE"
         FILESIZE=$(stat --printf="%s" "$BACKUP_FILE" 2>/dev/null || stat -f%z "$BACKUP_FILE" 2>/dev/null || echo "unknown")
         log "Compressed: ${BACKUP_FILE} (${FILESIZE} bytes)"
     else

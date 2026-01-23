@@ -18,6 +18,9 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM}
+      - POSTGRES_USER=${POSTGRES_USER:-cofactor}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-cofactor_db}
     volumes:
       - backup-data:/backup
     depends_on:
@@ -40,7 +43,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cofactor}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-cofactor}
+      POSTGRES_DB: ${POSTGRES_DB:-cofactor_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - backup-data:/backup
@@ -71,6 +74,10 @@ services:
       - |
         # Install docker-cli for backup
         apk add --no-cache docker-cli
+
+        # Fix permissions for backup directory (allow web container uid 1001 to write)
+        chown -R 1001:1001 /backup
+
         # Wait for docker socket to be available
         while ! docker info >/dev/null 2>&1; do
           echo "Waiting for docker..."

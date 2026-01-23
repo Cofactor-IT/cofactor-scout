@@ -69,7 +69,7 @@ export async function POST() {
         // Construct pg_dump command
         const dbHost = process.env.POSTGRES_HOST || 'db';
         const dbUser = process.env.POSTGRES_USER || 'cofactor';
-        const dbName = process.env.POSTGRES_DB || 'cofactor';
+        const dbName = process.env.POSTGRES_DB || 'cofactor_db';
         const dbPassword = process.env.POSTGRES_PASSWORD;
 
         // Command assumes pg_dump is available (installed via apk add postgresql-client)
