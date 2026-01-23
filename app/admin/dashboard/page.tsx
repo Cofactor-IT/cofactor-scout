@@ -126,6 +126,11 @@ export default async function AdminDashboard() {
                             Settings
                         </Button>
                     </Link>
+                    <Link href="/admin/backups">
+                        <Button variant="outline">
+                            Backups
+                        </Button>
+                    </Link>
                     <Link href="/admin/universities">
                         <Button variant="outline">
                             Manage Universities
