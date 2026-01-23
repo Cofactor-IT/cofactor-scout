@@ -149,14 +149,33 @@ export async function signUp(prevState: { error?: string; success?: string } | u
         if (foundUniversity) {
             universityId = foundUniversity.id
         } else if (universityName?.trim()) {
-            // Create a pending university with this domain
-            try {
-                const newUniversity = await createPendingUniversity(universityName.trim(), emailDomain)
-                universityId = newUniversity.id
-                logger.info('Created pending university', { name: universityName, domain: emailDomain })
-            } catch (e) {
-                // University creation failed (might be duplicate name), continue without university
-                logger.warn('Failed to create pending university', { name: universityName, error: e })
+            // User manually entered a university name
+            const normalizedName = universityName.trim()
+
+            // Check if university already exists by name
+            const existingByName = await prisma.university.findFirst({
+                where: {
+                    name: {
+                        equals: normalizedName,
+                        mode: 'insensitive' // Case insensitive match
+                    }
+                }
+            })
+
+            if (existingByName) {
+                // Link to existing university
+                universityId = existingByName.id
+                logger.info('Linked to existing university by name', { name: normalizedName, id: universityId })
+            } else {
+                // Create a pending university with this domain
+                try {
+                    const newUniversity = await createPendingUniversity(normalizedName, emailDomain)
+                    universityId = newUniversity.id
+                    logger.info('Created pending university', { name: normalizedName, domain: emailDomain })
+                } catch (e) {
+                    // Fallback in case of race condition or error
+                    logger.warn('Failed to create pending university', { name: normalizedName, error: e })
+                }
             }
         }
     }
