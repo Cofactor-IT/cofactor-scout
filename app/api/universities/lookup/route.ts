@@ -2,6 +2,9 @@ import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { extractEmailDomain, isPersonalEmail } from '@/lib/universityUtils'
 
+// Prevent Next.js from caching this route - always fetch fresh data
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const email = searchParams.get('email')
