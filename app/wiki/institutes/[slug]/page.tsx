@@ -123,14 +123,7 @@ export default async function InstitutePage({ params }: { params: Promise<{ slug
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-semibold">Articles</h2>
-                    {/* We need to pass institute info to AddArticleButton somehow, 
-                        currently it just does query params for universityId.
-                        We might need to update AddArticleButton to support instituteId/labId or handle it in edit page.
-                        For now, let's keep it simple or user has to select institute in edit page? 
-                        Wait, we don't have institute selection in edit page yet.
-                        We should update AddArticleButton to allow passing instituteId.
-                    */}
-                    <Button disabled variant="outline">Add Article (Coming Soon)</Button>
+                    <AddArticleButton instituteId={institute.id} universityId={institute.universityId} />
                 </div>
                 {institute.pages.length === 0 ? (
                     <p className="text-muted-foreground col-span-full text-center py-10">

@@ -51,14 +51,38 @@ export async function proposeEdit(formData: FormData) {
     if (!uniPage) {
         if (!uniName) throw new Error("Page Title required for new page")
 
-        // Determine University ID:
+        // Determine hierarchy context
         let targetUniversityId = user.universityId
+        let targetInstituteId: string | null = null
+        let targetLabId: string | null = null
 
-        if (isAdminOrStaff) {
-            const formUniversityId = formData.get('universityId') as string
-            if (formUniversityId) {
-                targetUniversityId = formUniversityId
+        const formUniversityId = formData.get('universityId') as string
+        const formInstituteId = formData.get('instituteId') as string
+        const formLabId = formData.get('labId') as string
+
+        if (formLabId) {
+            const lab = await prisma.lab.findUnique({
+                where: { id: formLabId },
+                include: { institute: true }
+            })
+            if (lab) {
+                targetLabId = lab.id
+                targetInstituteId = lab.instituteId
+                targetUniversityId = lab.institute.universityId
             }
+        } else if (formInstituteId) {
+            const inst = await prisma.institute.findUnique({ where: { id: formInstituteId } })
+            if (inst) {
+                targetInstituteId = inst.id
+                targetUniversityId = inst.universityId
+            }
+        } else if (isAdminOrStaff && formUniversityId) {
+            targetUniversityId = formUniversityId
+        }
+
+        // Verify access
+        if (!isAdminOrStaff && targetUniversityId !== user.universityId) {
+            throw new Error("You can only create articles for your own university structure")
         }
 
         uniPage = await prisma.uniPage.create({
@@ -66,6 +90,8 @@ export async function proposeEdit(formData: FormData) {
                 name: uniName,
                 slug,
                 universityId: targetUniversityId,
+                instituteId: targetInstituteId,
+                labId: targetLabId,
                 content: isAdminOrStaff ? content : '',
                 published: isAdminOrStaff ? true : false
             }

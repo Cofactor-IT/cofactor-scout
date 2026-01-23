@@ -43,7 +43,9 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                     select: { pages: true }
                 }
             },
-            orderBy: { name: 'asc' }
+            orderBy: {
+                pages: { _count: 'desc' }
+            }
         });
 
         return (

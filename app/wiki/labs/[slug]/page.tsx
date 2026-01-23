@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { notFound } from 'next/navigation'
 import { AddPersonModal } from '../../AddPersonModal'
+import { AddArticleButton } from '../../AddArticleButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,7 +89,7 @@ export default async function LabPage({ params }: { params: Promise<{ slug: stri
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-semibold">publications / Articles</h2>
-                    <Button disabled variant="outline">Add Article (Coming Soon)</Button>
+                    <AddArticleButton labId={lab.id} instituteId={lab.institute.id} universityId={lab.institute.universityId} />
                 </div>
                 {lab.pages.length === 0 ? (
                     <p className="text-muted-foreground col-span-full text-center py-10">
