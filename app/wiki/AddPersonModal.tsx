@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { addPerson } from './people-actions'
-import { useToast } from "@/components/ui/use-toast"
 
 interface AddPersonModalProps {
     contextId: string
@@ -27,7 +26,6 @@ export function AddPersonModal({ contextId, contextType }: AddPersonModalProps) 
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const router = useRouter()
-    const { toast } = useToast()
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -43,17 +41,10 @@ export function AddPersonModal({ contextId, contextType }: AddPersonModalProps) 
         try {
             await addPerson(formData)
             setOpen(false)
-            toast({
-                title: "Person Added",
-                description: "The profile has been successfully added.",
-            })
             router.refresh()
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to add person",
-                variant: "destructive"
-            })
+            console.error(error)
+            alert(error instanceof Error ? error.message : "Failed to add person")
         } finally {
             setLoading(false)
         }

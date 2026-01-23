@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label"
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { proposeInstitute, proposeLab } from './structure-actions'
-import { useToast } from "@/components/ui/use-toast"
 
 interface ProposeStructureModalProps {
     type: 'institute' | 'lab'
@@ -26,7 +25,6 @@ export function ProposeStructureModal({ type, parentId }: ProposeStructureModalP
     const [open, setOpen] = useState(false)
     const [name, setName] = useState('')
     const router = useRouter()
-    const { toast } = useToast()
 
     const handlePropose = async () => {
         if (!name) return
@@ -45,17 +43,10 @@ export function ProposeStructureModal({ type, parentId }: ProposeStructureModalP
 
             setOpen(false)
             setName('')
-            toast({
-                title: "Proposal Submitted",
-                description: `Your ${type} proposal has been submitted for approval.`,
-            })
             router.refresh()
         } catch (error) {
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Something went wrong",
-                variant: "destructive"
-            })
+            console.error(error)
+            alert(error instanceof Error ? error.message : "Something went wrong")
         }
     }
 
