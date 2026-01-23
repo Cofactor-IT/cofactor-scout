@@ -29,11 +29,20 @@ A student ambassador network platform for managing referrals, tracking viral gro
 | **Admin** | Full access: approve/reject revisions, manage users, delete pages |
 
 ### 📚 University Wiki
-- Community-contributed university pages
-- Revision-based editing with moderation workflow
+- **University-Specific Scoping**: Wikis are isolated per university; students only see their own.
+- **Role-Based Access**:
+  - **Students**: View/Edit own university wiki.
+  - **Staff**: View/Edit all university wikis.
+  - **Admins**: Full control over all wikis.
+- **Revision System**: Proposed edits require approval (Students) or are auto-approved (Staff).
 - **Published State**: Pages only visible after first approval
 - **Diff Viewer**: Visual comparison of edit proposals
 - **XSS Protection**: All content sanitized with DOMPurify
+
+### 🏫 University Management
+- **Admin Control**: Create and manage universities with associated email domains.
+- **Auto-Detection**: Users are automatically assigned to a university based on their email domain during signup.
+- **Manual Assignment**: Admins can manually assign or correct university affiliation.
 
 ### 📊 Admin Dashboard
 - **KPI Cards**: Total users, referrals, social reach, pending actions
@@ -195,6 +204,8 @@ cofactor-club/
 | Database | PostgreSQL 15 + Prisma ORM |
 | Auth | NextAuth.js (Credentials) |
 | Styling | Tailwind CSS + Shadcn UI |
+| Icons | Lucide React |
+| Markdown | react-markdown + remark-gfm |
 | Email | Nodemailer |
 | Container | Docker (node:20-alpine, ARM64 compatible) |
 
