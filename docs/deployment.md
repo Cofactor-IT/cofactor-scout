@@ -610,20 +610,22 @@ git pull origin main
 # Rebuild and restart
 docker compose up -d --build
 
+# Apply schema changes
+docker compose exec web npx prisma db push
+
 # Or for zero-downtime (requires multiple servers)
 docker compose pull
 docker compose up -d --no-deps web
 docker compose up -d --no-deps db
 ```
 
-### Database Migrations
+### Database Schema Updates
+
+Since this project uses `prisma db push` instead of migrations:
 
 ```bash
-# Generate migration
-npx prisma migrate dev --name migration_name
-
-# Apply migration in production
-docker compose exec web npx prisma migrate deploy
+# Push schema changes to production
+docker compose exec web npx prisma db push
 ```
 
 ### Clean Up Old Images

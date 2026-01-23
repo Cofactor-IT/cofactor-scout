@@ -16,19 +16,26 @@ export async function GET(request: Request) {
     // Check if it's a personal email
     const personalEmail = email ? isPersonalEmail(email) : false
 
-    // Find university by domain
-    const university = await prisma.university.findFirst({
-        where: {
-            domains: {
-                has: targetDomain.toLowerCase()
+    let university = null
+    try {
+        // Find university by domain
+        university = await prisma.university.findFirst({
+            where: {
+                domains: {
+                    has: targetDomain.toLowerCase()
+                },
+                approved: true
             },
-            approved: true
-        },
-        select: {
-            id: true,
-            name: true
-        }
-    })
+            select: {
+                id: true,
+                name: true
+            }
+        })
+    } catch (error) {
+        console.error('Database error in university lookup:', error)
+        // Fallback: DB might be down or table missing. 
+        // We continue with null university so user can at least see "unknown domain" input.
+    }
 
     return NextResponse.json({
         university: university || null,

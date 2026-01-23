@@ -37,9 +37,17 @@ export default function SignUpPage() {
             if (response.ok) {
                 const data = await response.json()
                 setUniversityLookup(data)
+            } else {
+                throw new Error('API response not ok')
             }
         } catch (error) {
             console.error('Failed to lookup university:', error)
+            // Fallback: allow manual entry if check fails
+            setUniversityLookup({
+                university: null,
+                isPersonalEmail: false,
+                domain: emailValue.split('@')[1] || ''
+            })
         } finally {
             setIsLookingUp(false)
         }

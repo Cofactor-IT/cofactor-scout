@@ -117,6 +117,19 @@ docker-compose exec web npx prisma studio
 ./scripts/restore.sh
 ```
 
+### 6. Updating Deployment
+```bash
+# 1. Pull latest changes
+git pull origin main
+
+# 2. Rebuild and restart containers
+docker-compose up -d --build
+
+# 3. Apply database schema changes
+docker-compose exec web npx prisma db push
+```
+
+
 ---
 
 ## Local Development
