@@ -37,7 +37,7 @@ export const PERSONAL_EMAIL_DOMAINS = [
  */
 export function extractEmailDomain(email: string): string {
     const parts = email.toLowerCase().trim().split('@')
-    return parts.length === 2 ? parts[1] : ''
+    return parts.length === 2 ? parts[1].trim() : ''
 }
 
 /**
