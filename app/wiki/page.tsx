@@ -95,9 +95,23 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
         targetUniversityName = uni?.name || "Unknown University";
     }
 
-    const whereClause = (targetUniversityId)
-        ? { universityId: targetUniversityId }
-        : {}
+    // If not admin/staff and no university ID, show nothing
+    if (!isAdmin && !targetUniversityId) {
+        return (
+            <div className="container mx-auto py-10">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-4xl font-bold">University Wiki</h1>
+                        <p className="text-muted-foreground mt-2">
+                            Please contact your administrator to be assigned to a university.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    const whereClause = { universityId: targetUniversityId }
 
     const pages = await prisma.uniPage.findMany({
         where: {
