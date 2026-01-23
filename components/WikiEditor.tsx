@@ -26,6 +26,7 @@ export function WikiEditor({ value, onChange, placeholder }: WikiEditorProps) {
                         backgroundColor: 'transparent',
                         fontSize: 14,
                         fontWeight: 'normal',
+                        width: '100%',
                     },
                     '&multiLine': {
                         control: {
@@ -41,6 +42,8 @@ export function WikiEditor({ value, onChange, placeholder }: WikiEditorProps) {
                             minHeight: 400,
                             border: '0',
                             outline: '0',
+                            backgroundColor: 'transparent',
+                            color: 'inherit',
                         },
                     },
                     '&singleLine': {
@@ -62,12 +65,14 @@ export function WikiEditor({ value, onChange, placeholder }: WikiEditorProps) {
                             fontSize: 14,
                             borderRadius: 4,
                             overflow: 'hidden',
+                            zIndex: 1000,
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                         },
                         item: {
-                            padding: '5px 15px',
-                            borderBottom: '1px solid rgba(0,0,0,0.15)',
+                            padding: '8px 15px',
+                            borderBottom: '1px solid rgba(0,0,0,0.05)',
                             '&focused': {
-                                backgroundColor: '#cee4e5',
+                                backgroundColor: '#f1f5f9',
                             },
                         },
                     },
@@ -76,10 +81,19 @@ export function WikiEditor({ value, onChange, placeholder }: WikiEditorProps) {
                 <Mention
                     trigger="@"
                     data={(query, callback) => {
-                        if (query.length < 2) return
+                        // Allow searching with just 1 character
+                        if (query.length === 0) return
+
                         fetch(`/api/mentions?query=${query}`)
-                            .then(res => res.json())
+                            .then(res => {
+                                if (!res.ok) throw new Error(res.statusText)
+                                return res.json()
+                            })
                             .then(res => callback(res))
+                            .catch(err => {
+                                console.error("Mentions API Error:", err)
+                                callback([]) // Ensure menu doesn't hang
+                            })
                     }}
                     markup="[@__display__](__link__)"
                     displayTransform={(id, display) => `@${display}`}
