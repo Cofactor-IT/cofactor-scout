@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { cn, ensureAbsoluteUrl } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -108,9 +109,9 @@ export default async function InstitutePage({ params }: { params: Promise<{ slug
                                         <p className="text-sm mt-3 line-clamp-3">{person.bio}</p>
                                     )}
                                     <div className="mt-4 flex gap-2">
-                                        {person.linkedin && <a href={person.linkedin} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">LinkedIn</a>}
-                                        {person.twitter && <a href={person.twitter} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">Twitter</a>}
-                                        {person.website && <a href={person.website} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">Website</a>}
+                                        {person.linkedin && <a href={ensureAbsoluteUrl(person.linkedin)} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">LinkedIn</a>}
+                                        {person.twitter && <a href={ensureAbsoluteUrl(person.twitter)} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">Twitter</a>}
+                                        {person.website && <a href={ensureAbsoluteUrl(person.website)} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">Website</a>}
                                     </div>
                                 </CardContent>
                             </Card>
