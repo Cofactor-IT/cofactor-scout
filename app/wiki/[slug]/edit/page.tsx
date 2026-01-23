@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { proposeEdit } from '../../actions'
+import { WikiEditorWrapper } from './WikiEditorWrapper'
 
 export default async function EditWikiPage({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams: Promise<{ title?: string, universityId?: string, instituteId?: string, labId?: string }> }) {
     const { slug } = await params
@@ -41,13 +41,8 @@ export default async function EditWikiPage({ params, searchParams }: { params: P
 
                         <div className="space-y-2">
                             <Label htmlFor="content">Content (Markdown supported)</Label>
-                            <Textarea
-                                id="content"
-                                name="content"
-                                className="min-h-[400px] font-mono"
-                                defaultValue={uniPage?.content || ''}
-                                required
-                            />
+                            {/* We use a hidden input to submit the data, controlled by client wrapper */}
+                            <WikiEditorWrapper defaultValue={uniPage?.content || ''} />
                         </div>
 
                         <div className="flex justify-end gap-4">
