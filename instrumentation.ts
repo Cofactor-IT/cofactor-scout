@@ -33,6 +33,7 @@ export async function register() {
                 })
                 console.log('Admin user created successfully')
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             // If tables don't exist yet (P2021), skip silently - migrations will run via entrypoint
             if (error.code === 'P2021') {
