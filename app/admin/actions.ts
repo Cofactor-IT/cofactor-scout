@@ -176,4 +176,55 @@ export async function deletePage(slug: string) {
 
     revalidatePath('/wiki')
     redirect('/wiki')
+    revalidatePath('/wiki')
+    redirect('/wiki')
+}
+
+/**
+ * Approve Institute
+ */
+export async function approveInstitute(id: string) {
+    await requireAdmin()
+    await prisma.institute.update({
+        where: { id },
+        data: { approved: true }
+    })
+    revalidatePath('/admin/dashboard')
+    revalidatePath('/wiki')
+}
+
+/**
+ * Reject Institute
+ */
+export async function rejectInstitute(id: string) {
+    await requireAdmin()
+    await prisma.institute.delete({
+        where: { id }
+    })
+    revalidatePath('/admin/dashboard')
+}
+
+/**
+ * Approve Lab
+ */
+export async function approveLab(id: string) {
+    await requireAdmin()
+    const lab = await prisma.lab.update({
+        where: { id },
+        data: { approved: true },
+        include: { institute: true }
+    })
+    revalidatePath('/admin/dashboard')
+    revalidatePath(`/wiki/institutes/${lab.institute.slug}`)
+}
+
+/**
+ * Reject Lab
+ */
+export async function rejectLab(id: string) {
+    await requireAdmin()
+    await prisma.lab.delete({
+        where: { id }
+    })
+    revalidatePath('/admin/dashboard')
 }

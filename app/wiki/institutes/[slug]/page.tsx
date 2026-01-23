@@ -1,0 +1,161 @@
+import { prisma } from '@/lib/prisma'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth-config"
+import { notFound } from 'next/navigation'
+import { ProposeStructureModal } from '../../ProposeStructureModal'
+import { AddPersonModal } from '../../AddPersonModal'
+import { AddArticleButton } from '../../AddArticleButton'
+
+export const dynamic = 'force-dynamic'
+
+export default async function InstitutePage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params
+    const session = await getServerSession(authOptions)
+
+    const institute = await prisma.institute.findUnique({
+        where: { slug },
+        include: {
+            labs: {
+                where: { approved: true },
+                orderBy: { name: 'asc' }
+            },
+            people: {
+                orderBy: { name: 'asc' }
+            },
+            pages: {
+                orderBy: { name: 'asc' }
+            }
+        }
+    })
+
+    if (!institute) {
+        notFound()
+    }
+
+    return (
+        <div className="container mx-auto py-10">
+            {/* Header */}
+            <div className="mb-8">
+                <Link href={`/wiki?universityId=${institute.universityId}`} className="text-sm text-muted-foreground hover:underline mb-2 block">
+                    &larr; Back to University
+                </Link>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-4xl font-bold">{institute.name}</h1>
+                        <p className="text-muted-foreground mt-2">Institute</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Labs Section */}
+            <div className="mb-12">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-semibold">Labs</h2>
+                    <ProposeStructureModal type="lab" parentId={institute.id} />
+                </div>
+                {institute.labs.length === 0 ? (
+                    <Card className="bg-muted/10 border-dashed">
+                        <CardContent className="py-8 text-center text-muted-foreground">
+                            No labs found. Propose one to get started!
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {institute.labs.map((lab) => (
+                            <Link key={lab.id} href={`/wiki/labs/${lab.slug}`}>
+                                <Card className="hover:bg-muted/50 transition-colors h-full flex items-center p-6">
+                                    <div className="text-3xl mr-4">🧪</div>
+                                    <div>
+                                        <CardTitle className="text-lg">{lab.name}</CardTitle>
+                                        <p className="text-xs text-muted-foreground mt-1">Lab</p>
+                                    </div>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* People Section */}
+            <div className="mb-12">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-semibold">People / Directory</h2>
+                    <AddPersonModal contextId={institute.id} contextType="institute" />
+                </div>
+                {institute.people.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4 bg-muted/10 rounded-lg">
+                        No members listed yet.
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {institute.people.map((person) => (
+                            <Card key={person.id} className="h-full">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="font-semibold text-lg">{person.name}</h3>
+                                            <p className="text-sm text-muted-foreground">{person.role}</p>
+                                            {person.fieldOfStudy && (
+                                                <p className="text-xs text-muted-foreground mt-1">{person.fieldOfStudy}</p>
+                                            )}
+                                        </div>
+                                        {person.image && <div className="w-12 h-12 bg-muted rounded-full"></div>}
+                                    </div>
+                                    {person.bio && (
+                                        <p className="text-sm mt-3 line-clamp-3">{person.bio}</p>
+                                    )}
+                                    <div className="mt-4 flex gap-2">
+                                        {person.linkedin && <a href={person.linkedin} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">LinkedIn</a>}
+                                        {person.twitter && <a href={person.twitter} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">Twitter</a>}
+                                        {person.website && <a href={person.website} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">Website</a>}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Articles Section */}
+            <div>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-semibold">Articles</h2>
+                    {/* We need to pass institute info to AddArticleButton somehow, 
+                        currently it just does query params for universityId.
+                        We might need to update AddArticleButton to support instituteId/labId or handle it in edit page.
+                        For now, let's keep it simple or user has to select institute in edit page? 
+                        Wait, we don't have institute selection in edit page yet.
+                        We should update AddArticleButton to allow passing instituteId.
+                    */}
+                    <Button disabled variant="outline">Add Article (Coming Soon)</Button>
+                </div>
+                {institute.pages.length === 0 ? (
+                    <p className="text-muted-foreground col-span-full text-center py-10">
+                        No articles found.
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Similar to Wiki list */}
+                        {institute.pages.map((page) => (
+                            <Link key={page.id} href={`/wiki/${page.slug}`}>
+                                <Card className="hover:bg-muted/50 transition-colors h-full">
+                                    <CardHeader>
+                                        <CardTitle>{page.name}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground line-clamp-3">
+                                            {page.content || "No content yet."}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}

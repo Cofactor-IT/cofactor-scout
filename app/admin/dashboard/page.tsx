@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import Link from 'next/link'
-import { approveRevision, rejectRevision, approveStaff, rejectStaff } from '../actions'
+import {
+    approveRevision, rejectRevision,
+    approveStaff, rejectStaff,
+    approveInstitute, rejectInstitute,
+    approveLab, rejectLab
+} from '../actions'
 import { SocialStats } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -23,7 +28,10 @@ export default async function AdminDashboard() {
         topWikiPages,
         // University data
         totalUniversities,
-        pendingUniversities
+        pendingUniversities,
+        // Structure data
+        pendingInstitutes,
+        pendingLabs
     ] = await Promise.all([
         // 1. Pending Revisions
         prisma.wikiRevision.findMany({
@@ -75,7 +83,19 @@ export default async function AdminDashboard() {
         // 9. Total Universities
         prisma.university.count({ where: { approved: true } }),
         // 10. Pending Universities
-        prisma.university.count({ where: { approved: false } })
+        prisma.university.count({ where: { approved: false } }),
+        // 11. Pending Institutes
+        prisma.institute.findMany({
+            where: { approved: false },
+            include: { university: true },
+            orderBy: { createdAt: 'desc' }
+        }),
+        // 12. Pending Labs
+        prisma.lab.findMany({
+            where: { approved: false },
+            include: { institute: true },
+            orderBy: { createdAt: 'desc' }
+        })
     ])
 
     // Calculate Total Social Reach
@@ -155,13 +175,70 @@ export default async function AdminDashboard() {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{pendingRevisions.length + pendingStaff.length}</div>
+                        <div className="text-2xl font-bold">
+                            {pendingRevisions.length + pendingStaff.length + pendingInstitutes.length + pendingLabs.length}
+                        </div>
                         <p className="text-xs text-muted-foreground">Requires attention</p>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                {/* Pending Structures (Institutes/Labs) */}
+                {(pendingInstitutes.length > 0 || pendingLabs.length > 0) && (
+                    <Card className="col-span-full">
+                        <CardHeader>
+                            <CardTitle>Structure Applications</CardTitle>
+                            <CardDescription>Pending attempts to create new Institutes or Labs</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {pendingInstitutes.map((inst) => (
+                                    <div key={inst.id} className="flex justify-between items-center border p-4 rounded-lg">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-bold text-lg">{inst.name}</h3>
+                                                <Badge variant="secondary">Institute Proposal</Badge>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                For {inst.university.name}
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <form action={approveInstitute.bind(null, inst.id)}>
+                                                <Button size="sm" className="bg-green-600 hover:bg-green-700">Approve</Button>
+                                            </form>
+                                            <form action={rejectInstitute.bind(null, inst.id)}>
+                                                <Button size="sm" variant="destructive">Reject</Button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                ))}
+                                {pendingLabs.map((lab) => (
+                                    <div key={lab.id} className="flex justify-between items-center border p-4 rounded-lg">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-bold text-lg">{lab.name}</h3>
+                                                <Badge variant="outline">Lab Proposal</Badge>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                Under {lab.institute.name}
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <form action={approveLab.bind(null, lab.id)}>
+                                                <Button size="sm" className="bg-green-600 hover:bg-green-700">Approve</Button>
+                                            </form>
+                                            <form action={rejectLab.bind(null, lab.id)}>
+                                                <Button size="sm" variant="destructive">Reject</Button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
                 {/* Top Performers Table */}
                 <Card className="col-span-4">
                     <CardHeader>

@@ -48,8 +48,9 @@ model University {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users User[]
-  pages UniPage[]
+  users       User[]
+  pages       UniPage[]
+  institutes  Institute[]
 
   @@index([name])
 }
@@ -69,11 +70,79 @@ model UniPage {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  
   revisions WikiRevision[]
-
+  
   universityId String?
   university   University? @relation(fields: [universityId], references: [id])
+
+  instituteId  String?
+  institute    Institute?  @relation(fields: [instituteId], references: [id])
+
+  labId        String?
+  lab          Lab?        @relation(fields: [labId], references: [id])
+}
+
+model Institute {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  labs      Lab[]
+  people    Person[]
+  pages     UniPage[]
+
+  @@index([universityId])
+  @@index([slug])
+}
+
+model Lab {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  instituteId String
+  institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+
+  people    Person[]
+  pages     UniPage[]
+
+  @@index([instituteId])
+  @@index([slug])
+}
+
+model Person {
+  id           String   @id @default(cuid())
+  name         String
+  role         String?
+  fieldOfStudy String?
+  image        String?
+  bio          String?
+  linkedin     String?
+  twitter      String?
+  website      String?
+  email        String?
+  
+  instituteId String?
+  institute   Institute? @relation(fields: [instituteId], references: [id])
+  
+  labId       String?
+  lab         Lab?       @relation(fields: [labId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([instituteId])
+  @@index([labId])
 }
 
 model WikiRevision {

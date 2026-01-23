@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function AddArticleButton() {
+export function AddArticleButton({ universityId }: { universityId?: string | null }) {
     const [open, setOpen] = useState(false)
     const [title, setTitle] = useState('')
     const router = useRouter()
@@ -33,7 +33,11 @@ export function AddArticleButton() {
 
         if (slug) {
             setOpen(false)
-            router.push(`/wiki/${slug}/edit?title=${encodeURIComponent(title)}`)
+            const query = new URLSearchParams()
+            query.set('title', title)
+            if (universityId) query.set('universityId', universityId)
+
+            router.push(`/wiki/${slug}/edit?${query.toString()}`)
         }
     }
 

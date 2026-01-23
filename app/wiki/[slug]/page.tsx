@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { WikiRevision } from '@prisma/client'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default async function WikiPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
@@ -168,8 +170,13 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
             </div>
 
             <Card>
-                <CardContent className="prose dark:prose-invert max-w-none pt-6 p-8">
-                    <div className="whitespace-pre-wrap font-sans">{uniPage.content}</div>
+                <CardContent className="pt-6 p-8">
+                    <ReactMarkdown
+                        className="prose dark:prose-invert max-w-none"
+                        remarkPlugins={[remarkGfm]}
+                    >
+                        {uniPage.content}
+                    </ReactMarkdown>
                 </CardContent>
             </Card>
         </div>

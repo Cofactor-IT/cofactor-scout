@@ -52,7 +52,14 @@ export async function proposeEdit(formData: FormData) {
         if (!uniName) throw new Error("Page Title required for new page")
 
         // Determine University ID:
-        const targetUniversityId = user.universityId
+        let targetUniversityId = user.universityId
+
+        if (isAdminOrStaff) {
+            const formUniversityId = formData.get('universityId') as string
+            if (formUniversityId) {
+                targetUniversityId = formUniversityId
+            }
+        }
 
         uniPage = await prisma.uniPage.create({
             data: {
