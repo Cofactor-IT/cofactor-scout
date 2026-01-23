@@ -107,7 +107,7 @@ export async function signUp(prevState: { error?: string; success?: string } | u
     }
 
     // Role Logic
-    let role: 'STUDENT' | 'PENDING_STAFF' = 'STUDENT'
+    let role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF' = 'STUDENT'
     let referrerId: string | null = null
 
     const STAFF_SECRET = process.env.STAFF_SECRET_CODE
