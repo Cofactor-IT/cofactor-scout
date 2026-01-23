@@ -33,7 +33,9 @@ export default function SignUpPage() {
 
         setIsLookingUp(true)
         try {
-            const response = await fetch(`/api/universities/lookup?email=${encodeURIComponent(emailValue)}`)
+            const response = await fetch(`/api/universities/lookup?email=${encodeURIComponent(emailValue)}`, {
+                cache: 'no-store'
+            })
             if (response.ok) {
                 const data = await response.json()
                 setUniversityLookup(data)
