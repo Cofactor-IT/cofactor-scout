@@ -8,7 +8,7 @@ import { logger } from '@/lib/logger'
 /**
  * Add a new staff domain - ADMIN ONLY
  */
-export async function addStaffDomain(formData: FormData) {
+export async function addStaffDomain(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
     await requireAdmin()
 
     const domain = formData.get('domain') as string

@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { addStaffDomain, removeStaffDomain } from './actions'
+import { AddStaffDomainForm } from './AddStaffDomainForm'
+import { removeStaffDomain } from './actions'
 import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -29,19 +30,7 @@ export default async function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-6">
-                        <form action={addStaffDomain} className="flex gap-4 items-end">
-                            <div className="grid w-full items-center gap-1.5">
-                                <Label htmlFor="domain">Target Domain</Label>
-                                <Input
-                                    type="text"
-                                    id="domain"
-                                    name="domain"
-                                    placeholder="example.com"
-                                    required
-                                />
-                            </div>
-                            <Button type="submit">Add Domain</Button>
-                        </form>
+                        <AddStaffDomainForm />
 
                         <div className="rounded-md border">
                             <Table>
