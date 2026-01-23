@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-config';
 import fs from 'fs';
 import path from 'path';
 import { writeFile } from 'fs/promises';
@@ -9,7 +9,11 @@ import { writeFile } from 'fs/promises';
 async function checkAdmin() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) return false;
+
+    // Strict check against env variable
     const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) return false;
+
     return session.user.email === adminEmail;
 }
 
@@ -40,9 +44,6 @@ export async function POST(request: Request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Sanitize filename to prevent overwriting existing important files or traversal
-        // But we might want to keep the original name if it looks like a valid backup name
-        // Enforce name pattern or just basename
         const safeFilename = path.basename(file.name);
         const filepath = path.join(BACKUP_DIR, safeFilename);
 

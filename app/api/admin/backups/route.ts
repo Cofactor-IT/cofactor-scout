@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-config';
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
@@ -13,8 +13,10 @@ async function checkAdmin() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) return false;
 
-    // Basic check - in real app might check role
+    // Strict check against env variable
     const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) return false; // Security: if env not set, no one is admin
+
     return session.user.email === adminEmail;
 }
 
@@ -65,21 +67,18 @@ export async function POST() {
         const filepath = path.join(BACKUP_DIR, filename);
 
         // Construct pg_dump command
-        // Note: We use process.env vars directly which pg_dump will pick up usually, 
-        // or we might need to pass them explicitly if environment isolation is strict.
-        // In Docker, we set POSTGRES_USER etc in env.
-
-        // If running in docker container that has access to DB host
         const dbHost = process.env.POSTGRES_HOST || 'db';
         const dbUser = process.env.POSTGRES_USER || 'cofactor';
         const dbName = process.env.POSTGRES_DB || 'cofactor';
-        // PGPASSWORD is implicitly used by pg_dump if set in env
+        const dbPassword = process.env.POSTGRES_PASSWORD;
 
         // Command assumes pg_dump is available (installed via apk add postgresql-client)
+        // We pass PGPASSWORD via env
+        const env = { ...process.env, PGPASSWORD: dbPassword };
         const command = `pg_dump -h ${dbHost} -U ${dbUser} -d ${dbName} -f "${filepath}"`;
 
         console.log('Starting backup:', command);
-        await execPromise(command);
+        await execPromise(command, { env });
 
         // Optional: Compress
         await execPromise(`gzip "${filepath}"`);

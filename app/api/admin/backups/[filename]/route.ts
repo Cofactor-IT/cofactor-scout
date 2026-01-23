@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-config';
 import fs from 'fs';
 import path from 'path';
 
@@ -8,7 +8,11 @@ import path from 'path';
 async function checkAdmin() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) return false;
+
+    // Strict check against env variable
     const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) return false;
+
     return session.user.email === adminEmail;
 }
 
@@ -36,12 +40,6 @@ export async function GET(
         const stats = fs.statSync(filepath);
         const fileStream = fs.createReadStream(filepath);
 
-        // Convert fs.ReadStream to a simpler ReadableStream-like object for NextResponse if needed,
-        // but Next.js App Router supports passing standard streams or Buffers.
-        // However, direct ReadStream might need conversion for type safety in newer Next.js types.
-        // The easiest way for binary download is creating a readable stream and returning it.
-
-        // Using @ts-expect-error as node streams are compatible but types mismatch slightly
         // @ts-expect-error
         return new NextResponse(fileStream, {
             headers: {

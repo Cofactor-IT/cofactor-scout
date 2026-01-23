@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-config';
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
@@ -12,7 +12,11 @@ const execPromise = util.promisify(exec);
 async function checkAdmin() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) return false;
+
+    // Strict check against env variable
     const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) return false;
+
     return session.user.email === adminEmail;
 }
 
@@ -41,11 +45,7 @@ export async function POST(request: Request) {
         const dbHost = process.env.POSTGRES_HOST || 'db';
         const dbUser = process.env.POSTGRES_USER || 'cofactor';
         const dbName = process.env.POSTGRES_DB || 'cofactor';
-        const dbPassword = process.env.POSTGRES_PASSWORD; // needed for psql if not in .pgpass or env
-
-        // Prepare command
-        // If it's gzipped, we need to gunzip and pipe to psql
-        // If it's plain sql, just psql -f
+        const dbPassword = process.env.POSTGRES_PASSWORD;
 
         let command;
         const isGzipped = safeFilename.endsWith('.gz');
@@ -59,17 +59,7 @@ export async function POST(request: Request) {
             command = `psql -h ${dbHost} -U ${dbUser} -d ${dbName} -f "${filepath}"`;
         }
 
-        // WARNING: Restoring overlaps existing data. Usually existing tables might need cleaning or 
-        // the backup should have DROP TABLE statements. pg_dump by default does not include DROP TABLE unless requested.
-        // However, for a simple restore, we might want to ensure a clean slate or rely on the backup being a complete snapshot (using --clean in dump would help).
-        // The current dump script in scripts/backup.sh does `pg_dump ... > file`. It does not use --clean or --if-exists.
-        // This means usually we should probably drop the DB and recreate it, or use --clean if we modify the backup script.
-        // Since we can't easily modify the dump format of *existing* backups, we might rely on psql to just error on conflicts or mix data (bad).
-        // BETTER: Let's assume for now we just run it. 
-        // Ideally, we should drop public schema and recreate it.
-
-        // Workaround: We will run a command to drop schema public cascade; create schema public; before restore.
-        // This ensures clean state.
+        // Workaround for clean restore: drop public schema and recreate
         const cleanCommand = `psql -h ${dbHost} -U ${dbUser} -d ${dbName} -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"`;
 
         console.log('Cleaning database...');
