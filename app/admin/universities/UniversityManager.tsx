@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useActionState, useState, useTransition } from 'react'
-import { createUniversity, deleteUniversity, approveUniversity, updateUniversity } from './actions'
+import { createUniversity, deleteUniversity, approveUniversity, updateUniversity, importUniversities } from './actions'
+import { Textarea } from '@/components/ui/textarea'
 
 type University = {
     id: string
@@ -28,6 +29,11 @@ export function UniversityManager({ universities }: { universities: University[]
     const [editDomains, setEditDomains] = useState<string[]>([''])
     const [isPending, startTransition] = useTransition()
     const [editError, setEditError] = useState<string | null>(null)
+
+    // Import state
+    const [importText, setImportText] = useState('')
+    const [isImporting, setIsImporting] = useState(false)
+    const [importResult, setImportResult] = useState<{ success: number, errors: string[] } | null>(null)
 
     const addDomainField = () => {
         setDomains([...domains, ''])
@@ -110,6 +116,56 @@ export function UniversityManager({ universities }: { universities: University[]
         }
     }
 
+    const handleImport = async () => {
+        if (!importText.trim()) return
+
+        setIsImporting(true)
+        setImportResult(null)
+
+        try {
+            const lines = importText.split('\n')
+            const universitiesToImport: { name: string, domains: string[] }[] = []
+
+            for (const line of lines) {
+                if (!line.trim()) continue
+
+                // Format: University of Oxford;ox.ac.uk;;
+                const parts = line.split(';')
+                if (parts.length < 2) continue
+
+                const name = parts[0].trim()
+                const domain = parts[1].trim()
+
+                if (name && domain) {
+                    universitiesToImport.push({
+                        name,
+                        domains: [domain.toLowerCase()]
+                    })
+                }
+            }
+
+            if (universitiesToImport.length === 0) {
+                setImportResult({ success: 0, errors: ['No valid entries found. Format: Name;Domain;;'] })
+                setIsImporting(false)
+                return
+            }
+
+            const result = await importUniversities(universitiesToImport)
+            setImportResult({
+                success: result.successCount,
+                errors: result.errors
+            })
+
+            if (result.successCount > 0) {
+                setImportText('')
+            }
+        } catch (error) {
+            setImportResult({ success: 0, errors: ['Failed to import universities'] })
+        } finally {
+            setIsImporting(false)
+        }
+    }
+
     const approvedUniversities = universities.filter(u => u.approved)
     const pendingUniversities = universities.filter(u => !u.approved)
 
@@ -157,6 +213,44 @@ export function UniversityManager({ universities }: { universities: University[]
                             {isCreating ? 'Creating...' : 'Create University'}
                         </Button>
                     </form>
+                </CardContent>
+            </Card>
+
+            {/* Import Universities */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Import Universities</CardTitle>
+                    <CardDescription>
+                        Import from CSV format: <code>University Name;domain.edu;;</code>
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Textarea
+                        placeholder={`University of Oxford;ox.ac.uk;;\nUniversity of Cambridge;cam.ac.uk;;`}
+                        value={importText}
+                        onChange={(e) => setImportText(e.target.value)}
+                        rows={5}
+                        className="font-mono text-sm"
+                    />
+
+                    {importResult && (
+                        <div className={`text-sm p-3 rounded-md ${importResult.errors.length > 0 ? 'bg-destructive/10 text-destructive' : 'bg-green-50 text-green-700'}`}>
+                            <p className="font-medium">Import completed:</p>
+                            <ul className="list-disc list-inside mt-1">
+                                <li>Successfully imported: {importResult.success}</li>
+                                {importResult.errors.slice(0, 5).map((err, i) => (
+                                    <li key={i}>{err}</li>
+                                ))}
+                                {importResult.errors.length > 5 && (
+                                    <li>...and {importResult.errors.length - 5} more errors</li>
+                                )}
+                            </ul>
+                        </div>
+                    )}
+
+                    <Button onClick={handleImport} disabled={isImporting || !importText.trim()}>
+                        {isImporting ? 'Importing...' : 'Import Universities'}
+                    </Button>
                 </CardContent>
             </Card>
 

@@ -143,3 +143,66 @@ export async function updateUniversity(universityId: string, name: string, domai
 
     revalidatePath('/admin/universities')
 }
+
+/**
+ * Bulk import universities - ADMIN ONLY
+ */
+export async function importUniversities(universities: { name: string, domains: string[] }[]) {
+    await requireAdmin()
+
+    const results = {
+        successCount: 0,
+        errors: [] as string[]
+    }
+
+    for (const uni of universities) {
+        try {
+            // Basic validation
+            if (!uni.name?.trim()) continue
+            if (uni.domains.length === 0) continue
+
+            // Check if name exists
+            const existingName = await prisma.university.findUnique({
+                where: { name: uni.name.trim() }
+            })
+
+            if (existingName) {
+                // If name exists, check if we should add new domains?
+                // For now, let's just log error that it exists
+                results.errors.push(`University "${uni.name}" already exists`)
+                continue
+            }
+
+            // Check if domains exist
+            let domainExists = false
+            for (const domain of uni.domains) {
+                const existingDomain = await prisma.university.findFirst({
+                    where: { domains: { has: domain } }
+                })
+                if (existingDomain) {
+                    results.errors.push(`Domain "${domain}" is already registered to ${existingDomain.name}`)
+                    domainExists = true
+                    break
+                }
+            }
+            if (domainExists) continue
+
+            // Create
+            await prisma.university.create({
+                data: {
+                    name: uni.name.trim(),
+                    domains: uni.domains,
+                    approved: true
+                }
+            })
+            results.successCount++
+
+        } catch (e) {
+            console.error('Import error for', uni.name, e)
+            results.errors.push(`Failed to import "${uni.name}"`)
+        }
+    }
+
+    revalidatePath('/admin/universities')
+    return results
+}
