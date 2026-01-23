@@ -9,27 +9,27 @@ datasource db {
 }
 
 model User {
-  id                String   @id @default(cuid())
-  email             String   @unique
-  name              String?
-  password          String?
-  role              Role     @default(STUDENT)
-  referralCode      String   @unique
-  socialStats       Json?
-  powerScore        Int      @default(0)
-  emailVerified     DateTime?
-  verificationToken String?  @unique
+  id                  String      @id @default(cuid())
+  email               String      @unique
+  name                String?
+  password            String?
+  role                Role        @default(STUDENT)
+  referralCode        String      @unique
+  socialStats         Json?
+  powerScore          Int         @default(0)
+  emailVerified       DateTime?
+  verificationToken   String?     @unique
   verificationExpires DateTime?
-  failedLoginAttempts Int    @default(0)
-  lockedUntil       DateTime?
-  universityId      String?
-  university        University? @relation(fields: [universityId], references: [id])
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  failedLoginAttempts Int         @default(0)
+  lockedUntil         DateTime?
+  universityId        String?
+  university          University? @relation(fields: [universityId], references: [id])
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
-  revisions     WikiRevision[]
-  referralsMade Referral[] @relation("Referrer")
-  referredBy    Referral?  @relation("Referee")
+  revisions           WikiRevision[]
+  referralsMade       Referral[]      @relation("Referrer")
+  referredBy          Referral?       @relation("Referee")
   passwordResetTokens PasswordReset[]
 
   @@index([email])
@@ -48,7 +48,8 @@ model University {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users     User[]
+  users User[]
+  pages UniPage[]
 
   @@index([name])
 }
@@ -68,9 +69,9 @@ model UniPage {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   revisions WikiRevision[]
-  
+
   universityId String?
   university   University? @relation(fields: [universityId], references: [id])
 }
@@ -105,8 +106,8 @@ model Referral {
   referee    User     @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
 
-  @@index([referrerId])
   @@unique([referrerId, refereeId])
+  @@index([referrerId])
 }
 
 model PasswordReset {
@@ -126,4 +127,3 @@ model StaffDomain {
   domain    String   @unique
   createdAt DateTime @default(now())
 }
-
