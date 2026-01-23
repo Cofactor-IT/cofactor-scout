@@ -1,6 +1,6 @@
 
-
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 /**
  * Personal email domains that should prompt user to use university email
@@ -54,14 +54,24 @@ export function isPersonalEmail(email: string): boolean {
 export async function findUniversityByDomain(domain: string) {
     if (!domain) return null
 
+    const targetDomain = domain.toLowerCase().trim()
+
+    // Try standard database query with robust checks for whitespace issues in DB
+    // We check for exact match and potential trailing/leading whitespace variants
     const university = await prisma.university.findFirst({
         where: {
-            domains: {
-                has: domain.toLowerCase()
-            },
+            OR: [
+                { domains: { has: targetDomain } },
+                { domains: { has: targetDomain + ' ' } },
+                { domains: { has: ' ' + targetDomain } }
+            ],
             approved: true
         }
     })
+
+    if (!university) {
+         logger.debug(`Lookup failed for domain: ${targetDomain}`)
+    }
 
     return university
 }
