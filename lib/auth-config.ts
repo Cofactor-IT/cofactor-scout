@@ -37,6 +37,7 @@ export const authOptions: NextAuthOptions = {
                     return null
                 }
 
+                const bcrypt = await import('bcryptjs')
                 const isValid = await bcrypt.compare(credentials.password, user.password)
 
                 // Check email verification
