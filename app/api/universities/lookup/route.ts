@@ -1,6 +1,5 @@
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { extractEmailDomain, isPersonalEmail } from '@/lib/universityUtils'
+import { extractEmailDomain, isPersonalEmail, findUniversityByDomain } from '@/lib/universityUtils'
 
 // Prevent Next.js from caching this route - always fetch fresh data
 export const dynamic = 'force-dynamic'
@@ -21,19 +20,16 @@ export async function GET(request: Request) {
 
     let university = null
     try {
-        // Find university by domain
-        university = await prisma.university.findFirst({
-            where: {
-                domains: {
-                    has: targetDomain.toLowerCase()
-                },
-                approved: true
-            },
-            select: {
-                id: true,
-                name: true
+        // Find university by domain using shared logic
+        const foundUniversity = await findUniversityByDomain(targetDomain)
+
+        if (foundUniversity) {
+            // Return only public fields
+            university = {
+                id: foundUniversity.id,
+                name: foundUniversity.name
             }
-        })
+        }
     } catch (error) {
         console.error('Database error in university lookup:', error)
         // Fallback: DB might be down or table missing. 
