@@ -15,6 +15,7 @@ const initialState = {
 type UniversityLookup = {
     university: { id: string; name: string } | null
     isPersonalEmail: boolean
+    isStaffDomain?: boolean
     domain: string
 }
 
@@ -70,6 +71,7 @@ export default function SignUpPage() {
     const showUniversityNameInput = universityLookup &&
         !universityLookup.university &&
         !universityLookup.isPersonalEmail &&
+        !universityLookup.isStaffDomain && // Do not show for staff domains
         email.includes('@')
 
     return (
@@ -99,9 +101,18 @@ export default function SignUpPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                             />
 
+
                             {/* University Detection Feedback */}
                             {isLookingUp && (
                                 <p className="text-sm text-muted-foreground">Checking university...</p>
+                            )}
+
+                            {universityLookup?.isStaffDomain && (
+                                <div className="p-3 bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-md">
+                                    <p className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">
+                                        ✓ Staff domain detected. Account will be created as Staff.
+                                    </p>
+                                </div>
                             )}
 
                             {universityLookup?.university && (

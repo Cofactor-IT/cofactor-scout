@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { extractEmailDomain, isPersonalEmail, findUniversityByDomain } from '@/lib/universityUtils'
 
 // Prevent Next.js from caching this route - always fetch fresh data
@@ -19,7 +20,17 @@ export async function GET(request: Request) {
     const personalEmail = email ? isPersonalEmail(email) : false
 
     let university = null
+    let isStaffDomain = false
+
     try {
+        // Check if it is a staff domain
+        const staffDomainRecord = await prisma.staffDomain.findUnique({
+            where: { domain: targetDomain }
+        })
+        if (staffDomainRecord) {
+            isStaffDomain = true
+        }
+
         // Find university by domain using shared logic
         const foundUniversity = await findUniversityByDomain(targetDomain)
 
@@ -38,6 +49,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
         university: university || null,
+        isStaffDomain,
         isPersonalEmail: personalEmail,
         domain: targetDomain
     })
