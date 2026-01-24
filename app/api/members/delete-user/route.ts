@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
 
     logger.info('User deleted by admin', { deletedUserId: userId, adminId: session.user.id })
 
-    const host = request.headers.get('host') || 'localhost:3000'
-    const protocol = request.headers.get('x-forwarded-proto') || 'http'
-    return NextResponse.redirect(`${protocol}://${host}/members`)
+    // Use relative URL for safer redirect (avoids header manipulation)
+    return NextResponse.redirect(new URL('/members', request.url))
 }

@@ -116,14 +116,19 @@ export async function cancelSecondaryRequest(requestId: string) {
  * Get all approved universities for the dropdown
  */
 export async function getApprovedUniversities() {
-    return prisma.university.findMany({
-        where: { approved: true },
-        orderBy: { name: 'asc' },
-        select: {
-            id: true,
-            name: true
-        }
-    })
+    try {
+        return await prisma.university.findMany({
+            where: { approved: true },
+            orderBy: { name: 'asc' },
+            select: {
+                id: true,
+                name: true
+            }
+        })
+    } catch (error) {
+        console.error('Failed to fetch universities:', error)
+        return []
+    }
 }
 
 /**

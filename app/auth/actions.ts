@@ -348,6 +348,20 @@ export async function resetPassword(prevState: { error?: string; success?: strin
         return { error: 'Password must be at least 8 characters' }
     }
 
+    // Password complexity validation (same as signup)
+    if (!/[A-Z]/.test(password)) {
+        return { error: 'Password must contain at least one uppercase letter' }
+    }
+    if (!/[a-z]/.test(password)) {
+        return { error: 'Password must contain at least one lowercase letter' }
+    }
+    if (!/[0-9]/.test(password)) {
+        return { error: 'Password must contain at least one number' }
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+        return { error: 'Password must contain at least one special character' }
+    }
+
     // Find valid reset token
     const resetRecord = await prisma.passwordReset.findUnique({
         where: { token },

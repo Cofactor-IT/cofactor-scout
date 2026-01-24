@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { getServerSession } from "next-auth"
@@ -167,11 +168,19 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                         </Link>
                     )}
                     <h1 className="text-4xl font-bold">
-                        {targetUniversityName
-                            ? `${targetUniversityName} Wiki`
-                            : 'University Wiki'}
+                        {universityIds.length > 1
+                            ? 'My Universities Wiki'
+                            : targetUniversityName
+                                ? `${targetUniversityName} Wiki`
+                                : 'University Wiki'}
                     </h1>
-                    {targetUniversityName && !isAdmin && (
+                    {universityIds.length > 1 && !isAdmin && (
+                        <div className="flex gap-2 mt-2">
+                            <Badge variant="outline">{userUniversityName}</Badge>
+                            <Badge variant="secondary">{userSecondaryUniversityName}</Badge>
+                        </div>
+                    )}
+                    {universityIds.length === 1 && targetUniversityName && !isAdmin && (
                         <p className="text-muted-foreground mt-2">
                             Exclusive content for {targetUniversityName} students.
                         </p>
@@ -200,11 +209,16 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                             <Link key={inst.id} href={`/wiki/institutes/${inst.slug}`}>
                                 <Card className="hover:bg-muted/50 transition-colors h-full flex items-center p-6">
                                     <div className="text-3xl mr-4">🏛️</div>
-                                    <div>
+                                    <div className="flex-1">
                                         <CardTitle className="text-lg">{inst.name}</CardTitle>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Institute
-                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-xs text-muted-foreground">Institute</span>
+                                            {universityIds.length > 1 && inst.university && (
+                                                <Badge variant="outline" className="text-[10px] h-5">
+                                                    {inst.university.name}
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
                                 </Card>
                             </Link>
@@ -224,7 +238,14 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                         <Link key={page.id} href={`/wiki/${page.slug}`}>
                             <Card className="hover:bg-muted/50 transition-colors h-full">
                                 <CardHeader>
-                                    <CardTitle>{page.name}</CardTitle>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle>{page.name}</CardTitle>
+                                        {universityIds.length > 1 && page.university && (
+                                            <Badge variant="outline" className="text-[10px] shrink-0">
+                                                {page.university.name}
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-sm text-muted-foreground line-clamp-3">

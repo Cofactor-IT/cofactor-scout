@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('query')
 
-    if (!query || query.length < 1) {
+    if (!query || query.length < 1 || query.length > 100) {
         return NextResponse.json([])
     }
 

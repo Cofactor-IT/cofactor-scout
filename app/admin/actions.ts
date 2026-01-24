@@ -106,9 +106,11 @@ export async function rejectStaff(userId: string) {
 }
 
 /**
- * Increment power score atomically
+ * Increment power score atomically - ADMIN ONLY
  */
 export async function incrementPowerScore(userId: string, points: number) {
+    await requireAdmin()
+
     await prisma.user.update({
         where: { id: userId },
         data: {
@@ -120,9 +122,11 @@ export async function incrementPowerScore(userId: string, points: number) {
 }
 
 /**
- * Full power score recalculation (Legacy/Sync fallback)
+ * Full power score recalculation (Legacy/Sync fallback) - ADMIN ONLY
  */
 export async function recalculatePowerScore(userId: string) {
+    await requireAdmin()
+
     const user = await prisma.user.findUnique({
         where: { id: userId }
     })
