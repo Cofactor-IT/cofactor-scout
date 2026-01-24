@@ -22,15 +22,18 @@ model User {
   verificationExpires DateTime?
   failedLoginAttempts Int         @default(0)
   lockedUntil         DateTime?
-  universityId        String?
-  university          University? @relation(fields: [universityId], references: [id])
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  universityId          String?
+  university            University? @relation("PrimaryUniversity", fields: [universityId], references: [id])
+  secondaryUniversityId String?
+  secondaryUniversity   University? @relation("SecondaryUniversity", fields: [secondaryUniversityId], references: [id])
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
 
-  revisions           WikiRevision[]
-  referralsMade       Referral[]      @relation("Referrer")
-  referredBy          Referral?       @relation("Referee")
-  passwordResetTokens PasswordReset[]
+  revisions                    WikiRevision[]
+  referralsMade                Referral[]                   @relation("Referrer")
+  referredBy                   Referral?                    @relation("Referee")
+  passwordResetTokens          PasswordReset[]
+  secondaryUniversityRequests  SecondaryUniversityRequest[]
 
   @@index([email])
   @@index([referralCode])
@@ -48,9 +51,11 @@ model University {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users       User[]
-  pages       UniPage[]
-  institutes  Institute[]
+  users             User[] @relation("PrimaryUniversity")
+  secondaryUsers    User[] @relation("SecondaryUniversity")
+  pages             UniPage[]
+  institutes        Institute[]
+  secondaryRequests SecondaryUniversityRequest[]
 
   @@index([name])
 }
@@ -123,6 +128,7 @@ model Lab {
 model Person {
   id           String   @id @default(cuid())
   name         String
+  slug         String   @unique
   role         String?
   fieldOfStudy String?
   image        String?
@@ -143,6 +149,7 @@ model Person {
 
   @@index([instituteId])
   @@index([labId])
+  @@index([slug])
 }
 
 model WikiRevision {
@@ -195,4 +202,26 @@ model StaffDomain {
   id        String   @id @default(cuid())
   domain    String   @unique
   createdAt DateTime @default(now())
+}
+
+model SecondaryUniversityRequest {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  universityId String
+  university   University    @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  proofText    String        // User's explanation/proof for affiliation
+  status       RequestStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([userId, universityId])
+  @@index([status])
+  @@index([userId])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

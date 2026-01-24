@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
+import { SecondaryUniversityCard } from './SecondaryUniversityCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,13 +23,37 @@ export default async function ProfilePage() {
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         include: {
-            university: true
+            university: true,
+            secondaryUniversity: true
         }
     })
 
     if (!user) {
         redirect('/auth/signin')
     }
+
+    // Fetch all approved universities for the dropdown
+    const universities = await prisma.university.findMany({
+        where: { approved: true },
+        orderBy: { name: 'asc' },
+        select: {
+            id: true,
+            name: true
+        }
+    })
+
+    // Fetch pending secondary university request
+    const pendingRequest = await prisma.secondaryUniversityRequest.findFirst({
+        where: {
+            userId: user.id,
+            status: 'PENDING'
+        },
+        include: {
+            university: {
+                select: { name: true }
+            }
+        }
+    })
 
     const socialStats = (user.socialStats as SocialStats) || {}
 
@@ -37,11 +62,11 @@ export default async function ProfilePage() {
             <h1 className="text-4xl font-bold mb-8">My Profile</h1>
 
             <div className="grid gap-6 md:grid-cols-2">
-                {/* University Card */}
+                {/* Primary University Card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>University</CardTitle>
-                        <CardDescription>Your academic affiliation.</CardDescription>
+                        <CardTitle>Primary University</CardTitle>
+                        <CardDescription>Your main academic affiliation.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {user.university ? (
@@ -58,6 +83,14 @@ export default async function ProfilePage() {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Secondary University Card */}
+                <SecondaryUniversityCard
+                    universities={universities}
+                    primaryUniversityId={user.universityId}
+                    secondaryUniversity={user.secondaryUniversity}
+                    pendingRequest={pendingRequest}
+                />
 
                 <Card>
                     <CardHeader>
@@ -108,4 +141,3 @@ export default async function ProfilePage() {
         </div>
     )
 }
-

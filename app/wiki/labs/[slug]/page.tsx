@@ -78,7 +78,7 @@ export default async function LabPage({ params }: { params: Promise<{ slug: stri
                                 <CardContent className="pt-6">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
-                                            <Link href={`/wiki/people/${person.id}`} className="hover:underline">
+                                            <Link href={`/wiki/people/${person.slug}`} className="hover:underline">
                                                 <h3 className="font-semibold text-lg">{person.name}</h3>
                                             </Link>
                                             <p className="text-sm text-muted-foreground">{person.role}</p>

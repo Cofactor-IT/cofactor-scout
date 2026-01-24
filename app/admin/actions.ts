@@ -226,3 +226,54 @@ export async function rejectLab(id: string) {
     })
     revalidatePath('/admin/dashboard')
 }
+
+/**
+ * Approve Secondary University Request - ADMIN ONLY
+ * Sets the user's secondaryUniversityId and updates request status
+ */
+export async function approveSecondaryUniversityRequest(requestId: string) {
+    await requireAdmin()
+
+    const request = await prisma.secondaryUniversityRequest.findUnique({
+        where: { id: requestId }
+    })
+
+    if (!request) {
+        throw new Error('Request not found')
+    }
+
+    if (request.status !== 'PENDING') {
+        throw new Error('Request is not pending')
+    }
+
+    await prisma.$transaction([
+        // Update user's secondary university
+        prisma.user.update({
+            where: { id: request.userId },
+            data: { secondaryUniversityId: request.universityId }
+        }),
+        // Mark request as approved
+        prisma.secondaryUniversityRequest.update({
+            where: { id: requestId },
+            data: { status: 'APPROVED' }
+        })
+    ])
+
+    revalidatePath('/admin/dashboard')
+    revalidatePath('/profile')
+}
+
+/**
+ * Reject Secondary University Request - ADMIN ONLY
+ */
+export async function rejectSecondaryUniversityRequest(requestId: string) {
+    await requireAdmin()
+
+    await prisma.secondaryUniversityRequest.update({
+        where: { id: requestId },
+        data: { status: 'REJECTED' }
+    })
+
+    revalidatePath('/admin/dashboard')
+    revalidatePath('/profile')
+}

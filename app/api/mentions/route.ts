@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         prisma.person.findMany({
             where: { name: { contains: query, mode: 'insensitive' } },
             take: 5,
-            select: { id: true, name: true, role: true }
+            select: { id: true, name: true, slug: true, role: true }
         }),
         prisma.lab.findMany({
             where: {
@@ -44,18 +44,10 @@ export async function GET(request: Request) {
 
     const results = [
         ...people.map(p => ({
-            id: `person:${p.id}`,
+            id: `person:${p.slug}`,
             display: p.name,
             type: 'Person',
-            link: `/wiki/people/${p.id}` // We might need a person view or scroll anchor? For now assuming specific route or placeholder.
-            // Actually we don't have a /wiki/people/[id] page yet? We have /wiki/institutes/[slug] which lists people.
-            // Maybe we link to the user profile or just a social search?
-            // Let's link to the search for now or just text? 
-            // Wait, we can link to the institute/lab they belong to?
-            // For now, let's just make it a non-clickable span or link to hash?
-            // "People" usually don't have their own page in this wiki structure yet, they are just cards.
-            // Let's defer linking people until we have a person page. Or maybe linking to their institute?
-            // Let's just store the name.
+            link: `/wiki/people/${p.slug}`
         })),
         ...labs.map(l => ({
             id: `lab:${l.slug}`,

@@ -21,14 +21,21 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
     // For now, let's fetch user from DB to be sure.
     let userUniversityId: string | null = null;
     let userUniversityName: string | null = null;
+    let userSecondaryUniversityId: string | null = null;
+    let userSecondaryUniversityName: string | null = null;
 
     if (session?.user?.email) {
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
-            include: { university: true }
+            include: {
+                university: true,
+                secondaryUniversity: true
+            }
         })
         userUniversityId = user?.universityId ?? null
         userUniversityName = user?.university?.name ?? null
+        userSecondaryUniversityId = user?.secondaryUniversityId ?? null
+        userSecondaryUniversityName = user?.secondaryUniversity?.name ?? null
     }
 
     // Admin Folder View Logic
@@ -111,7 +118,17 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
         )
     }
 
-    const whereClause = { universityId: targetUniversityId }
+    // Build where clause - for students with secondary university, fetch from both
+    const universityIds = [targetUniversityId].filter(Boolean) as string[]
+
+    // For students (not admins browsing), also include secondary university content
+    if (!isAdmin && userSecondaryUniversityId && !universityId) {
+        universityIds.push(userSecondaryUniversityId)
+    }
+
+    const whereClause = universityIds.length > 1
+        ? { universityId: { in: universityIds } }
+        : { universityId: targetUniversityId }
 
     const pages = await prisma.uniPage.findMany({
         where: {
@@ -119,15 +136,22 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
             instituteId: null, // Only show top-level university pages here
             labId: null
         },
+        include: {
+            university: { select: { name: true } }
+        },
         orderBy: { name: 'asc' }
     })
 
+    // Fetch institutes from both universities for students with secondary
     let institutes: any[] = []
-    if (targetUniversityId) {
+    if (universityIds.length > 0) {
         institutes = await prisma.institute.findMany({
             where: {
-                universityId: targetUniversityId,
+                universityId: { in: universityIds },
                 approved: true
+            },
+            include: {
+                university: { select: { name: true } }
             },
             orderBy: { name: 'asc' }
         })

@@ -8,7 +8,8 @@ import {
     approveRevision, rejectRevision,
     approveStaff, rejectStaff,
     approveInstitute, rejectInstitute,
-    approveLab, rejectLab
+    approveLab, rejectLab,
+    approveSecondaryUniversityRequest, rejectSecondaryUniversityRequest
 } from '../actions'
 import { SocialStats } from '@/lib/types'
 
@@ -31,7 +32,9 @@ export default async function AdminDashboard() {
         pendingUniversities,
         // Structure data
         pendingInstitutes,
-        pendingLabs
+        pendingLabs,
+        // Secondary University Requests
+        pendingSecondaryRequests
     ] = await Promise.all([
         // 1. Pending Revisions
         prisma.wikiRevision.findMany({
@@ -94,6 +97,17 @@ export default async function AdminDashboard() {
         prisma.lab.findMany({
             where: { approved: false },
             include: { institute: true },
+            orderBy: { createdAt: 'desc' }
+        }),
+        // 13. Pending Secondary University Requests
+        prisma.secondaryUniversityRequest.findMany({
+            where: { status: 'PENDING' },
+            include: {
+                user: {
+                    select: { name: true, email: true, university: { select: { name: true } } }
+                },
+                university: { select: { name: true } }
+            },
             orderBy: { createdAt: 'desc' }
         })
     ])
@@ -181,7 +195,7 @@ export default async function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {pendingRevisions.length + pendingStaff.length + pendingInstitutes.length + pendingLabs.length}
+                            {pendingRevisions.length + pendingStaff.length + pendingInstitutes.length + pendingLabs.length + pendingSecondaryRequests.length}
                         </div>
                         <p className="text-xs text-muted-foreground">Requires attention</p>
                     </CardContent>
@@ -371,6 +385,50 @@ export default async function AdminDashboard() {
                                         </form>
                                         <form action={rejectStaff.bind(null, user.id)}>
                                             <Button size="sm" variant="destructive">Reject</Button>
+                                        </form>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Secondary University Requests */}
+            {pendingSecondaryRequests.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Secondary University Requests ({pendingSecondaryRequests.length})</CardTitle>
+                        <CardDescription>Users requesting access to another university&apos;s resources.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {pendingSecondaryRequests.map((req) => (
+                                <div key={req.id} className="flex justify-between items-start border p-4 rounded-lg">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="font-bold">{req.user.name || 'Unnamed User'}</h3>
+                                            <Badge variant="outline">{req.user.email}</Badge>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                                            <span>Primary: {req.user.university?.name || 'None'}</span>
+                                            <span>→</span>
+                                            <Badge variant="secondary">Requesting: {req.university.name}</Badge>
+                                        </div>
+                                        <div className="bg-muted p-3 rounded text-sm">
+                                            <p className="font-medium text-xs text-muted-foreground mb-1">Proof / Reason:</p>
+                                            <p>{req.proofText}</p>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            Submitted on {new Date(req.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col gap-2 ml-4">
+                                        <form action={approveSecondaryUniversityRequest.bind(null, req.id)}>
+                                            <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">Approve</Button>
+                                        </form>
+                                        <form action={rejectSecondaryUniversityRequest.bind(null, req.id)}>
+                                            <Button size="sm" variant="destructive" className="w-full">Reject</Button>
                                         </form>
                                     </div>
                                 </div>

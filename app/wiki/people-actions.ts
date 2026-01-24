@@ -52,9 +52,29 @@ export async function addPerson(formData: FormData) {
         throw new Error("Unauthorized access")
     }
 
+    // Generate slug from name
+    let baseSlug = name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars
+        .replace(/\s+/g, '-')           // Replace spaces with dashes
+        .replace(/-+/g, '-')            // Collapse multiple dashes
+        .trim()
+
+    // Check if slug exists and add random suffix if needed
+    let slug = baseSlug
+    let attempts = 0
+    while (attempts < 10) {
+        const existing = await prisma.person.findUnique({ where: { slug } })
+        if (!existing) break
+        // Add random 4-char suffix
+        const suffix = Math.random().toString(36).substring(2, 6)
+        slug = `${baseSlug}-${suffix}`
+        attempts++
+    }
+
     await prisma.person.create({
         data: {
             name,
+            slug,
             role,
             fieldOfStudy,
             bio,

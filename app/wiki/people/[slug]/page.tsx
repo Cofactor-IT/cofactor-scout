@@ -9,12 +9,12 @@ import { ExternalLink, Building2, FlaskConical, FileText } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function PersonPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params
+export default async function PersonPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params
     const session = await getServerSession(authOptions)
 
     const person = await prisma.person.findUnique({
-        where: { id },
+        where: { slug },
         include: {
             institute: {
                 include: {
@@ -41,8 +41,8 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     const university = person.institute?.university || person.lab?.institute?.university
 
     // Find articles that mention this person
-    // The mention format is: [@PersonName](/wiki/people/{id})
-    const mentionPattern = `/wiki/people/${person.id}`
+    // The mention format is: [@PersonName](/wiki/people/{slug})
+    const mentionPattern = `/wiki/people/${person.slug}`
 
     const mentioningArticles = await prisma.uniPage.findMany({
         where: {
