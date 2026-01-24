@@ -1,0 +1,61 @@
+
+> temp-app@0.1.0 lint
+> eslint
+
+
+C:\Users\thies\Antigravity\Cofactor Club\app\admin\backups\page.tsx
+  17:12  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\app\admin\dashboard\page.tsx
+  31:9  warning  'totalUniversities' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\app\admin\settings\page.tsx
+  4:10  warning  'Input' is defined but never used  @typescript-eslint/no-unused-vars
+  5:10  warning  'Label' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\app\admin\universities\UniversityManager.tsx
+  162:18  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\app\api\admin\backups\[filename]\route.ts
+  43:9  error  Include a description after the "@ts-expect-error" directive to explain why the @ts-expect-error is necessary. The description must be 3 characters or longer  @typescript-eslint/ban-ts-comment
+
+C:\Users\thies\Antigravity\Cofactor Club\app\members\member-row.tsx
+   6:11  warning  'MemberRowProps' is defined but never used          @typescript-eslint/no-unused-vars
+  48:24  warning  'setIsDisabled' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\app\wiki\institutes\[slug]\page.tsx
+  2:10  warning  'cn' is defined but never used      @typescript-eslint/no-unused-vars
+  5:10  warning  'Button' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\app\wiki\labs\[slug]\page.tsx
+  2:10  warning  'cn' is defined but never used      @typescript-eslint/no-unused-vars
+  5:10  warning  'Button' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\app\wiki\page.tsx
+    5:10  warning  'Button' is defined but never used        @typescript-eslint/no-unused-vars
+  147:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\thies\Antigravity\Cofactor Club\app\wiki\people-actions.ts
+   4:10  warning  'revalidatePath' is defined but never used           @typescript-eslint/no-unused-vars
+  56:9   error    'baseSlug' is never reassigned. Use 'const' instead  prefer-const
+
+C:\Users\thies\Antigravity\Cofactor Club\app\wiki\people\[slug]\page.tsx
+  14:11  warning  'session' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\components\WikiEditor.tsx
+    3:17  warning  'useState' is defined but never used      @typescript-eslint/no-unused-vars
+   94:68  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:52  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\thies\Antigravity\Cofactor Club\components\admin\BackupList.tsx
+  29:12  warning  'isRestoring' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thies\Antigravity\Cofactor Club\components\navbar.tsx
+  13:9  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+C:\Users\thies\Antigravity\Cofactor Club\lib\logger.ts
+  33:16  warning  'getUserId' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 23 problems (5 errors, 18 warnings)
+  1 error and 1 warning potentially fixable with the `--fix` option.
+

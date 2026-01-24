@@ -2,8 +2,6 @@ import { prisma } from '@/lib/prisma'
 import { ensureAbsoluteUrl } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
 import { notFound } from 'next/navigation'
 import { ExternalLink, Building2, FlaskConical, FileText } from 'lucide-react'
 
@@ -11,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function PersonPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
-    const session = await getServerSession(authOptions)
+
 
     const person = await prisma.person.findUnique({
         where: { slug },

@@ -128,7 +128,7 @@ model Lab {
 model Person {
   id           String   @id @default(cuid())
   name         String
-  slug         String   @unique
+  slug         String   @unique @default(cuid())
   role         String?
   fieldOfStudy String?
   image        String?

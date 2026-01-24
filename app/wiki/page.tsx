@@ -2,7 +2,6 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { AddArticleButton } from './AddArticleButton'
@@ -144,7 +143,8 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
     })
 
     // Fetch institutes from both universities for students with secondary
-    let institutes: any[] = []
+    type InstituteWithUniversity = { id: string; name: string; slug: string; universityId: string; university: { name: string } }
+    let institutes: InstituteWithUniversity[] = []
     if (universityIds.length > 0) {
         institutes = await prisma.institute.findMany({
             where: {

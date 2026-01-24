@@ -40,7 +40,7 @@ export async function GET(
         const stats = fs.statSync(filepath);
         const fileStream = fs.createReadStream(filepath);
 
-        // @ts-expect-error
+        // @ts-expect-error NextResponse supports streams but types are mismatched in this version
         return new NextResponse(fileStream, {
             headers: {
                 'Content-Disposition': `attachment; filename="${safeFilename}"`,

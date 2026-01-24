@@ -3,49 +3,8 @@
 import { useState } from 'react'
 import { Role } from '@prisma/client'
 
-interface MemberRowProps {
-    member: {
-        id: string
-        name: string | null
-        email: string
-        referralCode: string
-        role: Role
-        powerScore: number
-        emailVerified: Date | null
-        createdAt: Date
-        referredBy?: {
-            referrer?: {
-                name: string | null
-                referralCode: string
-            } | null
-        } | null
-        referralsMade: Array<{
-            referee: {
-                id: string
-                name: string | null
-                email: string
-            }
-        }>
-        revisions: Array<{
-            id: string
-            status: string
-            uniPage: {
-                slug: string
-                name: string
-            }
-        }>
-        stats: {
-            totalRevisions: number
-            approvedRevisions: number
-            pendingRevisions: number
-            rejectedRevisions: number
-        }
-    }
-    currentUserId: string
-}
-
 export function RoleForm({ memberId, currentRole, currentUserId }: { memberId: string, currentRole: Role, currentUserId: string }) {
-    const [isDisabled, setIsDisabled] = useState(memberId === currentUserId)
+    const [isDisabled] = useState(memberId === currentUserId)
 
     async function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
         const form = e.target.closest('form') as HTMLFormElement
@@ -57,12 +16,11 @@ export function RoleForm({ memberId, currentRole, currentUserId }: { memberId: s
             <input type="hidden" name="userId" value={memberId} />
             <select
                 name="role"
-                className={`h-8 rounded px-2 text-sm border-0 cursor-pointer ${
-                    currentRole === 'ADMIN' ? 'bg-red-500/20 text-red-500' :
+                className={`h-8 rounded px-2 text-sm border-0 cursor-pointer ${currentRole === 'ADMIN' ? 'bg-red-500/20 text-red-500' :
                     currentRole === 'STAFF' ? 'bg-blue-500/20 text-blue-500' :
-                    currentRole === 'PENDING_STAFF' ? 'bg-yellow-500/20 text-yellow-500' :
-                    'bg-gray-500/20 text-gray-500'
-                }`}
+                        currentRole === 'PENDING_STAFF' ? 'bg-yellow-500/20 text-yellow-500' :
+                            'bg-gray-500/20 text-gray-500'
+                    }`}
                 onChange={handleChange}
                 disabled={isDisabled}
             >
@@ -169,11 +127,10 @@ export function MemberRevisions({ revisions, stats }: { revisions: Array<{ id: s
                     <div className="absolute z-10 bg-popover border rounded p-2 mt-1 shadow-lg max-h-48 overflow-auto">
                         {revisions.map(rev => (
                             <div key={rev.id} className="text-xs whitespace-nowrap">
-                                <span className={`px-1 rounded ${
-                                    rev.status === 'APPROVED' ? 'bg-green-500/20 text-green-500' :
+                                <span className={`px-1 rounded ${rev.status === 'APPROVED' ? 'bg-green-500/20 text-green-500' :
                                     rev.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500' :
-                                    'bg-red-500/20 text-red-500'
-                                }`}>
+                                        'bg-red-500/20 text-red-500'
+                                    }`}>
                                     {rev.status}
                                 </span>
                                 {' '}{rev.uniPage.name}

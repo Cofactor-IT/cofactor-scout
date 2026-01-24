@@ -1,7 +1,6 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { revalidatePath } from 'next/cache'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
@@ -53,7 +52,7 @@ export async function addPerson(formData: FormData) {
     }
 
     // Generate slug from name
-    let baseSlug = name.toLowerCase()
+    const baseSlug = name.toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars
         .replace(/\s+/g, '-')           // Replace spaces with dashes
         .replace(/-+/g, '-')            // Collapse multiple dashes

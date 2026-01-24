@@ -27,19 +27,7 @@ export function generateRequestId(): string {
     return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 }
 
-/**
- * Get user ID from session if available
- */
-async function getUserId(): Promise<string | undefined> {
-    try {
-        const { getServerSession } = await import('next-auth')
-        const { authOptions } = await import('@/lib/auth-config')
-        const session = await getServerSession(authOptions)
-        return session?.user?.id
-    } catch {
-        return undefined
-    }
-}
+
 
 /**
  * Core logging function
@@ -153,4 +141,4 @@ declare global {
     var __requestId__: string | undefined
 }
 
-export {}
+export { }

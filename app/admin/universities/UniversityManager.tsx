@@ -159,7 +159,7 @@ export function UniversityManager({ universities }: { universities: University[]
             if (result.successCount > 0) {
                 setImportText('')
             }
-        } catch (error) {
+        } catch {
             setImportResult({ success: 0, errors: ['Failed to import universities'] })
         } finally {
             setIsImporting(false)

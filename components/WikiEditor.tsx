@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { MentionsInput, Mention } from 'react-mentions'
 
 interface WikiEditorProps {
@@ -91,7 +91,7 @@ export function WikiEditor({ value, onChange, placeholder }: WikiEditorProps) {
                             })
                             .then(res => {
                                 // Transform response to use link as id so markup template works
-                                const transformed = res.map((item: any) => ({
+                                const transformed = res.map((item: { link: string; display: string; type: string }) => ({
                                     id: item.link,  // Use the link URL as id
                                     display: item.display,
                                     type: item.type
@@ -105,7 +105,7 @@ export function WikiEditor({ value, onChange, placeholder }: WikiEditorProps) {
                     }}
                     markup="[@__display__](__id__)"
                     displayTransform={(id, display) => `@${display}`}
-                    renderSuggestion={(suggestion: any) => (
+                    renderSuggestion={(suggestion: { display: string; type: string }) => (
                         <div className="flex flex-col text-black">
                             <span className="font-bold">{suggestion.display}</span>
                             <span className="text-xs text-muted-foreground">{suggestion.type}</span>

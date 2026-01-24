@@ -184,8 +184,9 @@ export function BackupList({ backups, onRefresh }: BackupListProps) {
                                             title="Restore"
                                             className="text-orange-500 hover:text-orange-600"
                                             onClick={() => handleRestore(backup.name)}
+                                            disabled={isRestoring}
                                         >
-                                            <RotateCcw className="h-4 w-4" />
+                                            <RotateCcw className={`h-4 w-4 ${isRestoring ? 'animate-spin' : ''}`} />
                                         </Button>
 
                                         <Button

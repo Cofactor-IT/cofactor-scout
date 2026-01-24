@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BackupList } from '@/components/admin/BackupList';
 import { BackupStats } from '@/components/admin/BackupStats';
 import { Button } from '@/components/ui/button';
@@ -14,10 +14,7 @@ interface BackupFile {
 
 export default function BackupsPage() {
     const [backups, setBackups] = useState<BackupFile[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const fetchBackups = async () => {
-        setLoading(true);
+    const fetchBackups = useCallback(async () => {
         try {
             const res = await fetch('/api/admin/backups');
             if (res.ok) {
@@ -26,14 +23,13 @@ export default function BackupsPage() {
             }
         } catch (error) {
             console.error('Failed to fetch backups', error);
-        } finally {
-            setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchBackups();
-    }, []);
+    }, [fetchBackups]);
 
     const totalSize = backups.reduce((acc, curr) => acc + curr.size, 0);
     const lastBackup = backups.length > 0 ? new Date(backups[0].created) : null;
