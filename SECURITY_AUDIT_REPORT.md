@@ -15,10 +15,10 @@ This comprehensive security audit analyzed the Cofactor Club application across 
 ### Overall Risk Assessment: MEDIUM ✅ (Improved from MEDIUM-HIGH)
 
 | Severity | Count | Status |
-|----------|-------|--------|
+|----------|-------|---------|
 | Critical | 3 | ✅ All Fixed |
 | High | 5 | ✅ 4 Fixed, 1 Deferred |
-| Medium | 8 | ✅ 3 Fixed, 5 Deferred |
+| Medium | 8 | ✅ 6 Fixed, 2 Deferred |
 | Low | 4 | ⏸️ Backlog |
 | Info/Optimization | 6 | ⏸️ Backlog |
 
@@ -162,13 +162,14 @@ Added security headers:
 
 ## Medium Severity Issues
 
-### 9. ⏸️ DEFERRED: Duplicate Code in Admin Actions (MEDIUM)
+### 9. ✅ FIXED: Duplicate Code in Admin Actions (MEDIUM)
 
 **Location:** `app/admin/actions.ts:177-181`
 
 **Issue:** Redundant code paths with unreachable code after redirect.
 
-**Status:** Deferred - Low risk, code cleanup item.
+**Fix Applied (2026-01-24):**
+- Removed duplicate `revalidatePath('/wiki')` and `redirect('/wiki')` calls after the first redirect
 
 ### 10. ✅ FIXED: Information Disclosure via Error Messages (MEDIUM)
 
@@ -217,21 +218,26 @@ Added complexity requirements:
 
 **Status:** Deferred - Admin-only endpoint with filename validation. Consider adding magic byte validation.
 
-### 15. ⏸️ DEFERRED: Potential Race Condition in Referral Code Generation (MEDIUM)
+### 15. ✅ FIXED: Potential Race Condition in Referral Code Generation (MEDIUM)
 
-**Location:** `app/auth/actions.ts:46-56`
+**Location:** `app/auth/actions.ts:33-71`
 
-**Issue:** Referral code uniqueness check has race condition window.
+**Issue:** Referral code uniqueness check had race condition window.
 
-**Status:** Deferred - Database unique constraint provides fallback. Retry logic exists.
+**Fix Applied (2026-01-24):**
+- Refactored to generate new random suffix on each retry attempt
+- Added explicit comment noting database unique constraint as ultimate guarantee
+- Improved code structure with for-loop for clarity
 
-### 16. ⏸️ DEFERRED: Missing Request Size Limits (MEDIUM)
+### 16. ✅ FIXED: Missing Request Size Limits (MEDIUM)
 
-**Location:** Multiple API routes
+**Location:** `next.config.ts`
 
 **Issue:** No explicit limits on request body size.
 
-**Status:** Deferred - Next.js has default body size limits. Consider adding per-route limits.
+**Fix Applied (2026-01-24):**
+- Added `experimental.serverActions.bodySizeLimit: '1mb'` for server actions
+- Protects against DoS attacks via large payloads
 
 ---
 
