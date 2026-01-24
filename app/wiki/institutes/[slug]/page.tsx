@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth-config"
 import { notFound } from 'next/navigation'
 import { ProposeStructureModal } from '../../ProposeStructureModal'
 import { AddPersonModal } from '../../AddPersonModal'
+import { EditPersonModal, DeletePersonButton } from '../../EditPersonModal'
 import { AddArticleButton } from '../../AddArticleButton'
 
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,19 @@ export default async function InstitutePage({ params }: { params: Promise<{ slug
 
     if (!institute) {
         notFound()
+    }
+
+    // Check if user can edit (admin/staff or belongs to the same university)
+    let canEdit = false
+    if (session?.user?.email) {
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            select: { role: true, universityId: true }
+        })
+        if (user) {
+            const isAdmin = user.role === 'ADMIN' || user.role === 'STAFF'
+            canEdit = isAdmin || user.universityId === institute.universityId
+        }
     }
 
     return (
@@ -96,14 +110,28 @@ export default async function InstitutePage({ params }: { params: Promise<{ slug
                             <Card key={person.id} className="h-full">
                                 <CardContent className="pt-6">
                                     <div className="flex items-start justify-between">
-                                        <div>
-                                            <h3 className="font-semibold text-lg">{person.name}</h3>
+                                        <div className="flex-1">
+                                            <Link href={`/wiki/people/${person.id}`} className="hover:underline">
+                                                <h3 className="font-semibold text-lg">{person.name}</h3>
+                                            </Link>
                                             <p className="text-sm text-muted-foreground">{person.role}</p>
                                             {person.fieldOfStudy && (
                                                 <p className="text-xs text-muted-foreground mt-1">{person.fieldOfStudy}</p>
                                             )}
                                         </div>
-                                        {person.image && <div className="w-12 h-12 bg-muted rounded-full"></div>}
+                                        {canEdit && (
+                                            <div className="flex gap-1">
+                                                <EditPersonModal
+                                                    person={person}
+                                                    contextId={institute.id}
+                                                    contextType="institute"
+                                                />
+                                                <DeletePersonButton
+                                                    personId={person.id}
+                                                    personName={person.name}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                     {person.bio && (
                                         <p className="text-sm mt-3 line-clamp-3">{person.bio}</p>

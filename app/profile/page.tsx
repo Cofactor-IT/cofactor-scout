@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { syncSocials } from '../actions/social'
+
 import { SocialStats } from '@/lib/types'
 import Link from 'next/link'
 import { getServerSession } from "next-auth"
@@ -99,14 +99,9 @@ export default async function ProfilePage() {
                             </div>
                         </div>
 
-                        <div className="flex gap-2">
-                            <form action={syncSocials}>
-                                <Button variant="outline" className="flex-1">Sync Stats</Button>
-                            </form>
-                            <Link href="/profile/connect">
-                                <Button className="flex-1">Connect Accounts</Button>
-                            </Link>
-                        </div>
+                        <Link href="/profile/connect">
+                            <Button className="w-full">Connect Accounts</Button>
+                        </Link>
                     </CardContent>
                 </Card>
             </div>

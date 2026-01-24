@@ -34,6 +34,9 @@ A student ambassador network platform for managing referrals, tracking viral gro
   - **Students**: View/Edit own university wiki.
   - **Staff**: View/Edit all university wikis.
   - **Admins**: Full control over all wikis.
+- **@ Mentions**: Tag people, labs, and institutes in wiki articles with `@` autocomplete.
+- **Person Profiles**: Dedicated profile pages for persons showing bio, affiliations, and "Mentioned In" articles.
+- **Person Directory**: Add, edit, and delete persons from institutes and labs.
 - **Revision System**: Proposed edits require approval (Students) or are auto-approved (Staff).
 - **Published State**: Pages only visible after first approval
 - **Diff Viewer**: Visual comparison of edit proposals
@@ -175,6 +178,9 @@ cofactor-club/
 │   ├── auth/             # Sign-in/Sign-up pages
 │   ├── profile/          # User profile & social linking
 │   ├── wiki/             # University wiki pages
+│   │   ├── people/       # Person profile pages
+│   │   ├── institutes/   # Institute pages
+│   │   └── labs/         # Lab pages
 │   ├── leaderboard/      # Power Score rankings
 │   └── members/          # Members directory (admin only)
 ├── components/           # React components
