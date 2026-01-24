@@ -89,13 +89,21 @@ export function WikiEditor({ value, onChange, placeholder }: WikiEditorProps) {
                                 if (!res.ok) throw new Error(res.statusText)
                                 return res.json()
                             })
-                            .then(res => callback(res))
+                            .then(res => {
+                                // Transform response to use link as id so markup template works
+                                const transformed = res.map((item: any) => ({
+                                    id: item.link,  // Use the link URL as id
+                                    display: item.display,
+                                    type: item.type
+                                }))
+                                callback(transformed)
+                            })
                             .catch(err => {
                                 console.error("Mentions API Error:", err)
                                 callback([]) // Ensure menu doesn't hang
                             })
                     }}
-                    markup="[@__display__](__link__)"
+                    markup="[@__display__](__id__)"
                     displayTransform={(id, display) => `@${display}`}
                     renderSuggestion={(suggestion: any) => (
                         <div className="flex flex-col text-black">
