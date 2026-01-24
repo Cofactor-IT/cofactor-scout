@@ -105,10 +105,10 @@ export function WikiEditor({ value, onChange, placeholder }: WikiEditorProps) {
                     }}
                     markup="[@__display__](__id__)"
                     displayTransform={(id, display) => `@${display}`}
-                    renderSuggestion={(suggestion: { display: string; type: string }) => (
+                    renderSuggestion={(suggestion) => (
                         <div className="flex flex-col text-black">
                             <span className="font-bold">{suggestion.display}</span>
-                            <span className="text-xs text-muted-foreground">{suggestion.type}</span>
+                            <span className="text-xs text-muted-foreground">{(suggestion as { type?: string }).type}</span>
                         </div>
                     )}
                 />
