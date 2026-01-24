@@ -3,6 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: 'standalone',
 
+  // Request body size limits (DoS protection)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '1mb', // Default limit for server actions
+    },
+  },
+
   // Security headers
   async headers() {
     return [

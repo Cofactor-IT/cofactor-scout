@@ -176,8 +176,6 @@ export async function deletePage(slug: string) {
 
     revalidatePath('/wiki')
     redirect('/wiki')
-    revalidatePath('/wiki')
-    redirect('/wiki')
 }
 
 /**

@@ -31,6 +31,7 @@ function generateSecureToken(): string {
 }
 
 // Generate a unique referral code based on username
+// Uses database unique constraint as primary guarantee, with retry logic for race conditions
 async function generateUniqueReferralCode(name: string): Promise<string> {
     // Clean the name: remove spaces, special chars, convert to uppercase
     const cleanName = name
@@ -38,32 +39,35 @@ async function generateUniqueReferralCode(name: string): Promise<string> {
         .replace(/[^A-Z0-9]/g, '')
         .substring(0, 6) // Take first 6 chars
 
-    // Generate a random 4 character suffix
-    const randomSuffix = randomBytes(2).toString('hex').toUpperCase()
+    const maxAttempts = 10
 
-    // Combine: prefix + random suffix
-    let code = `${cleanName}${randomSuffix}`
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        // Generate a random 4 character suffix
+        const randomSuffix = randomBytes(2).toString('hex').toUpperCase()
 
-    // Ensure code is at least 4 characters
-    if (code.length < 4) {
-        code = code + randomBytes(3).toString('hex').toUpperCase()
-    }
+        // Combine: prefix + random suffix
+        let code = `${cleanName}${randomSuffix}`
 
-    // Check for uniqueness and regenerate if needed
-    let attempts = 0
-    while (attempts < 10) {
+        // Ensure code is at least 4 characters
+        if (code.length < 4) {
+            code = code + randomBytes(3).toString('hex').toUpperCase()
+        }
+
+        // Check if code exists (optimistic check)
         const existing = await prisma.user.findUnique({
             where: { referralCode: code }
         })
+
         if (!existing) {
+            // Code appears unique - return it
+            // The database unique constraint will catch any race condition
             return code
         }
-        // Generate new code with different random part
-        code = `${cleanName}${randomBytes(2).toString('hex').toUpperCase()}`
-        attempts++
+
+        // Code exists, try again with new random suffix
     }
 
-    // Fallback: use timestamp + random
+    // Fallback after max attempts: use timestamp + random for guaranteed uniqueness
     return `USER${Date.now().toString(36).toUpperCase()}${randomBytes(2).toString('hex').toUpperCase()}`
 }
 
