@@ -60,34 +60,40 @@ services:
     image: postgres:15-alpine
     restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/data:ro # Read-only access to data
       - backup-data:/backup
-      - ./scripts:/backup-scripts:ro
-      - /var/run/docker.sock:/var/run/docker.sock # Mount docker socket
     networks:
       - cofactor-net
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cofactor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-cofactor_db}
+      POSTGRES_HOST: db
     entrypoint: [ "/bin/sh", "-c" ]
     command:
       - |
-        # Install docker-cli for backup
-        apk add --no-cache docker-cli
-
         # Fix permissions for backup directory (allow web container uid 1001 to write)
         chown -R 1001:1001 /backup
 
-        # Wait for docker socket to be available
-        while ! docker info >/dev/null 2>&1; do
-          echo "Waiting for docker..."
+        # Wait for database to be ready
+        while ! pg_isready -h db -U $${POSTGRES_USER}; do
+          echo "Waiting for database..."
           sleep 5
         done
+
         # Run backup every 6 hours
         while true; do
           echo "[$$(date)] Starting scheduled backup..."
-          /backup-scripts/backup.sh
-          echo "[$$(date)] Backup complete. Next backup in 6 hours."
+          TIMESTAMP=$$(date +%Y-%m-%dT%H-%M-%S)
+          BACKUP_FILE="/backup/backup-$${TIMESTAMP}.sql.gz"
+          
+          # Use pg_dump directly with password from env
+          PGPASSWORD=$${POSTGRES_PASSWORD} pg_dump -h db -U $${POSTGRES_USER} -d $${POSTGRES_DB} | gzip > "$${BACKUP_FILE}"
+          
+          # Fix ownership so web container can manage the file
+          chown 1001:1001 "$${BACKUP_FILE}"
+          
+          echo "[$$(date)] Backup complete: $${BACKUP_FILE}"
+          echo "[$$(date)] Next backup in 6 hours."
           sleep 21600  # 6 hours
         done
     depends_on:

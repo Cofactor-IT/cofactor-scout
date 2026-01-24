@@ -3,10 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-config';
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
-import util from 'util';
-
-const execPromise = util.promisify(exec);
+import { spawn } from 'child_process';
 
 // Helper to check admin permission
 async function checkAdmin() {
@@ -21,6 +18,36 @@ async function checkAdmin() {
 }
 
 const BACKUP_DIR = process.env.BACKUP_DIR || '/backup';
+
+// Validate filename to prevent injection attacks
+function isValidFilename(filename: string): boolean {
+    // Only allow alphanumeric, dashes, underscores, and dots
+    return /^[a-zA-Z0-9_\-\.]+$/.test(filename);
+}
+
+// Execute command using spawn with argument array (prevents command injection)
+function execCommand(command: string, args: string[], env: NodeJS.ProcessEnv): Promise<{ stdout: string; stderr: string }> {
+    return new Promise((resolve, reject) => {
+        const proc = spawn(command, args, { env });
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', (data) => { stdout += data.toString(); });
+        proc.stderr.on('data', (data) => { stderr += data.toString(); });
+
+        proc.on('close', (code) => {
+            if (code === 0) {
+                resolve({ stdout, stderr });
+            } else {
+                reject(new Error(`Command failed with code ${code}: ${stderr}`));
+            }
+        });
+
+        proc.on('error', (err) => {
+            reject(err);
+        });
+    });
+}
 
 export async function GET() {
     if (!await checkAdmin()) {
@@ -64,29 +91,36 @@ export async function POST() {
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `backup-${timestamp}.sql`;
+
+        // Validate generated filename
+        if (!isValidFilename(filename)) {
+            return new NextResponse('Invalid filename generated', { status: 500 });
+        }
+
         const filepath = path.join(BACKUP_DIR, filename);
 
-        // Construct pg_dump command
+        // Database connection details
         const dbHost = process.env.POSTGRES_HOST || 'db';
         const dbUser = process.env.POSTGRES_USER || 'cofactor';
         const dbName = process.env.POSTGRES_DB || 'cofactor_db';
         const dbPassword = process.env.POSTGRES_PASSWORD;
 
-        // Command assumes pg_dump is available (installed via apk add postgresql-client)
-        // We pass PGPASSWORD via env
+        // Use spawn with argument array to prevent command injection
         const env = { ...process.env, PGPASSWORD: dbPassword };
-        const command = `pg_dump -h ${dbHost} -U ${dbUser} -d ${dbName} -f "${filepath}"`;
 
-        console.log('Starting backup:', command);
-        await execPromise(command, { env });
+        console.log('Starting backup to:', filename);
 
-        // Optional: Compress
-        await execPromise(`gzip "${filepath}"`);
+        // Execute pg_dump with argument array
+        await execCommand('pg_dump', ['-h', dbHost, '-U', dbUser, '-d', dbName, '-f', filepath], env);
+
+        // Compress the backup
+        await execCommand('gzip', [filepath], env);
         const finalFilename = `${filename}.gz`;
 
         return NextResponse.json({ success: true, filename: finalFilename });
     } catch (error) {
         console.error('Backup create error:', error);
-        return new NextResponse('Failed to create backup: ' + (error instanceof Error ? error.message : String(error)), { status: 500 });
+        // Return generic error message to prevent information disclosure
+        return new NextResponse('Failed to create backup', { status: 500 });
     }
 }

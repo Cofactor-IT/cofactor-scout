@@ -12,9 +12,17 @@ import { randomBytes, randomInt } from 'crypto'
 const signupAttempts = new Map<string, { count: number; resetTime: number }>()
 const passwordResetAttempts = new Map<string, { count: number; resetTime: number }>()
 
-// Generate a cryptographically secure 6-digit code for password reset
+// Store for rate limiting password reset verification attempts
+const resetVerifyAttempts = new Map<string, { count: number; resetTime: number }>()
+
+// Generate a 6-character alphanumeric code for password reset
 function generateToken(): string {
-    return randomInt(100000, 1000000).toString()
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Exclude confusing chars: 0,O,1,I
+    let result = ''
+    for (let i = 0; i < 6; i++) {
+        result += chars.charAt(randomInt(0, chars.length))
+    }
+    return result
 }
 
 function generateSecureToken(): string {
@@ -316,6 +324,20 @@ export async function resetPassword(prevState: { error?: string; success?: strin
 
     if (!token || !password) {
         return { error: 'Invalid request' }
+    }
+
+    // Rate limiting for password reset verification (prevent brute force)
+    const now = Date.now()
+    const verifyAttempt = resetVerifyAttempts.get(token)
+
+    if (!verifyAttempt || now > verifyAttempt.resetTime) {
+        resetVerifyAttempts.set(token, { count: 1, resetTime: now + 15 * 60 * 1000 }) // 15 min window
+    } else {
+        verifyAttempt.count++
+        if (verifyAttempt.count > 5) { // 5 attempts per 15 minutes
+            logger.warn('Rate limit exceeded for password reset verification', { token: token.substring(0, 2) + '...' })
+            return { error: 'Too many attempts. Please request a new reset code.' }
+        }
     }
 
     if (password.length < 8) {
