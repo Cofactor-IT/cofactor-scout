@@ -34,7 +34,7 @@ A student ambassador network platform for managing referrals, tracking viral gro
   - **Students**: View/Edit own university wiki.
   - **Staff**: View/Edit all university wikis.
   - **Admins**: Full control over all wikis.
-- **@ Mentions**: Tag people, labs, and institutes in wiki articles with `@` autocomplete.
+- **@ Mentions**: Tag people, labs, and institutes in wiki articles with `@` autocomplete; links directly to profiles.
 - **Person Profiles**: Dedicated profile pages for persons showing bio, affiliations, and "Mentioned In" articles.
 - **Person Directory**: Add, edit, and delete persons from institutes and labs.
 - **Revision System**: Proposed edits require approval (Students) or are auto-approved (Staff).
@@ -42,17 +42,27 @@ A student ambassador network platform for managing referrals, tracking viral gro
 - **Diff Viewer**: Visual comparison of edit proposals
 - **XSS Protection**: All content sanitized with DOMPurify
 
+### 👤 Profile & Settings
+- **Personalization**: Update display name, bio, and avatar.
+- **Account Security**: Change password functionality.
+- **Privacy Controls**: Toggle between **Public** (visible to all) and **Private** profiles.
+- **Multi-University Support**:
+  - **Primary University**: Assigned via email domain.
+  - **Secondary University**: Request affiliation with a second university by providing proof.
+  - **Unlink**: Option to remove secondary university affiliation.
+
 ### 🏫 University Management
 - **Admin Control**: Create and manage universities with associated email domains.
 - **Auto-Detection**: Users are automatically assigned to a university based on their email domain during signup.
 - **Manual Assignment**: Admins can manually assign or correct university affiliation.
 
 ### 📊 Admin Dashboard
-- **KPI Cards**: Total users, referrals, social reach, pending actions
+- **KPI Cards**: Total users, referals, social reach, pending actions
 - **Leaderboard**: Top 10 performers by Power Score
 - **Recent Signups**: Latest members with role badges
 - **Activity Hotspots**: Most edited wiki pages
 - **Staff Applications**: Approve/reject pending staff
+- **Security & Backups**: Database backup management and security monitoring.
 
 ---
 
@@ -227,6 +237,7 @@ cofactor-club/
 | XSS Prevention | isomorphic-dompurify |
 | CSRF Protection | Server Actions with form tokens |
 | Secrets | Environment variables only |
+| **Audit Status** | **Passed** (Jan 2026) - Fixed Command Injection & Debug Endpoints |
 
 ---
 
