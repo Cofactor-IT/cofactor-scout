@@ -113,6 +113,30 @@ export async function cancelSecondaryRequest(requestId: string) {
 }
 
 /**
+ * Unlink the current user's secondary university
+ */
+export async function unlinkSecondaryUniversity() {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+        return { error: 'You must be logged in' }
+    }
+
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { secondaryUniversityId: null }
+        })
+
+        revalidatePath('/profile')
+        return { success: true }
+    } catch (error) {
+        console.error('Failed to unlink secondary university:', error)
+        return { error: 'Failed to unlink university. Please try again.' }
+    }
+}
+
+/**
  * Get all approved universities for the dropdown
  */
 export async function getApprovedUniversities() {

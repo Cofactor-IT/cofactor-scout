@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { requestSecondaryUniversity, cancelSecondaryRequest } from './actions'
+import { requestSecondaryUniversity, cancelSecondaryRequest, unlinkSecondaryUniversity } from './actions'
 
 type University = {
     id: string
@@ -86,9 +86,27 @@ export function SecondaryUniversityCard({
                             Approved
                         </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-3">
+                    <p className="text-sm text-muted-foreground mt-3 mb-4">
                         You can view wiki articles and resources from this university.
                     </p>
+                    {error && <p className="text-sm text-destructive mb-2">{error}</p>}
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                            if (confirm('Are you sure you want to unlink your secondary university?')) {
+                                startTransition(async () => {
+                                    const result = await unlinkSecondaryUniversity()
+                                    if (result.error) {
+                                        setError(result.error)
+                                    }
+                                })
+                            }
+                        }}
+                        disabled={isPending}
+                    >
+                        {isPending ? 'Unlinking...' : 'Unlink University'}
+                    </Button>
                 </CardContent>
             </Card>
         )
