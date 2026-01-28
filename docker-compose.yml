@@ -23,6 +23,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-cofactor_db}
     volumes:
       - backup-data:/backup
+      - uploads-data:/app/public/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -122,3 +123,4 @@ networks:
 volumes:
   postgres_data:
   backup-data:
+  uploads-data:

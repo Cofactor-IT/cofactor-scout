@@ -197,9 +197,33 @@ export async function deletePerson(id: string) {
         throw new Error("Unauthorized access")
     }
 
-    await prisma.person.delete({
-        where: { id }
+    // Check if person is linked to a user (Public Profile)
+    const personWithUser = await prisma.person.findUnique({
+        where: { id },
+        include: { linkedUser: true }
     })
+
+    if (personWithUser?.linkedUser) {
+        // Soft delete: Make profile private and remove from directory (unlink from institute/lab)
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: personWithUser.linkedUser.id },
+                data: { isPublicProfile: false }
+            }),
+            prisma.person.update({
+                where: { id },
+                data: {
+                    instituteId: null,
+                    labId: null
+                }
+            })
+        ])
+    } else {
+        // Hard delete for manual entries
+        await prisma.person.delete({
+            where: { id }
+        })
+    }
 
     return { success: true }
 }
