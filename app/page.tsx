@@ -15,7 +15,7 @@ export default function Home() {
         <Link href="/leaderboard">
           <Button size="lg" className="h-12 px-8 text-lg">View Leaderboard</Button>
         </Link>
-        <Link href="/wiki/stanford">
+        <Link href="/wiki">
           <Button size="lg" variant="outline" className="h-12 px-8 text-lg">Explore Wiki</Button>
         </Link>
       </div>

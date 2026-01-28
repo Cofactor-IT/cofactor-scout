@@ -51,9 +51,7 @@ export function Navbar() {
                             </>
                         ) : (
                             <>
-                                <Link href="/profile">
-                                    <Button variant="ghost" size="sm">Profile</Button>
-                                </Link>
+
                                 <Link href="/members">
                                     <Button variant="ghost" size="sm">Members</Button>
                                 </Link>
@@ -63,9 +61,9 @@ export function Navbar() {
                                     </Link>
                                 )}
                                 <div className="flex items-center space-x-2 border-l pl-2 ml-2">
-                                    <span className="text-sm font-medium hidden sm:inline">
+                                    <Link href="/profile" className="text-sm font-medium hidden sm:inline hover:underline">
                                         {user.name || user.email}
-                                    </span>
+                                    </Link>
                                     <Button
                                         variant="outline"
                                         size="sm"
