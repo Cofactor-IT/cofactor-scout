@@ -98,7 +98,7 @@ export async function approveUniversity(universityId: string) {
 /**
  * Update a university - ADMIN ONLY
  */
-export async function updateUniversity(universityId: string, name: string, domains: string[]) {
+export async function updateUniversity(universityId: string, name: string, domains: string[], logo?: string | null) {
     await requireAdmin()
 
     if (!name?.trim()) {
@@ -133,15 +133,24 @@ export async function updateUniversity(universityId: string, name: string, domai
         }
     }
 
+    // Build update data
+    const updateData: { name: string; domains: string[]; logo?: string | null } = {
+        name: name.trim(),
+        domains: domains.map(d => d.toLowerCase())
+    }
+
+    // Only update logo if explicitly provided (including null to remove)
+    if (logo !== undefined) {
+        updateData.logo = logo
+    }
+
     await prisma.university.update({
         where: { id: universityId },
-        data: {
-            name: name.trim(),
-            domains: domains.map(d => d.toLowerCase())
-        }
+        data: updateData
     })
 
     revalidatePath('/admin/universities')
+    revalidatePath('/wiki')
 }
 
 /**

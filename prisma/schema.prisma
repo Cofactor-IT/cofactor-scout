@@ -12,6 +12,7 @@ model User {
   id                  String      @id @default(cuid())
   email               String      @unique
   name                String?
+  bio                 String?     // Personal description/bio
   password            String?
   role                Role        @default(STUDENT)
   referralCode        String      @unique
@@ -22,6 +23,9 @@ model User {
   verificationExpires DateTime?
   failedLoginAttempts Int         @default(0)
   lockedUntil         DateTime?
+  isPublicProfile     Boolean     @default(false)
+  publicPersonId      String?     @unique  // Link to Person record when public
+  publicPerson        Person?     @relation("UserPublicPerson", fields: [publicPersonId], references: [id])
   universityId          String?
   university            University? @relation("PrimaryUniversity", fields: [universityId], references: [id])
   secondaryUniversityId String?
@@ -47,6 +51,7 @@ model University {
   id        String   @id @default(cuid())
   name      String   @unique
   domains   String[] // Array of email domains (e.g., ["tu-berlin.de", "campus.tu-berlin.de"])
+  logo      String?  // Optional logo image path
   approved  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -143,6 +148,8 @@ model Person {
   
   labId       String?
   lab         Lab?       @relation(fields: [labId], references: [id])
+  
+  linkedUser  User?      @relation("UserPublicPerson")  // Link to user if this is their public profile
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

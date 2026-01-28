@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-
+import { Settings } from 'lucide-react'
 import { SocialStats } from '@/lib/types'
 import Link from 'next/link'
 import { getServerSession } from "next-auth"
@@ -59,7 +59,14 @@ export default async function ProfilePage() {
 
     return (
         <div className="container mx-auto py-10">
-            <h1 className="text-4xl font-bold mb-8">My Profile</h1>
+            <div className="flex items-center justify-between mb-8">
+                <h1 className="text-4xl font-bold">My Profile</h1>
+                <Link href="/profile/settings">
+                    <Button variant="outline">
+                        <Settings className="h-4 w-4 mr-2" /> Settings
+                    </Button>
+                </Link>
+            </div>
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Primary University Card */}

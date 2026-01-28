@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { AddArticleButton } from './AddArticleButton'
@@ -67,7 +68,19 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                         <Link key={uni.id} href={`/wiki?universityId=${uni.id}`}>
                             <Card className="hover:bg-muted/50 transition-colors h-full flex flex-col items-center justify-center py-8">
                                 <CardContent className="text-center p-0">
-                                    <div className="mb-4 text-4xl">📁</div>
+                                    <div className="mb-4">
+                                        {uni.logo ? (
+                                            <Image
+                                                src={uni.logo}
+                                                alt={`${uni.name} logo`}
+                                                width={64}
+                                                height={64}
+                                                className="rounded-lg object-contain mx-auto"
+                                            />
+                                        ) : (
+                                            <span className="text-4xl">📁</span>
+                                        )}
+                                    </div>
                                     <CardTitle className="mb-2">{uni.name}</CardTitle>
                                     <p className="text-muted-foreground text-sm">
                                         {uni._count.pages} articles
@@ -118,17 +131,78 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
         )
     }
 
-    // Build where clause - for students with secondary university, fetch from both
-    const universityIds = [targetUniversityId].filter(Boolean) as string[]
+    // Students with 2 universities: show folder view like admins
+    const hasSecondaryUniversity = !isAdmin && userSecondaryUniversityId && !universityId;
 
-    // For students (not admins browsing), also include secondary university content
-    if (!isAdmin && userSecondaryUniversityId && !universityId) {
-        universityIds.push(userSecondaryUniversityId)
+    if (hasSecondaryUniversity) {
+        // Fetch both universities with page counts for folder view
+        const userUniversities = await prisma.university.findMany({
+            where: {
+                id: { in: [userUniversityId!, userSecondaryUniversityId!] }
+            },
+            include: {
+                _count: {
+                    select: { pages: true, institutes: true }
+                }
+            },
+            orderBy: { name: 'asc' }
+        });
+
+        return (
+            <div className="container mx-auto py-10">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-4xl font-bold">My Universities Wiki</h1>
+                        <p className="text-muted-foreground mt-2">
+                            Select a university to view its content.
+                        </p>
+                    </div>
+                    <AddArticleButton />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {userUniversities.map((uni) => (
+                        <Link key={uni.id} href={`/wiki?universityId=${uni.id}`}>
+                            <Card className="hover:bg-muted/50 transition-colors h-full flex flex-col items-center justify-center py-12 border-2 hover:border-primary/50">
+                                <CardContent className="text-center p-0">
+                                    <div className="mb-4">
+                                        {uni.logo ? (
+                                            <Image
+                                                src={uni.logo}
+                                                alt={`${uni.name} logo`}
+                                                width={80}
+                                                height={80}
+                                                className="rounded-lg object-contain mx-auto"
+                                            />
+                                        ) : (
+                                            <span className="text-5xl">📁</span>
+                                        )}
+                                    </div>
+                                    <CardTitle className="mb-3 text-xl">{uni.name}</CardTitle>
+                                    <div className="flex gap-4 justify-center text-muted-foreground text-sm">
+                                        <span>{uni._count.pages} articles</span>
+                                        <span>•</span>
+                                        <span>{uni._count.institutes} institutes</span>
+                                    </div>
+                                    {uni.id === userUniversityId && (
+                                        <Badge variant="outline" className="mt-3">Primary</Badge>
+                                    )}
+                                    {uni.id === userSecondaryUniversityId && (
+                                        <Badge variant="secondary" className="mt-3">Secondary</Badge>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+        )
     }
 
-    const whereClause = universityIds.length > 1
-        ? { universityId: { in: universityIds } }
-        : { universityId: targetUniversityId }
+    // Single university view (or admin drilling down into specific university)
+    const universityIds = [targetUniversityId].filter(Boolean) as string[]
+
+    const whereClause = { universityId: targetUniversityId! }
 
     const pages = await prisma.uniPage.findMany({
         where: {
@@ -142,13 +216,13 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
         orderBy: { name: 'asc' }
     })
 
-    // Fetch institutes from both universities for students with secondary
+    // Fetch institutes for this university
     type InstituteWithUniversity = { id: string; name: string; slug: string; universityId: string; university: { name: string } }
     let institutes: InstituteWithUniversity[] = []
     if (universityIds.length > 0) {
         institutes = await prisma.institute.findMany({
             where: {
-                universityId: { in: universityIds },
+                universityId: universityIds[0],
                 approved: true
             },
             include: {
@@ -157,6 +231,9 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
             orderBy: { name: 'asc' }
         })
     }
+
+    // Check if student is viewing from folder selection (has universityId param but not admin)
+    const isStudentDrillDown = !isAdmin && universityId;
 
     return (
         <div className="container mx-auto py-10">
@@ -167,20 +244,17 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                             &larr; Back to Universities
                         </Link>
                     )}
-                    <h1 className="text-4xl font-bold">
-                        {universityIds.length > 1
-                            ? 'My Universities Wiki'
-                            : targetUniversityName
-                                ? `${targetUniversityName} Wiki`
-                                : 'University Wiki'}
-                    </h1>
-                    {universityIds.length > 1 && !isAdmin && (
-                        <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">{userUniversityName}</Badge>
-                            <Badge variant="secondary">{userSecondaryUniversityName}</Badge>
-                        </div>
+                    {isStudentDrillDown && userSecondaryUniversityId && (
+                        <Link href="/wiki" className="text-sm text-muted-foreground hover:underline mb-2 block">
+                            &larr; Back to My Universities
+                        </Link>
                     )}
-                    {universityIds.length === 1 && targetUniversityName && !isAdmin && (
+                    <h1 className="text-4xl font-bold">
+                        {targetUniversityName
+                            ? `${targetUniversityName} Wiki`
+                            : 'University Wiki'}
+                    </h1>
+                    {targetUniversityName && !isAdmin && (
                         <p className="text-muted-foreground mt-2">
                             Exclusive content for {targetUniversityName} students.
                         </p>
@@ -211,14 +285,7 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                                     <div className="text-3xl mr-4">🏛️</div>
                                     <div className="flex-1">
                                         <CardTitle className="text-lg">{inst.name}</CardTitle>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-xs text-muted-foreground">Institute</span>
-                                            {universityIds.length > 1 && inst.university && (
-                                                <Badge variant="outline" className="text-[10px] h-5">
-                                                    {inst.university.name}
-                                                </Badge>
-                                            )}
-                                        </div>
+                                        <span className="text-xs text-muted-foreground">Institute</span>
                                     </div>
                                 </Card>
                             </Link>
@@ -238,14 +305,7 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                         <Link key={page.id} href={`/wiki/${page.slug}`}>
                             <Card className="hover:bg-muted/50 transition-colors h-full">
                                 <CardHeader>
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle>{page.name}</CardTitle>
-                                        {universityIds.length > 1 && page.university && (
-                                            <Badge variant="outline" className="text-[10px] shrink-0">
-                                                {page.university.name}
-                                            </Badge>
-                                        )}
-                                    </div>
+                                    <CardTitle>{page.name}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-sm text-muted-foreground line-clamp-3">

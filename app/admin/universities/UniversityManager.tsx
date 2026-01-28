@@ -6,14 +6,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { useActionState, useState, useTransition } from 'react'
+import { useActionState, useState, useTransition, useRef } from 'react'
 import { createUniversity, deleteUniversity, approveUniversity, updateUniversity, importUniversities } from './actions'
 import { Textarea } from '@/components/ui/textarea'
+import Image from 'next/image'
 
 type University = {
     id: string
     name: string
     domains: string[]
+    logo: string | null
     approved: boolean
     createdAt: Date
     _count: { users: number }
@@ -27,8 +29,13 @@ export function UniversityManager({ universities }: { universities: University[]
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editName, setEditName] = useState('')
     const [editDomains, setEditDomains] = useState<string[]>([''])
+    const [editLogo, setEditLogo] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
     const [editError, setEditError] = useState<string | null>(null)
+
+    // Logo upload state
+    const [isUploading, setIsUploading] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     // Import state
     const [importText, setImportText] = useState('')
@@ -70,6 +77,7 @@ export function UniversityManager({ universities }: { universities: University[]
         setEditingId(uni.id)
         setEditName(uni.name)
         setEditDomains(uni.domains.length > 0 ? [...uni.domains] : [''])
+        setEditLogo(uni.logo)
         setEditError(null)
     }
 
@@ -77,7 +85,47 @@ export function UniversityManager({ universities }: { universities: University[]
         setEditingId(null)
         setEditName('')
         setEditDomains([''])
+        setEditLogo(null)
         setEditError(null)
+    }
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !editingId) return
+
+        setIsUploading(true)
+        setEditError(null)
+
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('universityId', editingId)
+
+            const response = await fetch('/api/admin/universities/upload-logo', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await response.json()
+
+            if (!response.ok) {
+                setEditError(result.error || 'Upload failed')
+                return
+            }
+
+            setEditLogo(result.path)
+        } catch {
+            setEditError('Failed to upload logo')
+        } finally {
+            setIsUploading(false)
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''
+            }
+        }
+    }
+
+    const removeLogo = () => {
+        setEditLogo(null)
     }
 
     const saveEdit = async () => {
@@ -95,7 +143,7 @@ export function UniversityManager({ universities }: { universities: University[]
 
         startTransition(async () => {
             try {
-                await updateUniversity(editingId, editName.trim(), validDomains)
+                await updateUniversity(editingId, editName.trim(), validDomains, editLogo)
                 setEditingId(null)
                 setEditError(null)
             } catch (e) {
@@ -309,7 +357,7 @@ export function UniversityManager({ universities }: { universities: University[]
                 <Card className="border-2 border-primary">
                     <CardHeader>
                         <CardTitle>Edit University</CardTitle>
-                        <CardDescription>Update university name and email domains.</CardDescription>
+                        <CardDescription>Update university name, email domains, and logo.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
@@ -344,6 +392,59 @@ export function UniversityManager({ universities }: { universities: University[]
                                 </Button>
                             </div>
 
+                            {/* Logo Upload Section */}
+                            <div className="space-y-2">
+                                <Label>University Logo</Label>
+                                <div className="flex items-center gap-4">
+                                    {editLogo ? (
+                                        <div className="relative">
+                                            <Image
+                                                src={editLogo}
+                                                alt="University logo"
+                                                width={80}
+                                                height={80}
+                                                className="rounded-lg object-contain border bg-white"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                                                onClick={removeLogo}
+                                            >
+                                                ✕
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="w-20 h-20 border-2 border-dashed rounded-lg flex items-center justify-center text-muted-foreground">
+                                            📁
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                                            onChange={handleLogoUpload}
+                                            className="hidden"
+                                            id="logo-upload"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isUploading}
+                                        >
+                                            {isUploading ? 'Uploading...' : editLogo ? 'Change Logo' : 'Upload Logo'}
+                                        </Button>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            PNG, JPG, WEBP, or SVG. Max 2MB.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             {editError && (
                                 <p className="text-sm text-destructive">{editError}</p>
                             )}
@@ -374,6 +475,7 @@ export function UniversityManager({ universities }: { universities: University[]
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>Logo</TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Domains</TableHead>
                                     <TableHead>Students</TableHead>
@@ -384,6 +486,19 @@ export function UniversityManager({ universities }: { universities: University[]
                             <TableBody>
                                 {approvedUniversities.map((uni) => (
                                     <TableRow key={uni.id}>
+                                        <TableCell>
+                                            {uni.logo ? (
+                                                <Image
+                                                    src={uni.logo}
+                                                    alt={`${uni.name} logo`}
+                                                    width={32}
+                                                    height={32}
+                                                    className="rounded object-contain"
+                                                />
+                                            ) : (
+                                                <span className="text-xl">📁</span>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="font-medium">{uni.name}</TableCell>
                                         <TableCell>
                                             <div className="flex flex-wrap gap-1">
