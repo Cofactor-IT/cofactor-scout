@@ -404,6 +404,7 @@ export function UniversityManager({ universities }: { universities: University[]
                                                 width={80}
                                                 height={80}
                                                 className="rounded-lg object-contain border bg-white"
+                                                unoptimized
                                             />
                                             <Button
                                                 type="button"
@@ -494,6 +495,7 @@ export function UniversityManager({ universities }: { universities: University[]
                                                     width={32}
                                                     height={32}
                                                     className="rounded object-contain"
+                                                    unoptimized
                                                 />
                                             ) : (
                                                 <span className="text-xl">📁</span>

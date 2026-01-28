@@ -76,6 +76,7 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                                                 width={64}
                                                 height={64}
                                                 className="rounded-lg object-contain mx-auto"
+                                                unoptimized
                                             />
                                         ) : (
                                             <span className="text-4xl">📁</span>
@@ -173,6 +174,7 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                                                 width={80}
                                                 height={80}
                                                 className="rounded-lg object-contain mx-auto"
+                                                unoptimized
                                             />
                                         ) : (
                                             <span className="text-5xl">📁</span>
