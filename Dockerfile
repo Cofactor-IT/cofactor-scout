@@ -39,7 +39,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Install openssl for Prisma runtime on ARM64
-RUN apk add --no-cache openssl postgresql-client
+RUN apk add --no-cache openssl postgresql-client && npm install -g pm2
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -69,4 +69,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["node", "server.js"]
+CMD ["pm2-runtime", "start", "server.js", "-i", "3", "--max-memory-restart", "4G"]

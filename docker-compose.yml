@@ -30,7 +30,7 @@ services:
     networks:
       - cofactor-net
     healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health" ]
+      test: [ "CMD-SHELL", "pm2 jlist | grep -q 'online' && wget -q -O /dev/null http://127.0.0.1:3000/api/health" ]
       interval: 10s
       timeout: 5s
       start_period: 60s
@@ -39,6 +39,7 @@ services:
   db:
     image: postgres:15-alpine
     restart: always
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
     ports:
       - "127.0.0.1:5432:5432" # Only accessible from localhost
     environment:
@@ -48,6 +49,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - backup-data:/backup
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     networks:
       - cofactor-net
     healthcheck:

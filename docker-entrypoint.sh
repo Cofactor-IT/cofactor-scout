@@ -27,6 +27,6 @@ const prisma = new PrismaClient();
 })();
 "
 
-# Start the Next.js server
+# Start the Next.js server (command from Dockerfile CMD)
 echo "Starting Next.js server..."
-exec node server.js
+exec "$@"
