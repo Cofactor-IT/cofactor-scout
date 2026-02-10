@@ -15,6 +15,8 @@ import {
 } from '@/lib/sanitization'
 import { validateContent, filterContent } from '@/lib/moderation/content-filter'
 import { logger } from '@/lib/logger'
+import { getDailyChangeCount } from '@/lib/user-limits'
+import { getSystemSettings } from '@/lib/settings'
 
 export async function addPerson(formData: FormData) {
     const session = await getServerSession(authOptions)
@@ -45,7 +47,7 @@ export async function addPerson(formData: FormData) {
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true, role: true, universityId: true }
+        select: { id: true, role: true, universityId: true, isTrusted: true }
     })
 
     if (!user) throw new Error("User not found")
@@ -142,6 +144,17 @@ export async function addPerson(formData: FormData) {
         attempts++
     }
 
+    let approved = false
+    if (user.id) {
+        const isStaff = user.role === 'ADMIN' || user.role === 'STAFF'
+        approved = isStaff
+        if (!approved && user.isTrusted) {
+            const changes = await getDailyChangeCount(user.id)
+            const settings = await getSystemSettings()
+            if (changes < settings.trustedUserDailyLimit) approved = true
+        }
+    }
+
     await prisma.person.create({
         data: {
             name: nameValidation.sanitized,
@@ -153,7 +166,9 @@ export async function addPerson(formData: FormData) {
             twitter: urlValidation.data.twitter,
             website: urlValidation.data.website,
             instituteId: instituteId || null,
-            labId: labId || null
+            labId: labId || null,
+            approved,
+            authorId: user.id
         }
     })
 

@@ -177,9 +177,12 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                             <Button variant="destructive" size="sm">Delete Page</Button>
                         </form>
                     )}
-                    <Link href={`/wiki/${slug}/history`}>
-                        <Button variant="ghost">History</Button>
-                    </Link>
+                    {/* HISTORY BUTTON - ADMIN/STAFF ONLY */}
+                    {(session?.user?.role === 'ADMIN' || session?.user?.role === 'STAFF') && (
+                        <Link href={`/wiki/${slug}/history`}>
+                            <Button variant="ghost">History</Button>
+                        </Link>
+                    )}
                     <Link href={`/wiki/${slug}/edit`}>
                         <Button variant="outline">Edit Page</Button>
                     </Link>

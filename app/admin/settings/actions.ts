@@ -79,3 +79,29 @@ export async function updateNotificationSettings(data: {
         throw new Error('Failed to update settings')
     }
 }
+
+export async function updateTrustedUserSettings(limit: number) {
+    await requireAdmin()
+
+    try {
+        const existing = await prisma.systemSettings.findFirst()
+
+        if (existing) {
+            await prisma.systemSettings.update({
+                where: { id: existing.id },
+                data: { trustedUserDailyLimit: limit }
+            })
+        } else {
+            await prisma.systemSettings.create({
+                data: { trustedUserDailyLimit: limit }
+            })
+        }
+
+        revalidatePath('/admin/settings')
+        logger.info('Trusted user settings updated', { limit })
+        return { success: true }
+    } catch (error) {
+        logger.error('Failed to update trusted user settings', error as Error)
+        throw new Error('Failed to update settings')
+    }
+}

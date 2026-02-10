@@ -19,6 +19,29 @@ export default async function HistoryPage({ params }: { params: Promise<{ slug: 
         where: { slug }
     })
 
+    // Strict Authorization Check: Only Admin/Staff can view full history
+    const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'STAFF'
+
+    if (!isAdmin) {
+        return (
+            <div className="container mx-auto py-10">
+                <Card className="max-w-md mx-auto border-destructive/50 bg-destructive/5">
+                    <CardHeader>
+                        <CardTitle className="text-destructive">Access Denied</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>Only administrators can view revision history.</p>
+                        <div className="mt-4">
+                            <Link href={`/wiki/${slug}`}>
+                                <Button variant="outline">Back to Article</Button>
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
     if (!uniPage) {
         return (
             <div className="container mx-auto py-10">
@@ -47,7 +70,7 @@ export default async function HistoryPage({ params }: { params: Promise<{ slug: 
     const currentRevision = revisions.find(r => r.status === 'APPROVED')
     const currentRevisionId = currentRevision ? currentRevision.id : null
 
-    const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'STAFF'
+
 
     return (
         <div className="container mx-auto py-10">
@@ -70,9 +93,7 @@ export default async function HistoryPage({ params }: { params: Promise<{ slug: 
                             <div key={rev.id} className="flex flex-col sm:flex-row justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-semibold">
-                                            {rev.title || uniPage.name}
-                                        </span>
+                                        {(rev as any).title || uniPage.name}
                                         <Badge variant={
                                             rev.status === 'APPROVED' ? 'default' :
                                                 rev.status === 'PENDING' ? 'secondary' :

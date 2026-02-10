@@ -10,6 +10,8 @@ import { wikiSubmissionSchema, wikiSlugSchema } from '@/lib/validation'
 import { sanitizeHtmlContent, containsSqlInjection } from '@/lib/sanitization'
 import { moderateContent } from '@/lib/moderation'
 import { logger } from '@/lib/logger'
+import { getDailyChangeCount } from '@/lib/user-limits'
+import { getSystemSettings } from '@/lib/settings'
 
 export async function proposeEdit(formData: FormData) {
     const slug = formData.get('slug') as string
@@ -39,6 +41,7 @@ export async function proposeEdit(formData: FormData) {
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
+        select: { id: true, role: true, universityId: true, isTrusted: true, name: true, email: true }
     })
 
     if (!user) {
@@ -192,18 +195,10 @@ export async function proposeEdit(formData: FormData) {
         // REPLACED: Reputation based auto-approval with Admin-assigned Trusted status
         if (user.isTrusted && moderationResult.action === 'approve') {
             // Check daily limit
-            const startOfDay = new Date()
-            startOfDay.setHours(0, 0, 0, 0)
+            const dailyChanges = await getDailyChangeCount(user.id)
+            const settings = await getSystemSettings()
 
-            const todaysApprovedEdits = await prisma.wikiRevision.count({
-                where: {
-                    authorId: user.id,
-                    status: 'APPROVED',
-                    createdAt: { gte: startOfDay }
-                }
-            })
-
-            if (todaysApprovedEdits < 5) {
+            if (dailyChanges < settings.trustedUserDailyLimit) {
                 status = 'APPROVED'
 
                 // CRITICAL FIX: Update the actual page content for auto-approved edits

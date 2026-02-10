@@ -13,7 +13,8 @@ export const getSystemSettings = unstable_cache(
                 data: {
                     enableStudentEmails: true,
                     enableAdminEmails: true,
-                    enableInAppNotifications: true
+                    enableInAppNotifications: true,
+                    trustedUserDailyLimit: 5
                 }
             })
         }

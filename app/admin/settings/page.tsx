@@ -7,6 +7,7 @@ import { removeStaffDomain } from './actions'
 import { requireAdmin } from '@/lib/auth'
 import { getSystemSettings } from '@/lib/settings'
 import { NotificationSettingsForm } from '@/components/admin/NotificationSettingsForm'
+import { TrustedUserSettingsForm } from '@/components/admin/TrustedUserSettingsForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,8 @@ export default async function SettingsPage() {
             <h1 className="text-4xl font-bold">Admin Settings</h1>
 
             <NotificationSettingsForm initialSettings={settings} />
+
+            <TrustedUserSettingsForm initialLimit={settings.trustedUserDailyLimit} />
 
             <Card>
                 <CardHeader>

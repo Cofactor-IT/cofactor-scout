@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
+import { getDailyChangeCount } from '@/lib/user-limits'
+import { getSystemSettings } from '@/lib/settings'
 
 // Helper to slugify names
 function slugify(text: string) {
@@ -28,7 +30,8 @@ export async function proposeInstitute(formData: FormData) {
     }
 
     const user = await prisma.user.findUnique({
-        where: { email: session.user.email }
+        where: { email: session.user.email },
+        select: { id: true, role: true, universityId: true, isTrusted: true }
     })
 
     if (!user) throw new Error("User not found")
@@ -53,12 +56,20 @@ export async function proposeInstitute(formData: FormData) {
         throw new Error("An institute with this name already exists")
     }
 
+    let approved = isAdmin
+    if (!approved && user.isTrusted) {
+        const changes = await getDailyChangeCount(user.id)
+        const settings = await getSystemSettings()
+        if (changes < settings.trustedUserDailyLimit) approved = true
+    }
+
     await prisma.institute.create({
         data: {
             name,
             slug,
             universityId,
-            approved: isAdmin // Auto-approve if admin
+            approved,
+            authorId: user.id
         }
     })
 
@@ -78,7 +89,8 @@ export async function proposeLab(formData: FormData) {
     }
 
     const user = await prisma.user.findUnique({
-        where: { email: session.user.email }
+        where: { email: session.user.email },
+        select: { id: true, role: true, universityId: true, isTrusted: true }
     })
 
     if (!user) throw new Error("User not found")
@@ -108,12 +120,20 @@ export async function proposeLab(formData: FormData) {
         throw new Error("A lab with this name already exists")
     }
 
+    let approved = isAdmin
+    if (!approved && user.isTrusted) {
+        const changes = await getDailyChangeCount(user.id)
+        const settings = await getSystemSettings()
+        if (changes < settings.trustedUserDailyLimit) approved = true
+    }
+
     await prisma.lab.create({
         data: {
             name,
             slug,
             instituteId,
-            approved: isAdmin
+            approved,
+            authorId: user.id
         }
     })
 

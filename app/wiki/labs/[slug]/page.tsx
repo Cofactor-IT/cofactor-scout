@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { ensureAbsoluteUrl } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
@@ -15,14 +16,43 @@ export default async function LabPage({ params }: { params: Promise<{ slug: stri
     const { slug } = await params
     const session = await getServerSession(authOptions)
 
+    let userId: string | null = null;
+    let isAdmin = false;
+    let userUniversityId: string | null = null;
+
+    if (session?.user?.email) {
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            select: { id: true, role: true, universityId: true }
+        })
+        if (user) {
+            userId = user.id
+            isAdmin = user.role === 'ADMIN' || user.role === 'STAFF'
+            userUniversityId = user.universityId
+        }
+    }
+
+    let itemFilter: any = { approved: true };
+    let pageFilter: any = { published: true };
+
+    if (isAdmin) {
+        itemFilter = {};
+        pageFilter = {};
+    } else if (userId) {
+        itemFilter = { OR: [{ approved: true }, { authorId: userId }] };
+        pageFilter = { OR: [{ published: true }, { revisions: { some: { authorId: userId } } }] };
+    }
+
     const lab = await prisma.lab.findUnique({
         where: { slug },
         include: {
             institute: true,
             people: {
+                where: itemFilter,
                 orderBy: { name: 'asc' }
             },
             pages: {
+                where: pageFilter,
                 orderBy: { name: 'asc' }
             }
         }
@@ -32,18 +62,7 @@ export default async function LabPage({ params }: { params: Promise<{ slug: stri
         notFound()
     }
 
-    // Check if user can edit (admin/staff or belongs to the same university)
-    let canEdit = false
-    if (session?.user?.email) {
-        const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
-            select: { role: true, universityId: true }
-        })
-        if (user) {
-            const isAdmin = user.role === 'ADMIN' || user.role === 'STAFF'
-            canEdit = isAdmin || user.universityId === lab.institute.universityId
-        }
-    }
+    const canEdit = isAdmin || (userUniversityId && lab && userUniversityId === lab.institute.universityId)
 
     return (
         <div className="container mx-auto py-10">
@@ -57,6 +76,11 @@ export default async function LabPage({ params }: { params: Promise<{ slug: stri
                         <h1 className="text-4xl font-bold">{lab.name}</h1>
                         <p className="text-muted-foreground mt-2">Lab</p>
                     </div>
+                    {canEdit && (
+                        <Link href={`/wiki/labs/${slug}/history`}>
+                            <Button variant="outline">Recent Activity</Button>
+                        </Link>
+                    )}
                 </div>
             </div>
 

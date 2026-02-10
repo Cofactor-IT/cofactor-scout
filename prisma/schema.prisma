@@ -53,6 +53,10 @@ model User {
   reportsMade                  Report[]             @relation("ReportReporter")
   reportsResolved              Report[]             @relation("ReportResolver")
 
+  institutesProposed           Institute[]
+  labsProposed                 Lab[]
+  peopleProposed               Person[]             @relation("PersonAuthor")
+
   @@index([email])
   @@index([referralCode])
   @@index([powerScore(sort: Desc)])
@@ -133,10 +137,14 @@ model Institute {
   people    Person[]
   pages     UniPage[]
 
+  authorId    String?
+  author      User?      @relation(fields: [authorId], references: [id])
+
   @@index([universityId])
   @@index([slug])
   @@index([searchVector])
   @@index([keywords])
+  @@index([authorId])
 }
 
 model Lab {
@@ -155,10 +163,14 @@ model Lab {
   people    Person[]
   pages     UniPage[]
 
+  authorId    String?
+  author      User?      @relation(fields: [authorId], references: [id])
+
   @@index([instituteId])
   @@index([slug])
   @@index([searchVector])
   @@index([keywords])
+  @@index([authorId])
 }
 
 model Person {
@@ -186,12 +198,18 @@ model Person {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  approved    Boolean  @default(false)
+
+  authorId    String?
+  author      User?    @relation("PersonAuthor", fields: [authorId], references: [id])
 
   @@index([instituteId])
   @@index([labId])
   @@index([slug])
   @@index([searchVector])
   @@index([keywords])
+  @@index([approved])
+  @@index([authorId])
 }
 
 model WikiRevision {
@@ -615,5 +633,6 @@ model SystemSettings {
   enableStudentEmails     Boolean  @default(true)
   enableAdminEmails       Boolean  @default(true)
   enableInAppNotifications Boolean @default(true)
+  trustedUserDailyLimit   Int      @default(5)
   updatedAt               DateTime @updatedAt
 }

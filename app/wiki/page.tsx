@@ -32,6 +32,9 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
     let userSecondaryUniversityId: string | null = null;
     let userSecondaryUniversityName: string | null = null;
 
+    let userId: string | null = null;
+    let isAdmin = userRole === 'ADMIN' || userRole === 'STAFF';
+
     if (session?.user?.email) {
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
@@ -40,14 +43,25 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                 secondaryUniversity: true
             }
         })
-        userUniversityId = user?.universityId ?? null
-        userUniversityName = user?.university?.name ?? null
-        userSecondaryUniversityId = user?.secondaryUniversityId ?? null
-        userSecondaryUniversityName = user?.secondaryUniversity?.name ?? null
+        if (user) {
+            userId = user.id
+            userUniversityId = user.universityId
+            userUniversityName = user.university?.name ?? null
+            userSecondaryUniversityId = user.secondaryUniversityId
+            userSecondaryUniversityName = user.secondaryUniversity?.name ?? null
+            isAdmin = user.role === 'ADMIN' || user.role === 'STAFF'
+        }
     }
 
+    const instituteFilter = (isAdmin || !userId)
+        ? (isAdmin ? {} : { approved: true })
+        : { OR: [{ approved: true }, { authorId: userId }] }
+
+    const pageFilter = (isAdmin || !userId)
+        ? (isAdmin ? {} : { published: true })
+        : { OR: [{ published: true }, { revisions: { some: { authorId: userId } } }] }
+
     // Admin Folder View Logic
-    const isAdmin = userRole === 'ADMIN' || userRole === 'STAFF';
     const showUniversityFolders = isAdmin && !universityId;
 
     if (showUniversityFolders) {
@@ -221,7 +235,8 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
             where: {
                 ...whereClause,
                 instituteId: null,
-                labId: null
+                labId: null,
+                ...pageFilter
             },
             include: {
                 university: { select: { name: true } }
@@ -234,13 +249,14 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
             where: {
                 ...whereClause,
                 instituteId: null,
-                labId: null
+                labId: null,
+                ...pageFilter
             }
         }),
         prisma.institute.findMany({
             where: {
                 universityId: universityIds[0],
-                approved: true
+                ...instituteFilter
             },
             include: {
                 university: { select: { name: true } }
@@ -252,7 +268,7 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
         prisma.institute.count({
             where: {
                 universityId: universityIds[0],
-                approved: true
+                ...instituteFilter
             }
         })
     ])
@@ -290,7 +306,14 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                         </p>
                     )}
                 </div>
-                <AddArticleButton universityId={targetUniversityId} />
+                <div className="flex gap-2">
+                    {isAdmin && targetUniversityId && (
+                        <Link href={`/wiki/university/${targetUniversityId}/history`}>
+                            <Button variant="outline">Recent Activity</Button>
+                        </Link>
+                    )}
+                    <AddArticleButton universityId={targetUniversityId} />
+                </div>
             </div>
 
             <div className="mb-10">
