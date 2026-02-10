@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { prisma } from '@/lib/prisma'
 import { Role } from '@prisma/client'
+import { validateCsrfToken } from '@/lib/csrf'
 
 // Valid roles from the enum
 const VALID_ROLES: Role[] = ['STUDENT', 'PENDING_STAFF', 'STAFF', 'ADMIN']
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
 
     if (session.user.role !== 'ADMIN') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (!await validateCsrfToken(request)) {
+        return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
     }
 
     const formData = await request.formData()

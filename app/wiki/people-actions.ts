@@ -4,23 +4,42 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
+import DOMPurify from 'isomorphic-dompurify'
+import { personSchema } from '@/lib/validation'
+import {
+    sanitizeName,
+    sanitizeBio,
+    sanitizeString,
+    generateSlug,
+    containsSqlInjection
+} from '@/lib/sanitization'
+import { validateContent, filterContent } from '@/lib/moderation/content-filter'
+import { logger } from '@/lib/logger'
 
 export async function addPerson(formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) redirect('/api/auth/signin')
 
-    const name = formData.get('name') as string
-    const role = formData.get('role') as string
-    const fieldOfStudy = formData.get('fieldOfStudy') as string
-    const bio = formData.get('bio') as string
-    const linkedin = formData.get('linkedin') as string
-    const twitter = formData.get('twitter') as string
-    const website = formData.get('website') as string
+    const rawName = formData.get('name') as string
+    const rawRole = formData.get('role') as string
+    const rawFieldOfStudy = formData.get('fieldOfStudy') as string
+    const rawBio = formData.get('bio') as string
+    const rawLinkedin = formData.get('linkedin') as string
+    const rawTwitter = formData.get('twitter') as string
+    const rawWebsite = formData.get('website') as string
 
     const instituteId = formData.get('instituteId') as string
     const labId = formData.get('labId') as string
 
-    if (!name || (!instituteId && !labId)) {
+    // Validate IDs format
+    if (instituteId && !/^[a-z0-9]+$/i.test(instituteId)) {
+        throw new Error("Invalid institute ID")
+    }
+    if (labId && !/^[a-z0-9]+$/i.test(labId)) {
+        throw new Error("Invalid lab ID")
+    }
+
+    if (!rawName || (!instituteId && !labId)) {
         throw new Error("Missing required fields (Name and Context)")
     }
 
@@ -51,14 +70,67 @@ export async function addPerson(formData: FormData) {
         throw new Error("Unauthorized access")
     }
 
-    // Generate slug from name
-    const baseSlug = name.toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars
-        .replace(/\s+/g, '-')           // Replace spaces with dashes
-        .replace(/-+/g, '-')            // Collapse multiple dashes
-        .trim()
+    // Sanitize inputs
+    const nameValidation = sanitizeName(rawName)
+    if (!nameValidation.isValid) {
+        throw new Error(nameValidation.error || "Invalid name")
+    }
 
-    // Check if slug exists and add random suffix if needed
+    const roleValidation = rawRole ? sanitizeString(rawRole, { maxLength: 100 }) : { sanitized: null, isValid: true, error: undefined }
+    if (!roleValidation.isValid) {
+        throw new Error(roleValidation.error || "Invalid role")
+    }
+
+    const fieldValidation = rawFieldOfStudy ? sanitizeString(rawFieldOfStudy, { maxLength: 200 }) : { sanitized: null, isValid: true, error: undefined }
+    if (!fieldValidation.isValid) {
+        throw new Error(fieldValidation.error || "Invalid field of study")
+    }
+
+    const bioValidation = rawBio ? sanitizeBio(rawBio) : { sanitized: null, isValid: true, error: undefined }
+    if (!bioValidation.isValid) {
+        throw new Error(bioValidation.error || "Invalid bio")
+    }
+
+    // MODERATION CHECK: Validate bio content
+    if (bioValidation.sanitized) {
+        const contentValidation = validateContent(bioValidation.sanitized, {
+            minLength: 0,
+            maxLength: 2000,
+            checkProfanity: true,
+            checkHateSpeech: true,
+            checkPii: true
+        })
+
+        if (!contentValidation.valid) {
+            logger.warn('Person bio rejected by content filter', {
+                userId: user.id,
+                errors: contentValidation.errors
+            })
+            throw new Error(`Bio rejected: ${contentValidation.errors.join(', ')}`)
+        }
+
+        // Apply content filtering (sanitize profanity)
+        const filterResult = filterContent(bioValidation.sanitized)
+        if (filterResult.sanitizedContent) {
+            bioValidation.sanitized = filterResult.sanitizedContent
+        }
+    }
+
+    // Validate URL fields using person schema (extract just URL fields)
+    const urlFields = {
+        linkedin: rawLinkedin || undefined,
+        twitter: rawTwitter || undefined,
+        website: rawWebsite || undefined
+    }
+
+    const urlSchema = personSchema.pick({ linkedin: true, twitter: true, website: true })
+    const urlValidation = urlSchema.safeParse(urlFields)
+    if (!urlValidation.success) {
+        throw new Error("Invalid URL format")
+    }
+
+    // Generate slug from name
+    let baseSlug = generateSlug(nameValidation.sanitized)
     let slug = baseSlug
     let attempts = 0
     while (attempts < 10) {
@@ -72,25 +144,19 @@ export async function addPerson(formData: FormData) {
 
     await prisma.person.create({
         data: {
-            name,
+            name: nameValidation.sanitized,
             slug,
-            role,
-            fieldOfStudy,
-            bio,
-            linkedin,
-            twitter,
-            website,
+            role: roleValidation.sanitized,
+            fieldOfStudy: fieldValidation.sanitized,
+            bio: bioValidation.sanitized,
+            linkedin: urlValidation.data.linkedin,
+            twitter: urlValidation.data.twitter,
+            website: urlValidation.data.website,
             instituteId: instituteId || null,
             labId: labId || null
         }
     })
 
-    if (instituteId) {
-        // Maybe redirect or revalidate institute page
-    }
-
-    // We should probably redirect back to referer or appropriate slug
-    // For now returning success so client can refresh/redirect
     return { success: true }
 }
 
@@ -99,15 +165,20 @@ export async function updatePerson(formData: FormData) {
     if (!session?.user?.email) redirect('/api/auth/signin')
 
     const id = formData.get('id') as string
-    const name = formData.get('name') as string
-    const role = formData.get('role') as string
-    const fieldOfStudy = formData.get('fieldOfStudy') as string
-    const bio = formData.get('bio') as string
-    const linkedin = formData.get('linkedin') as string
-    const twitter = formData.get('twitter') as string
-    const website = formData.get('website') as string
+    const rawName = formData.get('name') as string
+    const rawRole = formData.get('role') as string
+    const rawFieldOfStudy = formData.get('fieldOfStudy') as string
+    const rawBio = formData.get('bio') as string
+    const rawLinkedin = formData.get('linkedin') as string
+    const rawTwitter = formData.get('twitter') as string
+    const rawWebsite = formData.get('website') as string
 
-    if (!id || !name) {
+    // Validate ID format
+    if (!id || !/^[a-z0-9]+$/i.test(id)) {
+        throw new Error("Invalid person ID")
+    }
+
+    if (!rawName) {
         throw new Error("Missing required fields (ID and Name)")
     }
 
@@ -142,16 +213,61 @@ export async function updatePerson(formData: FormData) {
         throw new Error("Unauthorized access")
     }
 
+    // Validate and sanitize all fields using person schema
+    const personData = {
+        name: rawName,
+        role: rawRole || undefined,
+        fieldOfStudy: rawFieldOfStudy || undefined,
+        bio: rawBio || undefined,
+        linkedin: rawLinkedin || undefined,
+        twitter: rawTwitter || undefined,
+        website: rawWebsite || undefined
+    }
+
+    const validationResult = personSchema.safeParse(personData)
+    if (!validationResult.success) {
+        const errorMessage = validationResult.error.issues.map((issue: { message: string }) => issue.message).join(', ')
+        throw new Error(errorMessage)
+    }
+
+    const validatedData = validationResult.data
+
+    // MODERATION CHECK: Validate bio content if provided
+    if (validatedData.bio) {
+        const contentValidation = validateContent(validatedData.bio, {
+            minLength: 0,
+            maxLength: 2000,
+            checkProfanity: true,
+            checkHateSpeech: true,
+            checkPii: true
+        })
+
+        if (!contentValidation.valid) {
+            logger.warn('Person bio update rejected by content filter', {
+                userId: user.id,
+                personId: id,
+                errors: contentValidation.errors
+            })
+            throw new Error(`Bio rejected: ${contentValidation.errors.join(', ')}`)
+        }
+
+        // Apply content filtering (sanitize profanity)
+        const filterResult = filterContent(validatedData.bio)
+        if (filterResult.sanitizedContent) {
+            validatedData.bio = filterResult.sanitizedContent
+        }
+    }
+
     await prisma.person.update({
         where: { id },
         data: {
-            name,
-            role: role || null,
-            fieldOfStudy: fieldOfStudy || null,
-            bio: bio || null,
-            linkedin: linkedin || null,
-            twitter: twitter || null,
-            website: website || null
+            name: validatedData.name,
+            role: validatedData.role,
+            fieldOfStudy: validatedData.fieldOfStudy,
+            bio: validatedData.bio,
+            linkedin: validatedData.linkedin,
+            twitter: validatedData.twitter,
+            website: validatedData.website
         }
     })
 
@@ -164,6 +280,11 @@ export async function deletePerson(id: string) {
 
     if (!id) {
         throw new Error("Missing person ID")
+    }
+
+    // Validate ID format
+    if (!/^[a-z0-9]+$/i.test(id)) {
+        throw new Error("Invalid person ID")
     }
 
     const user = await prisma.user.findUnique({
@@ -227,4 +348,3 @@ export async function deletePerson(id: string) {
 
     return { success: true }
 }
-

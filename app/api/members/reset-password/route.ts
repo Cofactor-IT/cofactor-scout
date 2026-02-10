@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-config"
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { randomInt } from 'crypto'
+import { validateCsrfToken } from '@/lib/csrf'
 
 function generateResetCode(): string {
     // Generate a cryptographically secure 6-digit code
@@ -21,6 +22,10 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
         return NextResponse.json({ error: 'Missing user ID' }, { status: 400 })
+    }
+
+    if (!await validateCsrfToken(request)) {
+        return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
     }
 
     const user = await prisma.user.findUnique({

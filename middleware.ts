@@ -1,121 +1,113 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
+import { checkRateLimitEdge, RateLimitConfig, getClientIp } from '@/lib/rate-limit-edge'
 
-/**
- * Rate limiting store for middleware (in-memory)
- * For production, use Redis or a dedicated rate-limiting service
- */
-const rateLimit = new Map<string, { count: number; resetTime: number }>()
-
-/**
- * Check rate limit for a given identifier
- */
-function checkRateLimit(identifier: string, limit: number, windowMs: number): boolean {
-    const now = Date.now()
-    const entry = rateLimit.get(identifier)
-
-    if (!entry || now > entry.resetTime) {
-        rateLimit.set(identifier, { count: 1, resetTime: now + windowMs })
-        return true
-    }
-
-    if (entry.count >= limit) {
-        return false
-    }
-
-    entry.count++
-    return true
+// Define simple rate limits for edge
+const RateLimits = {
+    AUTH: { limit: 5, window: 15 * 60 * 1000 },
+    API_GLOBAL: { limit: 100, window: 60 * 1000 }
 }
 
-/**
- * Clean up expired rate limit entries periodically
- */
-setInterval(() => {
-    const now = Date.now()
-    for (const [key, entry] of rateLimit.entries()) {
-        if (now > entry.resetTime) {
-            rateLimit.delete(key)
-        }
-    }
-}, 60000) // Every minute
-
-/**
- * Get client IP from various headers (works with proxies, Cloudflare, Vercel)
- */
-function getClientIp(request: Request): string {
-    const headers = request.headers
-    return (
-        headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-        headers.get('x-real-ip') ||
-        headers.get('cf-connecting-ip') ||
-        'unknown'
-    )
-}
-
-// Require authentication for admin routes
 export default withAuth(
-    function middleware(req) {
+    async function middleware(req) {
         const token = req.nextauth.token
         const isAdmin = token?.role === "ADMIN"
         const isUrlAdmin = req.nextUrl.pathname.startsWith("/admin")
         const isAuthRoute = req.nextUrl.pathname.startsWith("/auth")
+        const isApiRoute = req.nextUrl.pathname.startsWith("/api")
 
-        // Admin route protection
         if (isUrlAdmin && !isAdmin) {
             return NextResponse.rewrite(new URL("/auth/signin?error=AccessDenied", req.url))
         }
 
-        // Rate limiting for auth routes (prevents brute force attacks)
-        if (isAuthRoute) {
-            const ip = getClientIp(req)
-            const allowed = checkRateLimit(ip, 10, 60000) // 10 requests per minute per IP
+        const ip = getClientIp(req)
 
-            if (!allowed) {
-                return new NextResponse('Too many requests', { status: 429 })
+        // Strict rate limiting for auth routes
+        if (isAuthRoute) {
+            const result = await checkRateLimitEdge(ip, RateLimits.AUTH)
+
+            if (!result.success) {
+                return new NextResponse('Too many requests', {
+                    status: 429,
+                    headers: {
+                        'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString()
+                    }
+                })
             }
         }
 
-        const response = NextResponse.next()
+        // Global API rate limiting (except auth which is handled above)
+        if (isApiRoute && !isAuthRoute) {
+            const result = await checkRateLimitEdge(ip, RateLimits.API_GLOBAL)
+
+            if (!result.success) {
+                return new NextResponse('Too many requests', {
+                    status: 429,
+                    headers: {
+                        'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString()
+                    }
+                })
+            }
+        }
+
+        const nonce = btoa(crypto.randomUUID())
+
+        const cspHeader = `
+            default-src 'self';
+            script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
+            style-src 'self' 'unsafe-inline' 'nonce-${nonce}';
+            img-src 'self' blob: data:;
+            font-src 'self';
+            object-src 'none';
+            base-uri 'self';
+            form-action 'self';
+            frame-ancestors 'none';
+            upgrade-insecure-requests;
+        `.replace(/\s{2,}/g, ' ').trim()
+
+        const requestHeaders = new Headers(req.headers)
+        requestHeaders.set('x-nonce', nonce)
+        requestHeaders.set('Content-Security-Policy', cspHeader)
+
+        const response = NextResponse.next({
+            request: {
+                headers: requestHeaders,
+            },
+        })
 
         // Add security headers
-        response.headers.set('X-Frame-Options', 'DENY') // Prevent clickjacking
-        response.headers.set('X-Content-Type-Options', 'nosniff') // Prevent MIME sniffing
+        response.headers.set('X-Frame-Options', 'DENY')
+        response.headers.set('X-Content-Type-Options', 'nosniff')
         response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-        response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
-
-        // Content Security Policy (basic version)
-        // Note: In production, you may need to adjust this based on your needs
-        const cspHeader = [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-inline needed for Next.js development
-            "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for styled-jsx and similar
-            "img-src 'self' data: https: blob:",
-            "font-src 'self' data:",
-            "object-src 'none'",
-            "base-uri 'self'",
-            "form-action 'self'",
-            "frame-ancestors 'none'",
-            "upgrade-insecure-requests"
-        ].join('; ')
-
+        response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+        response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
         response.headers.set('Content-Security-Policy', cspHeader)
-
-        // Note: NextAuth handles CSRF protection internally via JWT tokens
-        // Server Actions are protected by Next.js's built-in CSRF protection
-        // when using the 'use server' directive
 
         return response
     },
     {
         callbacks: {
-            authorized: ({ token }) => !!token
+            authorized: ({ token, req }) => {
+                const path = req.nextUrl.pathname
+
+                // Allow access to home page for everyone
+                if (path === '/') {
+                    return true
+                }
+
+                // For all other matched routes, require authentication
+                return !!token
+            }
         },
+        pages: {
+            signIn: '/auth/signin',
+            newUser: '/auth/signup'
+        }
     }
 )
 
 export const config = {
     matcher: [
-        // Apply to all routes except static files, auth routes, and API routes that handle their own security
         "/((?!_next/static|_next/image|favicon.ico|uploads|api/auth|api/health|api/universities|auth).*)",
     ]
 }

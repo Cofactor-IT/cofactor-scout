@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from "next-auth"
@@ -10,10 +12,15 @@ import { ProposeStructureModal } from './ProposeStructureModal'
 
 export const dynamic = 'force-dynamic'
 
-export default async function WikiIndexPage({ searchParams }: { searchParams: Promise<{ universityId?: string }> }) {
+export default async function WikiIndexPage({ searchParams }: { searchParams: Promise<{ universityId?: string, page?: string, institutesPage?: string }> }) {
     const session = await getServerSession(authOptions)
     const userRole = session?.user?.role
-    const { universityId } = await searchParams
+    const params = await searchParams
+    const { universityId } = params
+    const page = parseInt(params.page || '1', 10)
+    const institutesPage = parseInt(params.institutesPage || '1', 10)
+    const pagesLimit = 50
+    const institutesLimit = 20
 
     // Need to fetch user to get universityId, as it might not be in session depending on config.
     // Assuming we need to fetch user details if not in session. 
@@ -206,23 +213,31 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
 
     const whereClause = { universityId: targetUniversityId! }
 
-    const pages = await prisma.uniPage.findMany({
-        where: {
-            ...whereClause,
-            instituteId: null, // Only show top-level university pages here
-            labId: null
-        },
-        include: {
-            university: { select: { name: true } }
-        },
-        orderBy: { name: 'asc' }
-    })
+    const pagesSkip = (page - 1) * pagesLimit
+    const institutesSkip = (institutesPage - 1) * institutesLimit
 
-    // Fetch institutes for this university
-    type InstituteWithUniversity = { id: string; name: string; slug: string; universityId: string; university: { name: string } }
-    let institutes: InstituteWithUniversity[] = []
-    if (universityIds.length > 0) {
-        institutes = await prisma.institute.findMany({
+    const [pages, pagesCount, institutes, institutesCount] = await Promise.all([
+        prisma.uniPage.findMany({
+            where: {
+                ...whereClause,
+                instituteId: null,
+                labId: null
+            },
+            include: {
+                university: { select: { name: true } }
+            },
+            orderBy: { name: 'asc' },
+            take: pagesLimit,
+            skip: pagesSkip
+        }),
+        prisma.uniPage.count({
+            where: {
+                ...whereClause,
+                instituteId: null,
+                labId: null
+            }
+        }),
+        prisma.institute.findMany({
             where: {
                 universityId: universityIds[0],
                 approved: true
@@ -230,9 +245,22 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
             include: {
                 university: { select: { name: true } }
             },
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
+            take: institutesLimit,
+            skip: institutesSkip
+        }),
+        prisma.institute.count({
+            where: {
+                universityId: universityIds[0],
+                approved: true
+            }
         })
-    }
+    ])
+
+    const totalPagesCount = Math.ceil(pagesCount / pagesLimit)
+    const totalInstitutesCount = Math.ceil(institutesCount / institutesLimit)
+    const currentPage = Math.max(1, Math.min(page, totalPagesCount || 1))
+    const currentInstitutesPage = Math.max(1, Math.min(institutesPage, totalInstitutesCount || 1))
 
     // Check if student is viewing from folder selection (has universityId param but not admin)
     const isStudentDrillDown = !isAdmin && universityId;
@@ -280,45 +308,187 @@ export default async function WikiIndexPage({ searchParams }: { searchParams: Pr
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {institutes.map((inst) => (
-                            <Link key={inst.id} href={`/wiki/institutes/${inst.slug}`}>
-                                <Card className="hover:bg-muted/50 transition-colors h-full flex items-center p-6">
-                                    <div className="text-3xl mr-4">🏛️</div>
-                                    <div className="flex-1">
-                                        <CardTitle className="text-lg">{inst.name}</CardTitle>
-                                        <span className="text-xs text-muted-foreground">Institute</span>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {institutes.map((inst) => (
+                                <Link key={inst.id} href={`/wiki/institutes/${inst.slug}`}>
+                                    <Card className="hover:bg-muted/50 transition-colors h-full flex items-center p-6">
+                                        <div className="text-3xl mr-4">🏛️</div>
+                                        <div className="flex-1">
+                                            <CardTitle className="text-lg">{inst.name}</CardTitle>
+                                            <span className="text-xs text-muted-foreground">Institute</span>
+                                        </div>
+                                    </Card>
+                                </Link>
+                            ))}
+                        </div>
+                        {totalInstitutesCount > 1 && (
+                            <div className="flex items-center justify-between mt-6">
+                                <div className="text-sm text-muted-foreground">
+                                    Showing {((currentInstitutesPage - 1) * institutesLimit) + 1} to {Math.min(currentInstitutesPage * institutesLimit, institutesCount)} of {institutesCount} institutes
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={currentInstitutesPage === 1}
+                                        asChild={currentInstitutesPage > 1}
+                                    >
+                                        {currentInstitutesPage > 1 ? (
+                                            <Link href={`/wiki?universityId=${targetUniversityId}&institutesPage=${currentInstitutesPage - 1}`}>
+                                                <ChevronLeft className="h-4 w-4 mr-1" />
+                                                Previous
+                                            </Link>
+                                        ) : (
+                                            <>
+                                                <ChevronLeft className="h-4 w-4 mr-1" />
+                                                Previous
+                                            </>
+                                        )}
+                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: Math.min(5, totalInstitutesCount) }, (_, i) => {
+                                            let pageNum
+                                            if (totalInstitutesCount <= 5) {
+                                                pageNum = i + 1
+                                            } else if (currentInstitutesPage <= 3) {
+                                                pageNum = i + 1
+                                            } else if (currentInstitutesPage >= totalInstitutesCount - 2) {
+                                                pageNum = totalInstitutesCount - 4 + i
+                                            } else {
+                                                pageNum = currentInstitutesPage - 2 + i
+                                            }
+                                            return (
+                                                <Button
+                                                    key={pageNum}
+                                                    variant={currentInstitutesPage === pageNum ? "default" : "outline"}
+                                                    size="sm"
+                                                    asChild
+                                                >
+                                                    <Link href={`/wiki?universityId=${targetUniversityId}&institutesPage=${pageNum}`}>{pageNum}</Link>
+                                                </Button>
+                                            )
+                                        })}
                                     </div>
-                                </Card>
-                            </Link>
-                        ))}
-                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={currentInstitutesPage === totalInstitutesCount}
+                                        asChild={currentInstitutesPage < totalInstitutesCount}
+                                    >
+                                        {currentInstitutesPage < totalInstitutesCount ? (
+                                            <Link href={`/wiki?universityId=${targetUniversityId}&institutesPage=${currentInstitutesPage + 1}`}>
+                                                Next
+                                                <ChevronRight className="h-4 w-4 ml-1" />
+                                            </Link>
+                                        ) : (
+                                            <>
+                                                Next
+                                                <ChevronRight className="h-4 w-4 ml-1" />
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
             <h2 className="text-2xl font-semibold mb-4">General Articles</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pages.length === 0 ? (
-                    <p className="text-muted-foreground col-span-full text-center py-10">
-                        No articles found for this university.
-                    </p>
-                ) : (
-                    pages.map((page) => (
-                        <Link key={page.id} href={`/wiki/${page.slug}`}>
-                            <Card className="hover:bg-muted/50 transition-colors h-full">
-                                <CardHeader>
-                                    <CardTitle>{page.name}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground line-clamp-3">
-                                        {page.content || "No content yet."}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))
-                )}
-            </div>
+            {pages.length === 0 ? (
+                <p className="text-muted-foreground col-span-full text-center py-10">
+                    No articles found for this university.
+                </p>
+            ) : (
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {pages.map((page) => (
+                            <Link key={page.id} href={`/wiki/${page.slug}`}>
+                                <Card className="hover:bg-muted/50 transition-colors h-full">
+                                    <CardHeader>
+                                        <CardTitle>{page.name}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground line-clamp-3">
+                                            {page.content || "No content yet."}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
+                    {totalPagesCount > 1 && (
+                        <div className="flex items-center justify-between mt-6">
+                            <div className="text-sm text-muted-foreground">
+                                Showing {((currentPage - 1) * pagesLimit) + 1} to {Math.min(currentPage * pagesLimit, pagesCount)} of {pagesCount} articles
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={currentPage === 1}
+                                    asChild={currentPage > 1}
+                                >
+                                    {currentPage > 1 ? (
+                                        <Link href={`/wiki?universityId=${targetUniversityId}&page=${currentPage - 1}`}>
+                                            <ChevronLeft className="h-4 w-4 mr-1" />
+                                            Previous
+                                        </Link>
+                                    ) : (
+                                        <>
+                                            <ChevronLeft className="h-4 w-4 mr-1" />
+                                            Previous
+                                        </>
+                                    )}
+                                </Button>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, totalPagesCount) }, (_, i) => {
+                                        let pageNum
+                                        if (totalPagesCount <= 5) {
+                                            pageNum = i + 1
+                                        } else if (currentPage <= 3) {
+                                            pageNum = i + 1
+                                        } else if (currentPage >= totalPagesCount - 2) {
+                                            pageNum = totalPagesCount - 4 + i
+                                        } else {
+                                            pageNum = currentPage - 2 + i
+                                        }
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={currentPage === pageNum ? "default" : "outline"}
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link href={`/wiki?universityId=${targetUniversityId}&page=${pageNum}`}>{pageNum}</Link>
+                                            </Button>
+                                        )
+                                    })}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={currentPage === totalPagesCount}
+                                    asChild={currentPage < totalPagesCount}
+                                >
+                                    {currentPage < totalPagesCount ? (
+                                        <Link href={`/wiki?universityId=${targetUniversityId}&page=${currentPage + 1}`}>
+                                            Next
+                                            <ChevronRight className="h-4 w-4 ml-1" />
+                                        </Link>
+                                    ) : (
+                                        <>
+                                            Next
+                                            <ChevronRight className="h-4 w-4 ml-1" />
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     )
 }

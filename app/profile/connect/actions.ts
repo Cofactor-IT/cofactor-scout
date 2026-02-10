@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { recalculatePowerScore } from '@/app/admin/actions'
 import { SocialStats } from '@/lib/types'
 import { socialConnectSchema } from '@/lib/validation'
+import DOMPurify from 'isomorphic-dompurify'
 
 /**
  * Save social media username/URL and simulate fetching follower count
@@ -45,15 +46,15 @@ export async function saveSocialApiKeys(formData: FormData) {
 
     switch (platform) {
         case 'instagram':
-            updatedStats.instagramUsername = username
+            updatedStats.instagramUsername = username ? DOMPurify.sanitize(username) : undefined
             updatedStats.instagram = followers
             break
         case 'tiktok':
-            updatedStats.tiktokUsername = username
+            updatedStats.tiktokUsername = username ? DOMPurify.sanitize(username) : undefined
             updatedStats.tiktok = followers
             break
         case 'linkedin':
-            updatedStats.linkedinUrl = username
+            updatedStats.linkedinUrl = username ? DOMPurify.sanitize(username) : undefined
             updatedStats.linkedin = followers
             break
     }

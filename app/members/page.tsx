@@ -2,75 +2,98 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { RoleForm, ActionButtons } from './member-row'
+import { Button } from '@/components/ui/button'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function MembersPage() {
+export default async function MembersPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
     // Admin only access
     const session = await getServerSession(authOptions)
     if (!session?.user?.role || session.user.role !== 'ADMIN') {
         redirect('/api/auth/signin?error=AccessDenied')
     }
 
-    const members = await prisma.user.findMany({
-        orderBy: { createdAt: 'desc' },
-        include: {
-            referredBy: {
-                select: {
-                    referrer: {
-                        select: {
-                            name: true,
-                            email: true,
-                            referralCode: true
+    const params = await searchParams
+    const page = parseInt(params.page || '1', 10)
+    const limit = 20
+    const skip = (page - 1) * limit
+
+    const [members, totalCount, studentCount, staffCount, adminCount] = await Promise.all([
+        prisma.user.findMany({
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                referralCode: true,
+                powerScore: true,
+                emailVerified: true,
+                createdAt: true,
+                referredBy: {
+                    select: {
+                        referrer: {
+                            select: {
+                                name: true,
+                                referralCode: true
+                            }
+                        }
+                    }
+                },
+                referralsMade: {
+                    select: {
+                        referee: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true
+                            }
+                        }
+                    }
+                },
+                revisions: {
+                    select: {
+                        id: true,
+                        status: true,
+                        uniPage: {
+                            select: {
+                                name: true
+                            }
+                        }
+                    }
+                },
+                _count: {
+                    select: {
+                        revisions: {
+                            where: { status: 'APPROVED' }
                         }
                     }
                 }
             },
-            referralsMade: {
-                select: {
-                    referee: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            createdAt: true
-                        }
-                    }
-                }
-            },
-            revisions: {
-                select: {
-                    id: true,
-                    status: true,
-                    createdAt: true,
-                    uniPage: {
-                        select: {
-                            slug: true,
-                            name: true
-                        }
-                    }
-                }
-            }
-        }
-    })
+            take: limit,
+            skip: skip
+        }),
+        prisma.user.count(),
+        prisma.user.count({ where: { role: 'STUDENT' } }),
+        prisma.user.count({ where: { role: 'STAFF' } }),
+        prisma.user.count({ where: { role: 'ADMIN' } })
+    ])
 
-    // Calculate stats for each member
-    const membersWithStats = members.map(member => {
-        const approvedRevisions = member.revisions.filter(r => r.status === 'APPROVED')
-        const pendingRevisions = member.revisions.filter(r => r.status === 'PENDING')
-        const rejectedRevisions = member.revisions.filter(r => r.status === 'REJECTED')
+    const totalPages = Math.ceil(totalCount / limit)
+    const currentPage = Math.max(1, Math.min(page, totalPages || 1))
 
-        return {
-            ...member,
-            stats: {
-                totalRevisions: member.revisions.length,
-                approvedRevisions: approvedRevisions.length,
-                pendingRevisions: pendingRevisions.length,
-                rejectedRevisions: rejectedRevisions.length
-            }
+    const membersWithStats = members.map(member => ({
+        ...member,
+        stats: {
+            totalRevisions: member.revisions.length,
+            approvedRevisions: member._count.revisions,
+            pendingRevisions: member.revisions.filter(r => r.status === 'PENDING').length,
+            rejectedRevisions: member.revisions.filter(r => r.status === 'REJECTED').length
         }
-    })
+    }))
 
     return (
         <div className="container mx-auto py-10">
@@ -78,7 +101,7 @@ export default async function MembersPage() {
                 <div>
                     <h1 className="text-4xl font-bold">Admin Members Directory</h1>
                     <p className="text-muted-foreground mt-2">
-                        Manage all {members.length} members, roles, and view detailed metrics.
+                        Manage all {totalCount} members, roles, and view detailed metrics.
                     </p>
                 </div>
             </div>
@@ -86,19 +109,19 @@ export default async function MembersPage() {
             {/* Summary Stats */}
             <div className="grid gap-4 md:grid-cols-4 mb-8">
                 <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{members.length}</div>
+                    <div className="text-2xl font-bold">{totalCount}</div>
                     <div className="text-sm text-muted-foreground">Total Members</div>
                 </div>
                 <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{members.filter(m => m.role === 'STUDENT').length}</div>
+                    <div className="text-2xl font-bold">{studentCount}</div>
                     <div className="text-sm text-muted-foreground">Students</div>
                 </div>
                 <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{members.filter(m => m.role === 'STAFF').length}</div>
+                    <div className="text-2xl font-bold">{staffCount}</div>
                     <div className="text-sm text-muted-foreground">Staff</div>
                 </div>
                 <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{members.filter(m => m.role === 'ADMIN').length}</div>
+                    <div className="text-2xl font-bold">{adminCount}</div>
                     <div className="text-sm text-muted-foreground">Admins</div>
                 </div>
             </div>
@@ -230,6 +253,77 @@ export default async function MembersPage() {
                     </table>
                 </div>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                    <div className="text-sm text-muted-foreground">
+                        Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalCount)} of {totalCount} members
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={currentPage === 1}
+                            asChild={currentPage > 1}
+                        >
+                            {currentPage > 1 ? (
+                                <Link href={`/members?page=${currentPage - 1}`}>
+                                    <ChevronLeft className="h-4 w-4 mr-1" />
+                                    Previous
+                                </Link>
+                            ) : (
+                                <>
+                                    <ChevronLeft className="h-4 w-4 mr-1" />
+                                    Previous
+                                </>
+                            )}
+                        </Button>
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                let pageNum
+                                if (totalPages <= 5) {
+                                    pageNum = i + 1
+                                } else if (currentPage <= 3) {
+                                    pageNum = i + 1
+                                } else if (currentPage >= totalPages - 2) {
+                                    pageNum = totalPages - 4 + i
+                                } else {
+                                    pageNum = currentPage - 2 + i
+                                }
+                                return (
+                                    <Button
+                                        key={pageNum}
+                                        variant={currentPage === pageNum ? "default" : "outline"}
+                                        size="sm"
+                                        asChild
+                                    >
+                                        <Link href={`/members?page=${pageNum}`}>{pageNum}</Link>
+                                    </Button>
+                                )
+                            })}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={currentPage === totalPages}
+                            asChild={currentPage < totalPages}
+                        >
+                            {currentPage < totalPages ? (
+                                <Link href={`/members?page=${currentPage + 1}`}>
+                                    Next
+                                    <ChevronRight className="h-4 w-4 ml-1" />
+                                </Link>
+                            ) : (
+                                <>
+                                    Next
+                                    <ChevronRight className="h-4 w-4 ml-1" />
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Legend */}
             <div className="mt-6 p-4 border rounded-lg bg-muted/50">

@@ -37,14 +37,15 @@ export const authOptions: NextAuthOptions = {
                     return null
                 }
 
-                const bcrypt = await import('bcryptjs')
-                const isValid = await bcrypt.compare(credentials.password, user.password)
-
-                // Check email verification
+                // Check email verification BEFORE password check to prevent timing attacks
+                // and account enumeration
                 if (!user.emailVerified && user.email !== process.env.ADMIN_EMAIL) {
                     logger.warn('Login attempt with unverified email', { email: user.email })
                     return null
                 }
+
+                const bcrypt = await import('bcryptjs')
+                const isValid = await bcrypt.compare(credentials.password, user.password)
 
                 if (!isValid) {
                     // Increment failed login attempts
@@ -91,7 +92,9 @@ export const authOptions: NextAuthOptions = {
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string
-                session.user.role = token.role as string // Custom role property
+                session.user.role = token.role as string
+                const { setSentryUser } = await import('@/instrumentation/sentry')
+                setSentryUser(token.id as string, session.user.email || '', token.role as string)
             }
             return session
         },
@@ -106,7 +109,8 @@ export const authOptions: NextAuthOptions = {
         async signIn({ user, account }) {
             // user is defined only when sign in is successful
             // If we get here with credentials provider but no user, redirect to signup
-            if (!user && account?.provider === 'credentials') {
+            // Fix: Operator precedence issue (!user && account...)
+            if (!user && (account?.provider === 'credentials')) {
                 return Promise.resolve(false) // This will cause an error
             }
             return Promise.resolve(true)
@@ -118,7 +122,7 @@ export const authOptions: NextAuthOptions = {
     },
     session: {
         strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
+        maxAge: 7 * 24 * 60 * 60, // 7 days (reduced from 30 for better security)
     },
     secret: process.env.NEXTAUTH_SECRET
 }

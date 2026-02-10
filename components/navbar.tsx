@@ -4,18 +4,18 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useSession, signOut } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import { SearchBar } from './SearchBar'
 
 export function Navbar() {
     const { data: session, status } = useSession()
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true)
     }, [])
 
     if (!mounted) {
-        return null // Avoid hydration mismatch
+        return null
     }
 
     const user = session?.user
@@ -31,13 +31,12 @@ export function Navbar() {
                     <nav className="flex items-center space-x-6 text-sm font-medium">
                         <Link href="/leaderboard" className="transition-colors hover:text-foreground/80 text-foreground/60">Leaderboard</Link>
                         <Link href="/wiki" className="transition-colors hover:text-foreground/80 text-foreground/60">Wiki</Link>
+                        <Link href="/search" className="transition-colors hover:text-foreground/80 text-foreground/60">Search</Link>
                     </nav>
                 </div>
                 <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-                    <div className="w-full flex-1 md:w-auto md:flex-none">
-                        {/* Search could go here */}
-                    </div>
                     <nav className="flex items-center space-x-2">
+                        <SearchBar />
                         {status === 'loading' ? (
                             <div className="h-8 w-20 animate-pulse bg-muted rounded" />
                         ) : !user ? (
@@ -80,3 +79,4 @@ export function Navbar() {
         </nav>
     )
 }
+

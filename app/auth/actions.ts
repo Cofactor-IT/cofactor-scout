@@ -6,323 +6,392 @@ import bcrypt from 'bcryptjs'
 import { signUpSchema, type SignUpInput } from '@/lib/validation'
 import { RateLimits } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
-import { randomBytes, randomInt } from 'crypto'
+import { randomBytes } from 'crypto'
+import { RateLimitError, ValidationError } from '@/lib/errors'
 
-// Simple in-memory store for rate limiting by email
-const signupAttempts = new Map<string, { count: number; resetTime: number }>()
-const passwordResetAttempts = new Map<string, { count: number; resetTime: number }>()
+// Account enumeration prevention delay
+const ACCOUNT_ENUMERATION_DELAY = 1000
 
-// Store for rate limiting password reset verification attempts
-const resetVerifyAttempts = new Map<string, { count: number; resetTime: number }>()
-
-// Generate a 6-character alphanumeric code for password reset
-function generateToken(): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Exclude confusing chars: 0,O,1,I
-    let result = ''
-    for (let i = 0; i < 6; i++) {
-        result += chars.charAt(randomInt(0, chars.length))
-    }
-    return result
+// Simple in-memory rate limiting stores
+const rateLimitStores = {
+    signup: new Map<string, { count: number; resetTime: number }>(),
+    passwordReset: new Map<string, { count: number; resetTime: number }>(),
+    resetVerify: new Map<string, { count: number; resetTime: number }>(),
+    resendVerification: new Map<string, { count: number; resetTime: number }>()
 }
 
+/**
+ * Rate limiting check with cleanup
+ */
+function checkRateLimit(
+    store: Map<string, { count: number; resetTime: number }>,
+    identifier: string,
+    config: { limit: number; window: number }
+): boolean {
+    const now = Date.now()
+    const attempt = store.get(identifier)
+
+    if (!attempt || now > attempt.resetTime) {
+        store.set(identifier, { count: 1, resetTime: now + config.window })
+        return true
+    }
+
+    attempt.count++
+    return attempt.count <= config.limit
+}
+
+/**
+ * Generate secure random token
+ */
 function generateSecureToken(): string {
-    // Generate a secure random token for email verification
     return randomBytes(32).toString('hex')
 }
 
-// Generate a unique referral code based on username
-// Uses database unique constraint as primary guarantee, with retry logic for race conditions
-async function generateUniqueReferralCode(name: string): Promise<string> {
-    // Clean the name: remove spaces, special chars, convert to uppercase
-    const cleanName = name
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '')
-        .substring(0, 6) // Take first 6 chars
-
+/**
+ * Generate unique referral code
+ */
+async function generateUniqueReferralCode(): Promise<string> {
     const maxAttempts = 10
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        // Generate a random 4 character suffix
-        const randomSuffix = randomBytes(2).toString('hex').toUpperCase()
+        const randomPart = randomBytes(16).toString('hex').toUpperCase()
+        const code = randomPart.substring(0, 16)
 
-        // Combine: prefix + random suffix
-        let code = `${cleanName}${randomSuffix}`
-
-        // Ensure code is at least 4 characters
-        if (code.length < 4) {
-            code = code + randomBytes(3).toString('hex').toUpperCase()
-        }
-
-        // Check if code exists (optimistic check)
         const existing = await prisma.user.findUnique({
-            where: { referralCode: code }
+            where: { referralCode: code },
+            select: { id: true }
         })
 
         if (!existing) {
-            // Code appears unique - return it
-            // The database unique constraint will catch any race condition
             return code
         }
-
-        // Code exists, try again with new random suffix
     }
 
-    // Fallback after max attempts: use timestamp + random for guaranteed uniqueness
-    return `USER${Date.now().toString(36).toUpperCase()}${randomBytes(2).toString('hex').toUpperCase()}`
+    // Fallback with timestamp
+    return `USER${Date.now().toString(36).toUpperCase()}${randomBytes(4).toString('hex').toUpperCase()}`
 }
 
-export async function signUp(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
-    // Extract form data first to get email for rate limiting
-    const email = formData.get('email') as string
-    const rawEmail = email?.toLowerCase().trim()
-
-    // Rate limiting check
-    if (rawEmail) {
-        const now = Date.now()
-        const attempt = signupAttempts.get(rawEmail)
-
-        if (!attempt || now > attempt.resetTime) {
-            signupAttempts.set(rawEmail, { count: 1, resetTime: now + RateLimits.SIGNUP.window })
-        } else {
-            attempt.count++
-            if (attempt.count > RateLimits.SIGNUP.limit) {
-                logger.warn('Rate limit exceeded for signup', { email: rawEmail })
-                return { error: `Too many signup attempts. Please try again later.` }
-            }
-        }
-    }
-
-    // Extract and validate form data
-    const rawData = {
-        email: formData.get('email'),
-        password: formData.get('password'),
-        name: formData.get('name'),
-        referralCode: formData.get('referralCode')
-    }
-
-    const validationResult = signUpSchema.safeParse(rawData)
-    if (!validationResult.success) {
-        const errors = validationResult.error.issues.map((e: { message: string }) => e.message).join(', ')
-        logger.warn('Validation failed for signup', { errors })
-        return { error: errors }
-    }
-
-    const { email: validatedEmail, password, name, referralCode } = validationResult.data as SignUpInput
-
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-        where: { email: validatedEmail }
-    })
-    if (existingUser) {
-        logger.warn('Signup attempt with existing email', { email: validatedEmail })
-        return { error: 'Email already exists' }
-    }
-
-    // Role Logic
-    let role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF' = 'STUDENT'
-    let referrerId: string | null = null
-
+/**
+ * Determine user role based on referral code and email domain
+ */
+async function determineUserRole(email: string, referralCode: string): Promise<{
+    role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF'
+    referrerId: string | null
+}> {
     const STAFF_SECRET = process.env.STAFF_SECRET_CODE
 
+    // Check for staff secret code
     if (STAFF_SECRET && referralCode === STAFF_SECRET) {
-        role = 'PENDING_STAFF'
-    } else {
-        // Check if email domain is in staff domains list
-        const emailDomain = validatedEmail.split('@')[1]?.toLowerCase()
-        if (emailDomain) {
-            const staffDomain = await prisma.staffDomain.findUnique({
-                where: { domain: emailDomain }
-            })
+        return { role: 'PENDING_STAFF', referrerId: null }
+    }
 
-            if (staffDomain) {
-                role = 'STAFF'
-                logger.info('User assigned STAFF role via domain match', { email: validatedEmail, domain: emailDomain })
-            }
-        }
+    // Check email domain for staff access
+    const emailDomain = email.split('@')[1]?.toLowerCase()
+    if (emailDomain) {
+        const staffDomain = await prisma.staffDomain.findUnique({
+            where: { domain: emailDomain },
+            select: { id: true }
+        })
 
-        // If not already staff, check referral code
-        if (role !== 'STAFF') {
-            // Must be a valid referrer code
-            const referrer = await prisma.user.findUnique({
-                where: { referralCode }
-            })
-
-            if (!referrer) {
-                return { error: 'Invalid referral code' }
-            }
-            referrerId = referrer.id
+        if (staffDomain) {
+            logger.info('User assigned STAFF role via domain match', { email, domain: emailDomain })
+            return { role: 'STAFF', referrerId: null }
         }
     }
 
-    // University Logic
-    let universityId: string | null = null
+    // Validate referral code for regular signup
+    const referrer = await prisma.user.findUnique({
+        where: { referralCode },
+        select: { id: true }
+    })
+
+    if (!referrer) {
+        throw new ValidationError('Invalid referral code')
+    }
+
+    return { role: 'STUDENT', referrerId: referrer.id }
+}
+
+/**
+ * Determine university ID based on email domain and form data
+ */
+async function determineUniversity(
+    email: string,
+    formData: FormData
+): Promise<string | null> {
     const universityIdFromForm = formData.get('universityId') as string | null
     const universityName = formData.get('universityName') as string | null
 
     // Import university utilities
-    const { extractEmailDomain, isPersonalEmail, findUniversityByDomain, createPendingUniversity } = await import('@/lib/universityUtils')
-    const emailDomain = extractEmailDomain(validatedEmail)
+    const { extractEmailDomain, isPersonalEmail, findUniversityByDomain, createPendingUniversity } =
+        await import('@/lib/universityUtils')
 
+    const emailDomain = extractEmailDomain(email)
+
+    // Use pre-selected university if provided
     if (universityIdFromForm) {
-        // University was detected client-side, verify it exists
         const existingUni = await prisma.university.findUnique({
-            where: { id: universityIdFromForm }
+            where: { id: universityIdFromForm },
+            select: { id: true }
         })
-        if (existingUni) {
-            universityId = existingUni.id
-        }
-    } else if (!isPersonalEmail(validatedEmail) && emailDomain) {
-        // Try to find university by domain
+        return existingUni?.id || null
+    }
+
+    // Try to match by email domain
+    if (!isPersonalEmail(email) && emailDomain) {
         const foundUniversity = await findUniversityByDomain(emailDomain)
         if (foundUniversity) {
-            universityId = foundUniversity.id
-        } else if (universityName?.trim()) {
-            // User manually entered a university name
-            const normalizedName = universityName.trim()
-
-            // Check if university already exists by name
-            const existingByName = await prisma.university.findFirst({
-                where: {
-                    name: {
-                        equals: normalizedName,
-                        mode: 'insensitive' // Case insensitive match
-                    }
-                }
-            })
-
-            if (existingByName) {
-                // Link to existing university
-                universityId = existingByName.id
-                logger.info('Linked to existing university by name', { name: normalizedName, id: universityId })
-            } else {
-                // Create a pending university with this domain
-                try {
-                    const newUniversity = await createPendingUniversity(normalizedName, emailDomain)
-                    universityId = newUniversity.id
-                    logger.info('Created pending university', { name: normalizedName, domain: emailDomain })
-                } catch (e) {
-                    // Fallback in case of race condition or error
-                    logger.warn('Failed to create pending university', { name: normalizedName, error: e })
-                }
-            }
+            return foundUniversity.id
         }
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    // Create pending university if name provided
+    if (universityName?.trim()) {
+        const normalizedName = universityName.trim()
 
-    // Generate unique referral code based on username
-    const newReferralCode = await generateUniqueReferralCode(name)
+        // Check existing by name
+        const existingByName = await prisma.university.findFirst({
+            where: {
+                name: { equals: normalizedName, mode: 'insensitive' }
+            },
+            select: { id: true }
+        })
 
-    // Generate email verification token (expires in 24 hours)
+        if (existingByName) {
+            return existingByName.id
+        }
+
+        // Create new pending university
+        try {
+            const newUniversity = await createPendingUniversity(normalizedName, emailDomain || '')
+            return newUniversity.id
+        } catch (e) {
+            logger.warn('Failed to create pending university', { name: normalizedName, error: e })
+            return null
+        }
+    }
+
+    return null
+}
+
+/**
+ * Create user with referral relationship
+ */
+async function createUserWithReferral(
+    userData: SignUpInput,
+    hashedPassword: string,
+    referralCode: string,
+    role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF',
+    universityId: string | null,
+    referrerId: string | null
+): Promise<void> {
     const verificationToken = generateSecureToken()
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-    try {
-        await prisma.user.create({
+    await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
             data: {
-                email: validatedEmail,
-                name,
+                email: userData.email,
+                name: userData.name,
                 password: hashedPassword,
                 role,
-                referralCode: newReferralCode,
+                referralCode,
                 verificationToken,
                 verificationExpires,
                 universityId,
-                referredBy: referrerId ? {
-                    create: {
-                        referrerId: referrerId
-                    }
-                } : undefined
-            }
+                referredBy: referrerId ? { create: { referrerId } } : undefined
+            },
+            select: { id: true }
         })
 
-        // Referral record created via nested write, so we don't need manual create.
-
         if (referrerId) {
-            // Increment referrer power score (+50)
-            await prisma.user.update({
+            await tx.user.update({
                 where: { id: referrerId },
                 data: { powerScore: { increment: 50 } }
             })
         }
+    })
 
-        // Send Verification Email (Non-blocking)
-        const { sendVerificationEmail } = await import('@/lib/email')
-        sendVerificationEmail(validatedEmail, name, verificationToken).catch(err =>
-            logger.error('Failed to send verification email', { email: validatedEmail, error: err })
-        )
+    // Send verification email asynchronously
+    const { sendVerificationEmail } = await import('@/lib/email')
+    sendVerificationEmail(userData.email, userData.name, verificationToken)
+        .catch(err => logger.error('Failed to send verification email', { email: userData.email, error: err }))
 
-        logger.info('User registered successfully', { email: validatedEmail, role, referralCode: newReferralCode, universityId })
-
-    } catch (e) {
-        logger.error('Registration failed', { error: e })
-        return { error: 'Registration failed' }
-    }
-
-    redirect('/auth/signin?message=Please check your email to verify your account')
+    logger.info('User registered successfully', {
+        email: userData.email,
+        role,
+        referralCode,
+        universityId
+    })
 }
 
-export async function requestPasswordReset(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
-    const email = formData.get('email') as string
+/**
+ * Enforce constant timing delay for security
+ */
+async function enforceTimingDelay(startTime: number): Promise<void> {
+    const elapsed = Date.now() - startTime
+    if (elapsed < ACCOUNT_ENUMERATION_DELAY) {
+        await new Promise(resolve => setTimeout(resolve, ACCOUNT_ENUMERATION_DELAY - elapsed))
+    }
+}
+
+/**
+ * Main signup function - refactored into smaller, testable steps
+ */
+export async function signUp(
+    prevState: { error?: string; success?: string } | undefined,
+    formData: FormData
+): Promise<{ error?: string; success?: string }> {
+    const startTime = Date.now()
+
+    try {
+        // Extract and validate email first for rate limiting
+        const email = (formData.get('email') as string)?.toLowerCase().trim()
+
+        if (!email) {
+            return { error: 'Email is required' }
+        }
+
+        // Rate limiting
+        if (!checkRateLimit(rateLimitStores.signup, email, RateLimits.SIGNUP)) {
+            logger.warn('Rate limit exceeded for signup', { email })
+            throw new RateLimitError()
+        }
+
+        // Validate form data
+        const rawData = {
+            email: formData.get('email'),
+            password: formData.get('password'),
+            name: formData.get('name'),
+            referralCode: formData.get('referralCode')
+        }
+
+        const validationResult = signUpSchema.safeParse(rawData)
+        if (!validationResult.success) {
+            const errors = validationResult.error.issues.map(e => e.message).join(', ')
+            logger.warn('Validation failed for signup', { email, errors })
+            return { error: errors }
+        }
+
+        const { email: validatedEmail, password, name, referralCode } = validationResult.data
+
+        // Check for existing user
+        const existingUser = await prisma.user.findUnique({
+            where: { email: validatedEmail },
+            select: { id: true }
+        })
+
+        if (existingUser) {
+            logger.warn('Signup attempt with existing email', { email: validatedEmail })
+        }
+
+        // Determine role and referrer
+        const { role, referrerId } = await determineUserRole(validatedEmail, referralCode)
+
+        // Determine university
+        const universityId = await determineUniversity(validatedEmail, formData)
+
+        // Create user only if doesn't exist
+        if (!existingUser) {
+            const hashedPassword = await bcrypt.hash(password, 10)
+            const newReferralCode = await generateUniqueReferralCode()
+
+            await createUserWithReferral(
+                validationResult.data,
+                hashedPassword,
+                newReferralCode,
+                role,
+                universityId,
+                referrerId
+            )
+        }
+
+        // Enforce timing delay
+        await enforceTimingDelay(startTime)
+
+        if (existingUser) {
+            return { success: 'If an account exists with this email, a verification link has been sent.' }
+        }
+
+        redirect('/auth/signin?message=Please check your email to verify your account')
+
+    } catch (error) {
+        await enforceTimingDelay(startTime)
+
+        if (error instanceof RateLimitError) {
+            return { error: 'Too many signup attempts. Please try again later.' }
+        }
+
+        if (error instanceof ValidationError) {
+            return { error: error.message }
+        }
+
+        logger.error('Registration failed', { error })
+        return { error: 'Registration failed. Please try again.' }
+    }
+}
+
+/**
+ * Request password reset
+ */
+export async function requestPasswordReset(
+    prevState: { error?: string; success?: string } | undefined,
+    formData: FormData
+): Promise<{ error?: string; success?: string }> {
+    const startTime = Date.now()
+    const email = (formData.get('email') as string)?.toLowerCase().trim()
+
     if (!email) {
         return { error: 'Email is required' }
     }
 
-    const rawEmail = email.toLowerCase().trim()
-
-    // Rate limiting check for password reset
-    const now = Date.now()
-    const resetAttempt = passwordResetAttempts.get(rawEmail)
-
-    if (!resetAttempt || now > resetAttempt.resetTime) {
-        passwordResetAttempts.set(rawEmail, { count: 1, resetTime: now + RateLimits.PASSWORD_RESET.window })
-    } else {
-        resetAttempt.count++
-        if (resetAttempt.count > RateLimits.PASSWORD_RESET.limit) {
-            logger.warn('Rate limit exceeded for password reset', { email: rawEmail })
-            return { error: 'Too many password reset attempts. Please try again later.' }
-        }
+    // Rate limiting
+    if (!checkRateLimit(rateLimitStores.passwordReset, email, RateLimits.PASSWORD_RESET)) {
+        logger.warn('Rate limit exceeded for password reset', { email })
+        return { error: 'Too many password reset attempts. Please try again later.' }
     }
 
-    const user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase().trim() }
-    })
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            select: { id: true, email: true }
+        })
 
-    // Always show success message even if user doesn't exist (security)
-    if (!user) {
+        if (user) {
+            const resetToken = generateSecureToken()
+            const expires = new Date(Date.now() + 60 * 60 * 1000)
+
+            await prisma.passwordReset.deleteMany({ where: { userId: user.id } })
+            await prisma.passwordReset.create({
+                data: { token: resetToken, userId: user.id, expires }
+            })
+
+            const { sendPasswordResetEmail } = await import('@/lib/email')
+            sendPasswordResetEmail(user.email, resetToken).catch(err =>
+                logger.error('Failed to send password reset email', { email: user.email, error: err })
+            )
+
+            logger.info('Password reset requested', { email: user.email })
+        }
+
+        await enforceTimingDelay(startTime)
+
         return { success: 'If an account exists with this email, you will receive a password reset code.' }
+
+    } catch (error) {
+        await enforceTimingDelay(startTime)
+        logger.error('Password reset request failed', { error })
+        return { error: 'An error occurred. Please try again.' }
     }
-
-    // Generate reset token (expires in 1 hour)
-    const resetToken = generateToken()
-    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-    // Delete any existing tokens for this user
-    await prisma.passwordReset.deleteMany({
-        where: { userId: user.id }
-    })
-
-    // Create new reset token
-    await prisma.passwordReset.create({
-        data: {
-            token: resetToken,
-            userId: user.id,
-            expires
-        }
-    })
-
-    // Send reset email (Non-blocking)
-    const { sendPasswordResetEmail } = await import('@/lib/email')
-    sendPasswordResetEmail(user.email, resetToken).catch(err =>
-        logger.error('Failed to send password reset email', { email: user.email, error: err })
-    )
-
-    logger.info('Password reset requested', { email: user.email })
-
-    return { success: 'If an account exists with this email, you will receive a password reset code.' }
 }
 
-export async function resetPassword(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
+/**
+ * Reset password with token
+ */
+export async function resetPassword(
+    prevState: { error?: string; success?: string } | undefined,
+    formData: FormData
+): Promise<{ error?: string; success?: string }> {
     const token = formData.get('token') as string
     const password = formData.get('password') as string
 
@@ -330,108 +399,124 @@ export async function resetPassword(prevState: { error?: string; success?: strin
         return { error: 'Invalid request' }
     }
 
-    // Rate limiting for password reset verification (prevent brute force)
-    const now = Date.now()
-    const verifyAttempt = resetVerifyAttempts.get(token)
+    // Rate limiting
+    if (!checkRateLimit(rateLimitStores.resetVerify, token, { limit: 5, window: 15 * 60 * 1000 })) {
+        logger.warn('Rate limit exceeded for password reset verification', { token: token.substring(0, 4) + '...' })
+        return { error: 'Too many attempts. Please request a new reset code.' }
+    }
 
-    if (!verifyAttempt || now > verifyAttempt.resetTime) {
-        resetVerifyAttempts.set(token, { count: 1, resetTime: now + 15 * 60 * 1000 }) // 15 min window
-    } else {
-        verifyAttempt.count++
-        if (verifyAttempt.count > 5) { // 5 attempts per 15 minutes
-            logger.warn('Rate limit exceeded for password reset verification', { token: token.substring(0, 2) + '...' })
-            return { error: 'Too many attempts. Please request a new reset code.' }
+    // Validate password
+    const passwordValidation = validatePasswordComplexity(password)
+    if (!passwordValidation.valid) {
+        return { error: passwordValidation.error }
+    }
+
+    try {
+        const resetRecord = await prisma.passwordReset.findUnique({
+            where: { token },
+            include: { user: { select: { id: true, email: true } } }
+        })
+
+        if (!resetRecord) {
+            return { error: 'Invalid or expired reset code' }
         }
+
+        if (resetRecord.expires < new Date()) {
+            await prisma.passwordReset.delete({ where: { id: resetRecord.id } })
+            return { error: 'Reset code has expired' }
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: resetRecord.userId },
+                data: { password: hashedPassword }
+            }),
+            prisma.passwordReset.delete({ where: { id: resetRecord.id } })
+        ])
+
+        logger.info('Password reset successful', { email: resetRecord.user.email })
+        return { success: 'Your password has been reset. You can now sign in.' }
+
+    } catch (error) {
+        logger.error('Password reset failed', { error })
+        return { error: 'Failed to reset password. Please try again.' }
     }
-
-    if (password.length < 8) {
-        return { error: 'Password must be at least 8 characters' }
-    }
-
-    // Password complexity validation (same as signup)
-    if (!/[A-Z]/.test(password)) {
-        return { error: 'Password must contain at least one uppercase letter' }
-    }
-    if (!/[a-z]/.test(password)) {
-        return { error: 'Password must contain at least one lowercase letter' }
-    }
-    if (!/[0-9]/.test(password)) {
-        return { error: 'Password must contain at least one number' }
-    }
-    if (!/[^A-Za-z0-9]/.test(password)) {
-        return { error: 'Password must contain at least one special character' }
-    }
-
-    // Find valid reset token
-    const resetRecord = await prisma.passwordReset.findUnique({
-        where: { token },
-        include: { user: true }
-    })
-
-    if (!resetRecord) {
-        return { error: 'Invalid or expired reset code' }
-    }
-
-    if (resetRecord.expires < new Date()) {
-        // Delete expired token
-        await prisma.passwordReset.delete({ where: { id: resetRecord.id } })
-        return { error: 'Reset code has expired' }
-    }
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    // Update user password
-    await prisma.user.update({
-        where: { id: resetRecord.userId },
-        data: { password: hashedPassword }
-    })
-
-    // Delete used token
-    await prisma.passwordReset.delete({ where: { id: resetRecord.id } })
-
-    logger.info('Password reset successful', { email: resetRecord.user.email })
-
-    return { success: 'Your password has been reset. You can now sign in.' }
 }
 
-export async function resendVerificationEmail(prevState: { error?: string; success?: string } | undefined, formData: FormData) {
-    const email = formData.get('email') as string
+/**
+ * Validate password complexity
+ */
+function validatePasswordComplexity(password: string): { valid: true } | { valid: false; error: string } {
+    if (password.length < 8) {
+        return { valid: false, error: 'Password must be at least 8 characters' }
+    }
+    if (!/[A-Z]/.test(password)) {
+        return { valid: false, error: 'Password must contain at least one uppercase letter' }
+    }
+    if (!/[a-z]/.test(password)) {
+        return { valid: false, error: 'Password must contain at least one lowercase letter' }
+    }
+    if (!/[0-9]/.test(password)) {
+        return { valid: false, error: 'Password must contain at least one number' }
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+        return { valid: false, error: 'Password must contain at least one special character' }
+    }
+    return { valid: true }
+}
+
+/**
+ * Resend verification email
+ */
+export async function resendVerificationEmail(
+    prevState: { error?: string; success?: string } | undefined,
+    formData: FormData
+): Promise<{ error?: string; success?: string }> {
+    const startTime = Date.now()
+    const email = (formData.get('email') as string)?.toLowerCase().trim()
+
     if (!email) {
         return { error: 'Email is required' }
     }
 
-    const user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase().trim() }
-    })
-
-    if (!user) {
-        return { error: 'No account found with this email' }
+    // Rate limiting
+    if (!checkRateLimit(rateLimitStores.resendVerification, email, RateLimits.SIGNUP)) {
+        logger.warn('Rate limit exceeded for verification resend', { email })
+        return { error: 'Too many attempts. Please try again later.' }
     }
 
-    if (user.emailVerified) {
-        return { success: 'Email is already verified.' }
-    }
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            select: { id: true, email: true, name: true, emailVerified: true }
+        })
 
-    // Generate new verification token
-    const verificationToken = generateSecureToken()
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        if (user && !user.emailVerified) {
+            const verificationToken = generateSecureToken()
+            const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-    await prisma.user.update({
-        where: { id: user.id },
-        data: {
-            verificationToken,
-            verificationExpires
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { verificationToken, verificationExpires }
+            })
+
+            const { sendVerificationEmail } = await import('@/lib/email')
+            sendVerificationEmail(user.email, user.name || 'User', verificationToken).catch(err =>
+                logger.error('Failed to send verification email', { email: user.email, error: err })
+            )
+
+            logger.info('Verification email resent', { email: user.email })
         }
-    })
 
-    // Send verification email
-    const { sendVerificationEmail } = await import('@/lib/email')
-    sendVerificationEmail(user.email, user.name || 'User', verificationToken).catch(err =>
-        logger.error('Failed to send verification email', { email: user.email, error: err })
-    )
+        await enforceTimingDelay(startTime)
 
-    logger.info('Verification email resent', { email: user.email })
+        return { success: 'If an account exists with this email, a verification link has been sent.' }
 
-    return { success: 'Verification email sent. Please check your inbox.' }
+    } catch (error) {
+        await enforceTimingDelay(startTime)
+        logger.error('Resend verification failed', { error })
+        return { error: 'An error occurred. Please try again.' }
+    }
 }

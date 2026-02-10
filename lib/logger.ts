@@ -1,144 +1,190 @@
-/**
- * Centralized logging utility for the application
- * In production, this should be replaced with a proper logging service
- * like Sentry, LogRocket, DataDog, or CloudWatch
- */
+import { randomUUID } from 'crypto'
+import * as Sentry from '@sentry/nextjs'
+import { setSentryUser, clearSentryUser, addBreadcrumb, captureException } from '@/instrumentation/sentry'
 
 export enum LogLevel {
     DEBUG = 'debug',
     INFO = 'info',
     WARN = 'warn',
-    ERROR = 'error'
+    ERROR = 'error',
+    FATAL = 'fatal'
 }
 
 interface LogEntry {
-    timestamp: string
     level: LogLevel
     message: string
-    context?: Record<string, unknown>
-    userId?: string
+    timestamp: string
     requestId?: string
+    userId?: string
+    sessionId?: string
+    context?: Record<string, any>
+    error?: Error
 }
 
-/**
- * Generate a unique request ID for tracing
- */
+let currentRequestId: string | null = null
+
 export function generateRequestId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    return randomUUID()
 }
 
+export function setRequestId(requestId: string) {
+    currentRequestId = requestId
+}
 
+export function getRequestId(): string | null {
+    return currentRequestId
+}
 
-/**
- * Core logging function
- */
-function log(level: LogLevel, message: string, context?: Record<string, unknown>) {
-    const entry: LogEntry = {
-        timestamp: new Date().toISOString(),
+export function clearRequestId() {
+    currentRequestId = null
+}
+
+function log(entry: LogEntry): void {
+    const logOutput = {
+        level: entry.level,
+        message: entry.message,
+        timestamp: entry.timestamp,
+        requestId: entry.requestId || currentRequestId || undefined,
+        ...(entry.userId && { userId: entry.userId }),
+        ...(entry.sessionId && { sessionId: entry.sessionId }),
+        ...(entry.context && { context: entry.context }),
+        ...(entry.error && {
+            error: {
+                name: entry.error.name,
+                message: entry.error.message,
+                stack: entry.error.stack?.substring(0, 500)
+            }
+        })
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+        console.log(JSON.stringify(logOutput))
+    } else {
+        const emoji = {
+            [LogLevel.DEBUG]: '🔍',
+            [LogLevel.INFO]: 'ℹ️',
+            [LogLevel.WARN]: '⚠️',
+            [LogLevel.ERROR]: '❌',
+            [LogLevel.FATAL]: '💀'
+        }[entry.level]
+
+        console.log(`${emoji} [${entry.level.toUpperCase()}] ${entry.message}`, {
+            requestId: entry.requestId || currentRequestId,
+            ...(entry.userId && { userId: entry.userId }),
+            ...(entry.context && { ...entry.context }),
+            ...(entry.error && { error: entry.error.message })
+        })
+    }
+}
+
+function createLogEntry(
+    level: LogLevel,
+    message: string,
+    context?: Record<string, any>,
+    error?: Error
+): LogEntry {
+    return {
         level,
         message,
+        timestamp: new Date().toISOString(),
+        requestId: currentRequestId || undefined,
         context,
-        requestId: globalThis.__requestId__
-    }
-
-    // In production with a logging service, send the entry there
-    // For now, use structured console output
-    const logString = JSON.stringify(entry)
-
-    switch (level) {
-        case LogLevel.ERROR:
-            console.error(logString)
-            break
-        case LogLevel.WARN:
-            console.warn(logString)
-            break
-        case LogLevel.INFO:
-            console.log(logString)
-            break
-        case LogLevel.DEBUG:
-            if (process.env.NODE_ENV === 'development') {
-                console.debug(logString)
-            }
-            break
+        error
     }
 }
 
-/**
- * Logger object with convenience methods
- */
+export function debug(message: string, context?: Record<string, any>): void {
+    if (process.env.LOG_LEVEL !== 'debug' && process.env.NODE_ENV === 'production') {
+        return
+    }
+    log(createLogEntry(LogLevel.DEBUG, message, context))
+}
+
+export function info(message: string, context?: Record<string, any>): void {
+    log(createLogEntry(LogLevel.INFO, message, context))
+}
+
+export function warn(message: string, context?: Record<string, any>): void {
+    log(createLogEntry(LogLevel.WARN, message, context))
+}
+
+export function error(message: string, context?: Record<string, any>, err?: Error): void {
+    // Auto-detect error in context if not explicitly passed
+    const errorObj = err || (context?.error instanceof Error ? context.error : undefined)
+    const entry = createLogEntry(LogLevel.ERROR, message, context, errorObj)
+    log(entry)
+
+    addBreadcrumb('error', message, context)
+
+    if (errorObj) {
+        captureException(errorObj, { message, ...context })
+    } else {
+        Sentry.captureMessage(message, { level: 'error', extra: context })
+    }
+}
+
+export function fatal(message: string, context?: Record<string, any>, err?: Error): void {
+    const entry = createLogEntry(LogLevel.FATAL, message, context, err)
+    log(entry)
+
+    addBreadcrumb('fatal', message, context)
+    captureException(err || new Error(message), { message, ...context })
+}
+
+export function logUserLogin(userId: string, email: string, method: string): void {
+    info('User logged in', {
+        userId,
+        email: email.substring(0, 3) + '***',
+        method
+    })
+    setSentryUser(userId, email, method)
+}
+
+export function logUserLogout(userId: string): void {
+    info('User logged out', { userId })
+    clearSentryUser()
+}
+
+export function logUserSignup(userId: string, email: string, method: string): void {
+    info('User signed up', {
+        userId,
+        email: email.substring(0, 3) + '***',
+        method
+    })
+}
+
+export function logAdminAction(action: string, adminId: string, targetId?: string): void {
+    info(`Admin action: ${action}`, {
+        adminId,
+        ...(targetId && { targetId })
+    })
+}
+
+export function logSecurityEvent(event: string, severity: 'low' | 'medium' | 'high', context?: Record<string, any>): void {
+    const level = severity === 'high' ? LogLevel.ERROR : LogLevel.WARN
+    log(createLogEntry(level, `Security event: ${event}`, context))
+}
+
+export function logApiError(endpoint: string, method: string, status: number, err: Error): void {
+    error(`API error: ${method} ${endpoint}`, {
+        endpoint,
+        status,
+        errorCode: err.name,
+        errorMessage: err.message
+    }, err)
+}
+
 export const logger = {
-    debug: (message: string, context?: Record<string, unknown>) => {
-        log(LogLevel.DEBUG, message, context)
-    },
-
-    info: (message: string, context?: Record<string, unknown>) => {
-        log(LogLevel.INFO, message, context)
-    },
-
-    warn: (message: string, context?: Record<string, unknown>) => {
-        log(LogLevel.WARN, message, context)
-    },
-
-    error: (message: string, context?: Record<string, unknown>) => {
-        log(LogLevel.ERROR, message, context)
-    },
-
-    /**
-     * Log a security event (always logged regardless of environment)
-     */
+    debug,
+    info,
+    warn,
+    error,
+    fatal,
     security: (message: string, context?: Record<string, unknown>) => {
-        log(LogLevel.WARN, `[SECURITY] ${message}`, context)
+        log(createLogEntry(LogLevel.WARN, `[SECURITY] ${message}`, context))
     }
 }
 
-/**
- * Set the current request ID for tracing
- * Call this at the beginning of request handling
- */
-export function setRequestId(id: string) {
-    globalThis.__requestId__ = id
-}
-
-/**
- * Clear the current request ID
- * Call this at the end of request handling
- */
-export function clearRequestId() {
-    delete globalThis.__requestId__
-}
-
-/**
- * Decorator for async handlers to add request tracing and error logging
- */
-export function withLogging<T extends (...args: unknown[]) => Promise<unknown>>(
-    handler: T,
-    context: { name: string }
-): T {
-    return (async (...args: unknown[]) => {
-        const requestId = generateRequestId()
-        setRequestId(requestId)
-
-        logger.info(`${context.name} started`, { requestId })
-
-        try {
-            const result = await handler(...args)
-            logger.info(`${context.name} completed`, { requestId })
-            return result
-        } catch (error) {
-            logger.error(`${context.name} failed`, {
-                requestId,
-                error: error instanceof Error ? error.message : String(error)
-            })
-            throw error
-        } finally {
-            clearRequestId()
-        }
-    }) as T
-}
-
-// Extend globalThis to include our request ID
 declare global {
     var __requestId__: string | undefined
 }
-
-export { }

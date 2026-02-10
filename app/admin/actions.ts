@@ -3,34 +3,132 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { requireAdmin } from '@/lib/auth'
-import { parseSocialStats, calculateSocialReach, POWER_SCORE } from '@/lib/types'
+import { requireAdmin } from '@/lib/auth-checks'
+import { POWER_SCORE, parseSocialStats, calculateSocialReach } from '@/lib/types'
+import { logger } from '@/lib/logger'
+import { updateReputationAfterModeration, calculateReputation } from '@/lib/moderation/reputation'
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface RevisionWithDetails {
+    id: string
+    uniPageId: string
+    authorId: string
+    content: string
+    createdAt: Date
+    uniPage: { id: string; name: string; slug: string }
+    author: {
+        id: string
+        name: string | null
+        email: string
+        powerScore: number
+        createdAt: Date
+        emailVerified: Date | null
+    }
+}
+
+// ============================================================================
+// Revision Management
+// ============================================================================
 
 /**
  * Approve a wiki revision - ADMIN ONLY
- * Updates revision status, applies content to UniPage, and increments author's power score
- * USES TRANSACTION FOR ATOMICITY
  */
-export async function approveRevision(revisionId: string) {
-    // Security check: Verify admin access
+export async function approveRevision(revisionId: string, notes?: string | FormData) {
     await requireAdmin()
+    const finalNotes = typeof notes === 'string' ? notes : undefined
 
-    // 1. Fetch revision details
-    const revision = await prisma.wikiRevision.findUnique({
-        where: { id: revisionId }
-    })
-
+    const revision = await fetchRevisionForModeration(revisionId)
     if (!revision) throw new Error("Revision not found")
 
-    // 2. Perform Atomic Transaction
-    await prisma.$transaction([
-        // Update Revision Status -> APPROVED
-        prisma.wikiRevision.update({
-            where: { id: revisionId },
-            data: { status: 'APPROVED' }
-        }),
+    await executeApprovalTransaction(revision, finalNotes)
+    await updateReputationAfterModeration(revision.authorId, 'approved')
 
-        // Update UniPage Content with new text AND set published = true
+    logger.info('Wiki revision approved', {
+        revisionId,
+        authorId: revision.authorId,
+        pageId: revision.uniPageId,
+        notes: finalNotes
+    })
+
+    await revalidateAfterApproval(revision.uniPageId, revision.uniPage.slug)
+}
+
+/**
+ * Reject a wiki revision - ADMIN ONLY
+ */
+export async function rejectRevision(revisionId: string, notes?: string | FormData, reason?: string) {
+    await requireAdmin()
+    const finalNotes = typeof notes === 'string' ? notes : undefined
+
+    const revision = await fetchRevisionForModeration(revisionId)
+    if (!revision) throw new Error("Revision not found")
+
+    await prisma.wikiRevision.update({
+        where: { id: revisionId },
+        data: {
+            status: 'REJECTED'
+        }
+    })
+
+    await updateReputationAfterModeration(revision.authorId, 'rejected')
+
+    logger.info('Wiki revision rejected', {
+        revisionId,
+        authorId: revision.authorId,
+        pageId: revision.uniPageId,
+        reason,
+        notes: finalNotes
+    })
+
+    revalidatePath('/admin/dashboard')
+}
+
+/**
+ * Fetch revision with moderation context
+ */
+async function fetchRevisionForModeration(revisionId: string) {
+    return prisma.wikiRevision.findUnique({
+        where: { id: revisionId },
+        select: {
+            id: true,
+            uniPageId: true,
+            authorId: true,
+            content: true,
+            createdAt: true,
+            uniPage: {
+                select: { id: true, name: true, slug: true }
+            },
+            author: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    powerScore: true,
+                    createdAt: true,
+                    emailVerified: true
+                }
+            }
+        }
+    })
+}
+
+/**
+ * Execute approval transaction atomically
+ */
+async function executeApprovalTransaction(
+    revision: RevisionWithDetails,
+    notes?: string
+) {
+    await prisma.$transaction([
+        prisma.wikiRevision.update({
+            where: { id: revision.id },
+            data: {
+                status: 'APPROVED'
+            }
+        }),
         prisma.uniPage.update({
             where: { id: revision.uniPageId },
             data: {
@@ -38,8 +136,6 @@ export async function approveRevision(revisionId: string) {
                 published: true
             }
         }),
-
-        // Increment Power Score for Author (+20)
         prisma.user.update({
             where: { id: revision.authorId },
             data: {
@@ -47,102 +143,206 @@ export async function approveRevision(revisionId: string) {
             }
         })
     ])
+}
 
-    // Fetch slug for revalidation (optimization: could fetch in initial query)
-    const uniPage = await prisma.uniPage.findUnique({
-        where: { id: revision.uniPageId },
-        select: { slug: true }
-    })
+/**
+ * Revalidate paths after approval
+ */
+async function revalidateAfterApproval(uniPageId: string, slug: string) {
+    revalidatePath(`/wiki/${slug}`)
+    revalidatePath('/admin/dashboard')
+    revalidatePath('/wiki')
+}
 
-    if (uniPage) {
-        revalidatePath(`/wiki/${uniPage.slug}`)
+// ============================================================================
+// Bulk Operations
+// ============================================================================
+
+interface BulkResult {
+    success: string[]
+    failed: { id: string; error: string }[]
+}
+
+/**
+ * Bulk approve wiki revisions - ADMIN ONLY
+ */
+export async function bulkApproveRevisions(revisionIds: string[], notes?: string): Promise<BulkResult> {
+    await requireAdmin()
+
+    const results: BulkResult = { success: [], failed: [] }
+
+    for (const revisionId of revisionIds) {
+        try {
+            await approveRevision(revisionId, notes)
+            results.success.push(revisionId)
+        } catch (error) {
+            results.failed.push({
+                id: revisionId,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            })
+        }
     }
 
-    revalidatePath('/admin/dashboard')
-    revalidatePath(`/wiki`)
-}
-
-/**
- * Reject a wiki revision - ADMIN ONLY
- */
-export async function rejectRevision(revisionId: string) {
-    // Security check: Verify admin access
-    await requireAdmin()
-
-    await prisma.wikiRevision.update({
-        where: { id: revisionId },
-        data: { status: 'REJECTED' }
-    })
-    revalidatePath('/admin/dashboard')
-}
-
-/**
- * Approve a pending staff member - ADMIN ONLY
- */
-export async function approveStaff(userId: string) {
-    await requireAdmin()
-
-    await prisma.user.update({
-        where: { id: userId },
-        data: { role: 'STAFF' }
+    logger.info('Bulk approve revisions completed', {
+        total: revisionIds.length,
+        success: results.success.length,
+        failed: results.failed.length
     })
 
-    revalidatePath('/admin/dashboard')
+    return results
 }
 
 /**
- * Reject a pending staff member - ADMIN ONLY
- * Downgrades them to STUDENT
+ * Bulk reject wiki revisions - ADMIN ONLY
  */
-export async function rejectStaff(userId: string) {
+export async function bulkRejectRevisions(
+    revisionIds: string[],
+    notes?: string,
+    reason?: string
+): Promise<BulkResult> {
     await requireAdmin()
 
-    await prisma.user.update({
-        where: { id: userId },
-        data: { role: 'STUDENT' }
+    const results: BulkResult = { success: [], failed: [] }
+
+    for (const revisionId of revisionIds) {
+        try {
+            await rejectRevision(revisionId, notes, reason)
+            results.success.push(revisionId)
+        } catch (error) {
+            results.failed.push({
+                id: revisionId,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            })
+        }
+    }
+
+    logger.info('Bulk reject revisions completed', {
+        total: revisionIds.length,
+        success: results.success.length,
+        failed: results.failed.length
     })
 
-    revalidatePath('/admin/dashboard')
+    return results
+}
+
+// ============================================================================
+// Revision Queries
+// ============================================================================
+
+interface RevisionWithPriority {
+    priorityScore: number
+    authorReputation: {
+        score: number
+        level: string
+        canAutoApprove: boolean
+        requiresExtraReview: boolean
+    }
 }
 
 /**
- * Increment power score atomically - ADMIN ONLY
+ * Get pending revisions with moderation info - ADMIN ONLY
  */
+export async function getPendingRevisionsWithModerationInfo() {
+    await requireAdmin()
+
+    const revisions = await prisma.wikiRevision.findMany({
+        where: { status: 'PENDING' },
+        include: {
+            author: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    powerScore: true,
+                    createdAt: true,
+                    emailVerified: true
+                }
+            },
+            uniPage: {
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true
+                }
+            }
+        },
+        orderBy: [
+            { createdAt: 'desc' }
+        ]
+    })
+
+    // Calculate priority score for each revision
+    const revisionsWithPriority = await Promise.all(
+        revisions.map(async (revision) => {
+            const reputation = await calculateReputation(revision.authorId)
+
+            const priorityScore =
+                (reputation.requiresExtraReview ? 20 : 0) +
+                (reputation.score < 30 ? 15 : 0)
+
+            return {
+                ...revision,
+                priorityScore,
+                authorReputation: {
+                    score: reputation.score,
+                    level: reputation.level,
+                    canAutoApprove: reputation.canAutoApprove,
+                    requiresExtraReview: reputation.requiresExtraReview
+                }
+            }
+        })
+    )
+
+    return revisionsWithPriority.sort((a, b) => b.priorityScore - a.priorityScore)
+}
+
+// ============================================================================
+// Staff Management
+// ============================================================================
+
+export async function approveStaff(userId: string, _formData?: FormData) {
+    await requireAdmin()
+    await prisma.user.update({ where: { id: userId }, data: { role: 'STAFF' } })
+    revalidatePath('/admin/dashboard')
+    logger.info('Staff approved', { userId })
+}
+
+export async function rejectStaff(userId: string, _formData?: FormData) {
+    await requireAdmin()
+    await prisma.user.update({ where: { id: userId }, data: { role: 'STUDENT' } })
+    revalidatePath('/admin/dashboard')
+    logger.info('Staff rejected', { userId })
+}
+
+// ============================================================================
+// Power Score Management
+// ============================================================================
+
 export async function incrementPowerScore(userId: string, points: number) {
     await requireAdmin()
-
     await prisma.user.update({
         where: { id: userId },
-        data: {
-            powerScore: {
-                increment: points
-            }
-        }
+        data: { powerScore: { increment: points } }
     })
+    logger.info('Power score incremented', { userId, points })
 }
 
-/**
- * Full power score recalculation (Legacy/Sync fallback) - ADMIN ONLY
- */
 export async function recalculatePowerScore(userId: string) {
     await requireAdmin()
 
     const user = await prisma.user.findUnique({
-        where: { id: userId }
+        where: { id: userId },
+        select: { id: true, socialStats: true }
     })
 
     if (!user) return
 
-    const referralsCount = await prisma.referral.count({
-        where: { referrerId: userId }
-    })
-
-    const approvedEditsCount = await prisma.wikiRevision.count({
-        where: {
-            authorId: userId,
-            status: 'APPROVED'
-        }
-    })
+    const [referralsCount, approvedEditsCount] = await Promise.all([
+        prisma.referral.count({ where: { referrerId: userId } }),
+        prisma.wikiRevision.count({
+            where: { authorId: userId, status: 'APPROVED' }
+        })
+    ])
 
     const socialStats = parseSocialStats(user.socialStats)
     const socialReach = calculateSocialReach(socialStats)
@@ -156,121 +356,98 @@ export async function recalculatePowerScore(userId: string) {
         where: { id: userId },
         data: { powerScore }
     })
+
+    logger.info('Power score recalculated', { userId, powerScore })
 }
 
-/**
- * Delete a Wiki Page (UniPage) - ADMIN ONLY
- * Removes the page and all its revisions.
- */
+// ============================================================================
+// Page Management
+// ============================================================================
+
 export async function deletePage(slug: string) {
     await requireAdmin()
 
-    // Find page ID first
-    const page = await prisma.uniPage.findUnique({ where: { slug } })
+    const page = await prisma.uniPage.findUnique({
+        where: { slug },
+        select: { id: true }
+    })
+
     if (!page) return
 
     await prisma.$transaction([
-        prisma.wikiRevision.deleteMany({
-            where: { uniPageId: page.id }
-        }),
-        prisma.uniPage.delete({
-            where: { id: page.id }
-        })
+        prisma.wikiRevision.deleteMany({ where: { uniPageId: page.id } }),
+        prisma.uniPage.delete({ where: { id: page.id } })
     ])
 
     revalidatePath('/wiki')
     redirect('/wiki')
 }
 
-/**
- * Approve Institute
- */
-export async function approveInstitute(id: string) {
+// ============================================================================
+// Institute Management
+// ============================================================================
+
+export async function approveInstitute(id: string, _formData?: FormData) {
     await requireAdmin()
-    await prisma.institute.update({
-        where: { id },
-        data: { approved: true }
-    })
+    await prisma.institute.update({ where: { id }, data: { approved: true } })
     revalidatePath('/admin/dashboard')
     revalidatePath('/wiki')
+    logger.info('Institute approved', { instituteId: id })
 }
 
-/**
- * Reject Institute
- */
-export async function rejectInstitute(id: string) {
+export async function rejectInstitute(id: string, _formData?: FormData) {
     await requireAdmin()
-    await prisma.institute.delete({
-        where: { id }
-    })
+    await prisma.institute.delete({ where: { id } })
     revalidatePath('/admin/dashboard')
+    logger.info('Institute rejected', { instituteId: id })
 }
 
-/**
- * Approve Lab
- */
-export async function approveLab(id: string) {
+// ============================================================================
+// Lab Management
+// ============================================================================
+
+export async function approveLab(id: string, _formData?: FormData) {
     await requireAdmin()
     const lab = await prisma.lab.update({
         where: { id },
         data: { approved: true },
-        include: { institute: true }
+        include: { institute: { select: { slug: true } } }
     })
     revalidatePath('/admin/dashboard')
     revalidatePath(`/wiki/institutes/${lab.institute.slug}`)
+    logger.info('Lab approved', { labId: id })
 }
 
-/**
- * Reject Lab
- */
-export async function rejectLab(id: string) {
+export async function rejectLab(id: string, _formData?: FormData) {
     await requireAdmin()
-    await prisma.lab.delete({
-        where: { id }
-    })
+    await prisma.lab.delete({ where: { id } })
     revalidatePath('/admin/dashboard')
+    logger.info('Lab rejected', { labId: id })
 }
 
-/**
- * Approve Secondary University Request - ADMIN ONLY
- * Sets the user's secondaryUniversityId and updates request status
- */
-export async function approveSecondaryUniversityRequest(requestId: string) {
+// ============================================================================
+// Secondary University Request Management
+// ============================================================================
+
+interface SecondaryRequest {
+    id: string
+    userId: string
+    universityId: string
+    status: string
+}
+
+export async function approveSecondaryUniversityRequest(requestId: string, _formData?: FormData) {
     await requireAdmin()
 
-    const request = await prisma.secondaryUniversityRequest.findUnique({
-        where: { id: requestId }
-    })
-
-    if (!request) {
-        throw new Error('Request not found')
-    }
-
-    if (request.status !== 'PENDING') {
-        throw new Error('Request is not pending')
-    }
-
-    await prisma.$transaction([
-        // Update user's secondary university
-        prisma.user.update({
-            where: { id: request.userId },
-            data: { secondaryUniversityId: request.universityId }
-        }),
-        // Mark request as approved
-        prisma.secondaryUniversityRequest.update({
-            where: { id: requestId },
-            data: { status: 'APPROVED' }
-        })
-    ])
+    const request = await fetchAndValidateSecondaryRequest(requestId)
+    await executeSecondaryUniversityApproval(request)
 
     revalidatePath('/admin/dashboard')
     revalidatePath('/profile')
+    logger.info('Secondary university request approved', { requestId, userId: request.userId })
 }
 
-/**
- * Reject Secondary University Request - ADMIN ONLY
- */
-export async function rejectSecondaryUniversityRequest(requestId: string) {
+export async function rejectSecondaryUniversityRequest(requestId: string, _formData?: FormData) {
     await requireAdmin()
 
     await prisma.secondaryUniversityRequest.update({
@@ -280,4 +457,30 @@ export async function rejectSecondaryUniversityRequest(requestId: string) {
 
     revalidatePath('/admin/dashboard')
     revalidatePath('/profile')
+    logger.info('Secondary university request rejected', { requestId })
+}
+
+async function fetchAndValidateSecondaryRequest(requestId: string): Promise<SecondaryRequest> {
+    const request = await prisma.secondaryUniversityRequest.findUnique({
+        where: { id: requestId },
+        select: { id: true, userId: true, universityId: true, status: true }
+    })
+
+    if (!request) throw new Error('Request not found')
+    if (request.status !== 'PENDING') throw new Error('Request is not pending')
+
+    return request
+}
+
+async function executeSecondaryUniversityApproval(request: SecondaryRequest) {
+    await prisma.$transaction([
+        prisma.user.update({
+            where: { id: request.userId },
+            data: { secondaryUniversityId: request.universityId }
+        }),
+        prisma.secondaryUniversityRequest.update({
+            where: { id: request.id },
+            data: { status: 'APPROVED' }
+        })
+    ])
 }

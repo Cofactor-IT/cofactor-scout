@@ -1,6 +1,7 @@
 /**
  * In-memory rate limiting for API endpoints and form submissions.
  * For production, consider using Redis or a dedicated rate-limiting service.
+ * Use checkRateLimitRedis from './rate-limit-redis' for production deployments.
  */
 
 interface RateLimitEntry {
@@ -9,6 +10,7 @@ interface RateLimitEntry {
 }
 
 const rateLimitStore = new Map<string, RateLimitEntry>()
+let cleanupInterval: NodeJS.Timeout | null = null
 
 /**
  * Clean up expired entries from the rate limit store
@@ -24,7 +26,21 @@ function cleanupExpiredEntries() {
 
 // Run cleanup every minute
 if (typeof setInterval !== 'undefined') {
-    setInterval(cleanupExpiredEntries, 60 * 1000)
+    cleanupInterval = setInterval(cleanupExpiredEntries, 60 * 1000)
+}
+
+export function cleanupRateLimitStore() {
+    if (cleanupInterval) {
+        clearInterval(cleanupInterval)
+        cleanupInterval = null
+    }
+    rateLimitStore.clear()
+}
+
+if (typeof process !== 'undefined' && process.on) {
+    process.on('exit', cleanupRateLimitStore)
+    process.on('SIGINT', cleanupRateLimitStore)
+    process.on('SIGTERM', cleanupRateLimitStore)
 }
 
 /**

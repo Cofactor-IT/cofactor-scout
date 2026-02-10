@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { validateCsrfToken } from '@/lib/csrf'
 
 export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
@@ -19,6 +20,10 @@ export async function POST(request: NextRequest) {
 
     if (userId === session.user.id) {
         return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 })
+    }
+
+    if (!await validateCsrfToken(request)) {
+        return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
     }
 
     await prisma.user.delete({

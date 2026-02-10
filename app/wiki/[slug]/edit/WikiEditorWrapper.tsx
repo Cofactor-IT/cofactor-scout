@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { WikiEditor } from '@/components/WikiEditor'
+import { WikiEditor } from '@/components/editor/WikiEditor'
 
 export function WikiEditorWrapper({ defaultValue }: { defaultValue: string }) {
     const [content, setContent] = useState(defaultValue)
