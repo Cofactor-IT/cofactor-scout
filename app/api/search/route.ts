@@ -10,7 +10,9 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const rawQuery = searchParams.get('q') || ''
-    const rawType = searchParams.get('type') as 'page' | 'institute' | 'lab' | 'person' | undefined
+    const rawTypeParam = searchParams.get('type')
+    // Treat empty string and null as undefined (no type filter = "all")
+    const rawType = (rawTypeParam && rawTypeParam.length > 0) ? rawTypeParam as 'page' | 'institute' | 'lab' | 'person' : undefined
     const suggestions = searchParams.get('suggestions') === 'true'
     const rawPage = parseInt(searchParams.get('page') || '1', 10)
     const rawLimit = parseInt(searchParams.get('limit') || '20', 10)
