@@ -10,11 +10,11 @@ export function withPerformanceTracking<T extends (...args: unknown[]) => Promis
 ): T {
     return (async (...args: unknown[]) => {
         const start = Date.now()
-        
+
         try {
             const result = await handler(...args)
             const duration = Date.now() - start
-            
+
             trackApiRequest(routeName, 'unknown', duration, 200)
             return result
         } catch (error) {
@@ -33,11 +33,11 @@ export function withRouteTracking<T extends (...args: unknown[]) => Promise<unkn
 ): T {
     return (async (...args: unknown[]) => {
         const start = Date.now()
-        
+
         try {
             const result = await handler(...args)
             const duration = Date.now() - start
-            
+
             trackApiRequest(routeName, 'GET', duration, 200)
             return result
         } catch (error) {
