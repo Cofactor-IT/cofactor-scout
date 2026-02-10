@@ -71,9 +71,11 @@ export async function GET(request: NextRequest) {
             return Response.json({ suggestions: suggestionsList })
         }
 
-        const { results, totalCount } = await unifiedSearch(query, {
-            type
-        }, limit, allowedUniversityIds)
+        const { results, totalCount } = await unifiedSearch(query,
+            type ? { type } : undefined,
+            limit,
+            allowedUniversityIds
+        )
 
         return Response.json({
             results,
