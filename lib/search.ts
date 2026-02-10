@@ -114,14 +114,31 @@ export async function searchInstitutes(query: string, limit: number = 10, allowe
         orderBy: { name: 'asc' }
     })
 
-    return results.map(inst => ({
-        id: inst.id,
-        type: 'institute' as const,
-        title: inst.name,
-        content: `University: ${inst.university?.name || ''}`,
-        url: `/wiki/institutes/${inst.slug}`,
-        score: 1
-    }))
+    return results.map(inst => {
+        // Calculate simple relevance score: exact match > name match > keyword match
+        let score = 1
+        const lowerQuery = query.toLowerCase()
+        const lowerName = inst.name.toLowerCase()
+
+        if (lowerName === lowerQuery) {
+            score = 10 // Exact match
+        } else if (lowerName.startsWith(lowerQuery)) {
+            score = 5 // Starts with query
+        } else if (lowerName.includes(lowerQuery)) {
+            score = 3 // Contains query
+        } else if (inst.keywords?.includes(query)) {
+            score = 2 // Keyword match
+        }
+
+        return {
+            id: inst.id,
+            type: 'institute' as const,
+            title: inst.name,
+            content: `University: ${inst.university?.name || ''}`,
+            url: `/wiki/institutes/${inst.slug}`,
+            score
+        }
+    })
 }
 
 /**
@@ -163,14 +180,31 @@ export async function searchLabs(query: string, limit: number = 10, allowedUnive
         orderBy: { name: 'asc' }
     })
 
-    return results.map(lab => ({
-        id: lab.id,
-        type: 'lab' as const,
-        title: lab.name,
-        content: `Institute: ${lab.institute?.name || ''}`,
-        url: `/wiki/labs/${lab.slug}`,
-        score: 1
-    }))
+    return results.map(lab => {
+        // Calculate simple relevance score
+        let score = 1
+        const lowerQuery = query.toLowerCase()
+        const lowerName = lab.name.toLowerCase()
+
+        if (lowerName === lowerQuery) {
+            score = 10
+        } else if (lowerName.startsWith(lowerQuery)) {
+            score = 5
+        } else if (lowerName.includes(lowerQuery)) {
+            score = 3
+        } else if (lab.keywords?.includes(query)) {
+            score = 2
+        }
+
+        return {
+            id: lab.id,
+            type: 'lab' as const,
+            title: lab.name,
+            content: `Institute: ${lab.institute?.name || ''}`,
+            url: `/wiki/labs/${lab.slug}`,
+            score
+        }
+    })
 }
 
 /**
@@ -207,14 +241,37 @@ export async function searchPeople(query: string, limit: number = 10, allowedUni
         orderBy: { name: 'asc' }
     })
 
-    return results.map(person => ({
-        id: person.id,
-        type: 'person' as const,
-        title: person.name,
-        content: `${person.role || ''}${person.fieldOfStudy ? ` · ${person.fieldOfStudy}` : ''}`,
-        url: person.slug ? `/wiki/people/${person.slug}` : '#',
-        score: 1
-    }))
+    return results.map(person => {
+        // Calculate simple relevance score
+        let score = 1
+        const lowerQuery = query.toLowerCase()
+        const lowerName = person.name.toLowerCase()
+
+        if (lowerName === lowerQuery) {
+            score = 10
+        } else if (lowerName.startsWith(lowerQuery)) {
+            score = 5
+        } else if (lowerName.includes(lowerQuery)) {
+            score = 3
+        } else if (person.role?.toLowerCase().includes(lowerQuery)) {
+            score = 2.5
+        } else if (person.fieldOfStudy?.toLowerCase().includes(lowerQuery)) {
+            score = 2.5
+        } else if (person.bio?.toLowerCase().includes(lowerQuery)) {
+            score = 2
+        } else if (person.keywords?.includes(query)) {
+            score = 2
+        }
+
+        return {
+            id: person.id,
+            type: 'person' as const,
+            title: person.name,
+            content: `${person.role || ''}${person.fieldOfStudy ? ` · ${person.fieldOfStudy}` : ''}`,
+            url: person.slug ? `/wiki/people/${person.slug}` : '#',
+            score
+        }
+    })
 }
 
 /**
@@ -237,21 +294,28 @@ export async function unifiedSearch(
         return { results: [], totalCount: 0 }
     }
 
+    // When searching all types, fetch more results per type to ensure we get the best overall
+    // Then we'll sort globally and apply the final limit
+    const perTypeLimit = filters?.type ? limit : Math.ceil(limit * 1.5)
+
     const [pages, institutes, labs, people] = await Promise.all([
-        filters?.type === 'page' || !filters?.type ? searchWiki(query, limit, allowedUniversityIds) : Promise.resolve([]),
-        filters?.type === 'institute' || !filters?.type ? searchInstitutes(query, limit, allowedUniversityIds) : Promise.resolve([]),
-        filters?.type === 'lab' || !filters?.type ? searchLabs(query, limit, allowedUniversityIds) : Promise.resolve([]),
-        filters?.type === 'person' || !filters?.type ? searchPeople(query, limit, allowedUniversityIds) : Promise.resolve([])
+        filters?.type === 'page' || !filters?.type ? searchWiki(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
+        filters?.type === 'institute' || !filters?.type ? searchInstitutes(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
+        filters?.type === 'lab' || !filters?.type ? searchLabs(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
+        filters?.type === 'person' || !filters?.type ? searchPeople(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([])
     ])
 
     const allResults = [...pages, ...institutes, ...labs, ...people]
 
-    const totalCount = allResults.length
+    // Sort by score globally to get the best results across all types
     allResults.sort((a, b) => b.score - a.score)
 
+    // Apply the final limit
+    const limitedResults = allResults.slice(0, limit)
+
     return {
-        results: allResults.slice(0, limit),
-        totalCount
+        results: limitedResults,
+        totalCount: allResults.length
     }
 }
 
