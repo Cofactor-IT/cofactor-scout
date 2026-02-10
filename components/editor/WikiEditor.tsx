@@ -7,6 +7,8 @@ import Image from '@tiptap/extension-image'
 import Placeholder from '@tiptap/extension-placeholder'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import TurndownService from 'turndown'
+import { marked } from 'marked'
 import { EditorToolbar } from './EditorToolbar'
 import { Eye, EyeOff, Type, FileText } from 'lucide-react'
 
@@ -15,6 +17,7 @@ type ViewMode = 'rich' | 'markdown'
 interface WikiEditorProps {
     value?: string
     onChange?: (value: string) => void
+    initialViewMode?: ViewMode
     placeholder?: string
     onImageUpload?: (file: File) => Promise<string>
 }
@@ -22,10 +25,11 @@ interface WikiEditorProps {
 export function WikiEditor({
     value = '',
     onChange,
+    initialViewMode = 'rich',
     placeholder = 'Start writing... Type @ to mention people, labs, or institutes.',
     onImageUpload
 }: WikiEditorProps) {
-    const [viewMode, setViewMode] = useState<ViewMode>('rich')
+    const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode)
     const [localValue, setLocalValue] = useState(value)
     const [wordCount, setWordCount] = useState(0)
     const [charCount, setCharCount] = useState(0)
@@ -45,10 +49,10 @@ export function WikiEditor({
                 placeholder
             })
         ],
-        content: localValue,
+        content: viewMode === 'rich' ? localValue : '',
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl max-w-none focus:outline-none min-h-[300px] px-4 py-3'
+                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl max-w-none focus:outline-none min-h-[400px] px-4 py-3'
             },
             handlePaste: (view, event) => {
                 const items = event.clipboardData?.items
@@ -75,9 +79,11 @@ export function WikiEditor({
             }
         },
         onUpdate: ({ editor }) => {
-            const html = editor.getHTML()
-            setLocalValue(html)
-            onChange?.(html)
+            if (viewMode === 'rich') {
+                const html = editor.getHTML()
+                setLocalValue(html)
+                onChange?.(html)
+            }
         }
     })
 
@@ -86,7 +92,7 @@ export function WikiEditor({
         if (richEditor && viewMode === 'rich' && value !== richEditor.getHTML()) {
             richEditor.commands.setContent(value)
         }
-    }, [value])
+    }, [value, richEditor, viewMode])
 
     useEffect(() => {
         const text = localValue.replace(/<[^>]*>/g, '').trim()
@@ -102,17 +108,24 @@ export function WikiEditor({
         onChange?.(newValue)
     }
 
-    const handleViewToggle = (mode: ViewMode) => {
+    const handleViewToggle = async (mode: ViewMode) => {
+        if (mode === viewMode) return
+
         if (mode === 'markdown' && richEditor) {
-            // Convert HTML to plain text when switching to markdown
+            // Convert HTML to Markdown safely
             const htmlContent = richEditor.getHTML()
-            const plainText = htmlContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
-            setLocalValue(plainText)
+            const turndownService = new TurndownService()
+            const markdown = turndownService.turndown(htmlContent)
+            setLocalValue(markdown)
+            onChange?.(markdown)
+        } else if (mode === 'rich' && richEditor) {
+            // Convert Markdown to HTML safely
+            const html = await marked.parse(localValue)
+            setLocalValue(html)
+            richEditor.commands.setContent(html)
+            onChange?.(html)
         }
         setViewMode(mode)
-        if (mode === 'rich' && richEditor) {
-            richEditor.commands.setContent(localValue)
-        }
     }
 
     return (
