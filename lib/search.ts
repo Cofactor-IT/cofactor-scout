@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
-import { sanitizeForSql, containsSqlInjection } from './sanitization'
+import { Prisma } from '@prisma/client'
+import { sanitizeForPrisma, containsSqlInjection } from './sanitization'
 
 interface SearchResult {
     id: string
@@ -30,14 +31,14 @@ export async function searchWiki(query: string, limit: number = 20, allowedUnive
         return []
     }
 
-    const sanitizedQuery = sanitizeForSql(query)
+    const sanitizedQuery = sanitizeForPrisma(query)
     const pattern = `%${sanitizedQuery}%`
 
     try {
         // Build WHERE clause with university filtering if needed
         const universityFilter = allowedUniversityIds !== null && allowedUniversityIds !== undefined
-            ? `AND up."universityId" = ANY(ARRAY[${allowedUniversityIds.map(id => `'${sanitizeForSql(id)}'`).join(',')}]::text[])`
-            : ''
+            ? Prisma.sql`AND up."universityId" = ANY(${allowedUniversityIds})`
+            : Prisma.empty
 
         const results = await prisma.$queryRaw<Array<{
             id: string
@@ -57,7 +58,7 @@ export async function searchWiki(query: string, limit: number = 20, allowedUnive
             FROM "UniPage" up
             WHERE
                 up.published = true
-                ${universityFilter ? `${universityFilter}` : ''}
+                ${universityFilter}
                 AND (
                     up.name ILIKE ${pattern}
                     OR up.content ILIKE ${pattern}
@@ -368,7 +369,7 @@ export function highlightSearchTerms(content: string, query: string): string {
     if (!query) return content
 
     // Sanitize query for regex
-    const sanitizedQuery = sanitizeForSql(query)
+    const sanitizedQuery = sanitizeForPrisma(query)
     const terms = sanitizedQuery.split(/\s+/).filter(term => term.length > 2)
     let highlightedContent = content
 
@@ -393,7 +394,7 @@ export async function trackSearchQuery(query: string, resultsCount: number, user
             return
         }
 
-        const sanitizedQuery = sanitizeForSql(query)
+        const sanitizedQuery = sanitizeForPrisma(query)
 
         if (process.env.NODE_ENV === 'production') {
             await prisma.$executeRaw`

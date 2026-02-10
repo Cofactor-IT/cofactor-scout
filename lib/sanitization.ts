@@ -76,7 +76,7 @@ export function validateAndSanitizeUrl(url: string): UrlValidationResult {
     }
 
     const trimmed = url.trim()
-    
+
     if (trimmed.length === 0) {
         return { isValid: false, sanitizedUrl: null, error: 'URL cannot be empty' }
     }
@@ -104,8 +104,8 @@ export function validateAndSanitizeUrl(url: string): UrlValidationResult {
             return { isValid: false, sanitizedUrl: null, error: 'Invalid URL protocol' }
         }
 
-        return { 
-            isValid: true, 
+        return {
+            isValid: true,
             sanitizedUrl: parsed.toString()
         }
     } catch {
@@ -128,17 +128,17 @@ const SOCIAL_DOMAIN_PATTERNS = {
  */
 export function validateSocialUrl(url: string, platform: keyof typeof SOCIAL_DOMAIN_PATTERNS): UrlValidationResult {
     const baseValidation = validateAndSanitizeUrl(url)
-    
+
     if (!baseValidation.isValid) {
         return baseValidation
     }
 
     const pattern = SOCIAL_DOMAIN_PATTERNS[platform]
     if (!pattern.test(baseValidation.sanitizedUrl!)) {
-        return { 
-            isValid: false, 
-            sanitizedUrl: null, 
-            error: `Invalid ${platform} URL format` 
+        return {
+            isValid: false,
+            sanitizedUrl: null,
+            error: `Invalid ${platform} URL format`
         }
     }
 
@@ -171,9 +171,9 @@ interface FileValidationResult {
  */
 export function validateFileType(mimeType: string, allowedTypes: readonly string[]): FileValidationResult {
     if (!allowedTypes.includes(mimeType)) {
-        return { 
-            isValid: false, 
-            error: `Invalid file type. Allowed: ${allowedTypes.join(', ')}` 
+        return {
+            isValid: false,
+            error: `Invalid file type. Allowed: ${allowedTypes.join(', ')}`
         }
     }
     return { isValid: true }
@@ -184,9 +184,9 @@ export function validateFileType(mimeType: string, allowedTypes: readonly string
  */
 export function validateFileSize(size: number, maxSize: number): FileValidationResult {
     if (size > maxSize) {
-        return { 
-            isValid: false, 
-            error: `File too large. Maximum size: ${Math.round(maxSize / 1024 / 1024)}MB` 
+        return {
+            isValid: false,
+            error: `File too large. Maximum size: ${Math.round(maxSize / 1024 / 1024)}MB`
         }
     }
     return { isValid: true }
@@ -220,9 +220,9 @@ export async function validateImageFile(
         allowedTypes?: readonly string[]
     } = {}
 ): Promise<FileValidationResult> {
-    const { 
-        maxSize = MAX_FILE_SIZE, 
-        allowedTypes = ALLOWED_IMAGE_TYPES 
+    const {
+        maxSize = MAX_FILE_SIZE,
+        allowedTypes = ALLOWED_IMAGE_TYPES
     } = options
 
     // Validate MIME type
@@ -268,9 +268,9 @@ const SEARCH_INJECTION_PATTERNS = [
  * - Limit length
  * - Normalize whitespace
  */
-export function sanitizeSearchQuery(query: string, maxLength: number = 100): { 
+export function sanitizeSearchQuery(query: string, maxLength: number = 100): {
     sanitized: string
-    isValid: boolean 
+    isValid: boolean
     error?: string
 } {
     if (!query || typeof query !== 'string') {
@@ -281,39 +281,39 @@ export function sanitizeSearchQuery(query: string, maxLength: number = 100): {
 
     // Check length
     if (sanitized.length > maxLength) {
-        return { 
-            sanitized: '', 
-            isValid: false, 
-            error: `Search query too long (max ${maxLength} characters)` 
+        return {
+            sanitized: '',
+            isValid: false,
+            error: `Search query too long (max ${maxLength} characters)`
         }
     }
 
     // Check for injection patterns
     for (const pattern of SEARCH_INJECTION_PATTERNS) {
         if (pattern.test(sanitized)) {
-            return { 
-                sanitized: '', 
-                isValid: false, 
-                error: 'Invalid search query' 
+            return {
+                sanitized: '',
+                isValid: false,
+                error: 'Invalid search query'
             }
         }
     }
 
     // Remove special characters
     sanitized = sanitized.replace(SEARCH_SPECIAL_CHARS, '')
-    
+
     // Remove zero-width characters
     sanitized = removeZeroWidthChars(sanitized)
-    
+
     // Normalize Unicode
     sanitized = normalizeUnicode(sanitized)
 
     // Check minimum length after sanitization
     if (sanitized.length < 2) {
-        return { 
-            sanitized: '', 
-            isValid: false, 
-            error: 'Search query must be at least 2 characters' 
+        return {
+            sanitized: '',
+            isValid: false,
+            error: 'Search query must be at least 2 characters'
         }
     }
 
@@ -329,7 +329,7 @@ const DANGEROUS_JSON_KEYS = ['__proto__', 'constructor', 'prototype']
 /**
  * Safe JSON parsing with prototype pollution prevention
  */
-export function safeJsonParse<T = unknown>(json: string): { 
+export function safeJsonParse<T = unknown>(json: string): {
     success: boolean
     data?: T
     error?: string
@@ -343,7 +343,7 @@ export function safeJsonParse<T = unknown>(json: string): {
         }
 
         const parsed = JSON.parse(json)
-        
+
         // Recursively check for prototype pollution
         if (containsDangerousKeys(parsed)) {
             return { success: false, error: 'Invalid JSON structure' }
@@ -375,7 +375,7 @@ function containsDangerousKeys(obj: unknown): boolean {
 /**
  * Validate social stats JSON structure
  */
-export function validateSocialStats(stats: unknown): { 
+export function validateSocialStats(stats: unknown): {
     isValid: boolean
     error?: string
 } {
@@ -427,14 +427,14 @@ interface StringSanitizationOptions {
 export function sanitizeString(
     input: string,
     options: StringSanitizationOptions = {}
-): { 
+): {
     sanitized: string
     isValid: boolean
     error?: string
 } {
-    const { 
-        maxLength = 255, 
-        minLength = 1, 
+    const {
+        maxLength = 255,
+        minLength = 1,
         allowNewlines = false,
         allowHtml = false
     } = options
@@ -447,10 +447,10 @@ export function sanitizeString(
 
     // Remove zero-width characters
     sanitized = removeZeroWidthChars(sanitized)
-    
+
     // Normalize Unicode
     sanitized = normalizeUnicode(sanitized)
-    
+
     // Normalize whitespace
     sanitized = normalizeWhitespace(sanitized)
 
@@ -461,19 +461,19 @@ export function sanitizeString(
 
     // Check minimum length
     if (sanitized.length < minLength) {
-        return { 
-            sanitized: '', 
-            isValid: false, 
-            error: `Input must be at least ${minLength} characters` 
+        return {
+            sanitized: '',
+            isValid: false,
+            error: `Input must be at least ${minLength} characters`
         }
     }
 
     // Check maximum length
     if (sanitized.length > maxLength) {
-        return { 
-            sanitized: '', 
-            isValid: false, 
-            error: `Input must be no more than ${maxLength} characters` 
+        return {
+            sanitized: '',
+            isValid: false,
+            error: `Input must be no more than ${maxLength} characters`
         }
     }
 
@@ -507,26 +507,26 @@ export function sanitizeName(name: string, maxLength: number = 100): {
     // Check for valid name pattern (letters, spaces, hyphens, apostrophes)
     const validNamePattern = /^[\p{L}\s\-'\.]+$/u
     if (!validNamePattern.test(sanitized)) {
-        return { 
-            sanitized: '', 
-            isValid: false, 
-            error: 'Name contains invalid characters' 
+        return {
+            sanitized: '',
+            isValid: false,
+            error: 'Name contains invalid characters'
         }
     }
 
     if (sanitized.length < 2) {
-        return { 
-            sanitized: '', 
-            isValid: false, 
-            error: 'Name must be at least 2 characters' 
+        return {
+            sanitized: '',
+            isValid: false,
+            error: 'Name must be at least 2 characters'
         }
     }
 
     if (sanitized.length > maxLength) {
-        return { 
-            sanitized: '', 
-            isValid: false, 
-            error: `Name must be no more than ${maxLength} characters` 
+        return {
+            sanitized: '',
+            isValid: false,
+            error: `Name must be no more than ${maxLength} characters`
         }
     }
 
@@ -560,7 +560,7 @@ const SQL_KEYWORDS = [
 ]
 
 const SQL_PATTERN = new RegExp(
-    `\\b(${SQL_KEYWORDS.join('|')})\\b`, 
+    `\\b(${SQL_KEYWORDS.join('|')})\\b`,
     'i'
 )
 
@@ -599,18 +599,42 @@ export function sanitizeForSql(input: string): string {
 
     // Remove null bytes
     let sanitized = input.replace(/\x00/g, '')
-    
+
     // Remove control characters
     sanitized = sanitized.replace(CONTROL_CHARS, '')
-    
+
     // Remove zero-width characters
     sanitized = removeZeroWidthChars(sanitized)
-    
+
     // Normalize Unicode
     sanitized = normalizeUnicode(sanitized)
-    
+
     // Escape single quotes (defense in depth)
     sanitized = sanitized.replace(/'/g, "''")
+
+    return sanitized
+}
+
+/**
+ * Sanitize input for use in Prisma parameterized queries.
+ * Does NOT escape quotes, as Prisma handles parameterization.
+ */
+export function sanitizeForPrisma(input: string): string {
+    if (typeof input !== 'string') {
+        return ''
+    }
+
+    // Remove null bytes
+    let sanitized = input.replace(/\x00/g, '')
+
+    // Remove control characters
+    sanitized = sanitized.replace(CONTROL_CHARS, '')
+
+    // Remove zero-width characters
+    sanitized = removeZeroWidthChars(sanitized)
+
+    // Normalize Unicode
+    sanitized = normalizeUnicode(sanitized)
 
     return sanitized
 }
