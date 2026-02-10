@@ -275,7 +275,7 @@ export async function searchPeople(query: string, limit: number = 10, allowedUni
 }
 
 /**
- * Unified search across all entities
+ * Unified search across all entities with caching
  * @param allowedUniversityIds - Array of university IDs user can access, or null for all (admin)
  */
 export async function unifiedSearch(
@@ -294,33 +294,39 @@ export async function unifiedSearch(
         return { results: [], totalCount: 0 }
     }
 
-    // When searching all types, fetch more results per type to ensure we get the best overall
-    // Then we'll sort globally and apply the final limit
-    const perTypeLimit = filters?.type ? limit : Math.ceil(limit * 1.5)
+    // Generate a cache key based on query, filters, and user access
+    const { getOrSetCache } = await import('./cache')
+    const cacheKey = `search:unified:${Buffer.from(query).toString('base64')}:${JSON.stringify(filters)}:${limit}:${allowedUniversityIds ? allowedUniversityIds.sort().join(',') : 'all'}`
 
-    const [pages, institutes, labs, people] = await Promise.all([
-        filters?.type === 'page' || !filters?.type ? searchWiki(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
-        filters?.type === 'institute' || !filters?.type ? searchInstitutes(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
-        filters?.type === 'lab' || !filters?.type ? searchLabs(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
-        filters?.type === 'person' || !filters?.type ? searchPeople(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([])
-    ])
+    return getOrSetCache(cacheKey, async () => {
+        // When searching all types, fetch more results per type to ensure we get the best overall
+        // Then we'll sort globally and apply the final limit
+        const perTypeLimit = filters?.type ? limit : Math.ceil(limit * 1.5)
 
-    const allResults = [...pages, ...institutes, ...labs, ...people]
+        const [pages, institutes, labs, people] = await Promise.all([
+            filters?.type === 'page' || !filters?.type ? searchWiki(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
+            filters?.type === 'institute' || !filters?.type ? searchInstitutes(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
+            filters?.type === 'lab' || !filters?.type ? searchLabs(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([]),
+            filters?.type === 'person' || !filters?.type ? searchPeople(query, perTypeLimit, allowedUniversityIds) : Promise.resolve([])
+        ])
 
-    // Sort by score globally to get the best results across all types
-    allResults.sort((a, b) => b.score - a.score)
+        const allResults = [...pages, ...institutes, ...labs, ...people]
 
-    // Apply the final limit
-    const limitedResults = allResults.slice(0, limit)
+        // Sort by score globally to get the best results across all types
+        allResults.sort((a, b) => b.score - a.score)
 
-    return {
-        results: limitedResults,
-        totalCount: allResults.length
-    }
+        // Apply the final limit
+        const limitedResults = allResults.slice(0, limit)
+
+        return {
+            results: limitedResults,
+            totalCount: allResults.length
+        }
+    }, { ttl: 3600 }) // Cache for 1 hour
 }
 
 /**
- * Get search suggestions
+ * Get search suggestions with caching
  * @param allowedUniversityIds - Array of university IDs user can access, or null for all (admin)
  */
 export async function getSearchSuggestions(query: string, limit: number = 5, allowedUniversityIds?: string[] | null): Promise<string[]> {
@@ -334,19 +340,25 @@ export async function getSearchSuggestions(query: string, limit: number = 5, all
         return []
     }
 
-    const [pages, institutes, labs, people] = await Promise.all([
-        searchWiki(query, limit, allowedUniversityIds),
-        searchInstitutes(query, limit, allowedUniversityIds),
-        searchLabs(query, limit, allowedUniversityIds),
-        searchPeople(query, limit, allowedUniversityIds)
-    ])
+    // Cache suggestions with a shorter TTL or same as search
+    const { getOrSetCache } = await import('./cache')
+    const cacheKey = `search:suggestions:${Buffer.from(query).toString('base64')}:${limit}:${allowedUniversityIds ? allowedUniversityIds.sort().join(',') : 'all'}`
 
-    return [
-        ...pages.map(p => p.title),
-        ...institutes.map(i => i.title),
-        ...labs.map(l => l.title),
-        ...people.map(p => p.title)
-    ].slice(0, limit)
+    return getOrSetCache(cacheKey, async () => {
+        const [pages, institutes, labs, people] = await Promise.all([
+            searchWiki(query, limit, allowedUniversityIds),
+            searchInstitutes(query, limit, allowedUniversityIds),
+            searchLabs(query, limit, allowedUniversityIds),
+            searchPeople(query, limit, allowedUniversityIds)
+        ])
+
+        return [
+            ...pages.map(p => p.title),
+            ...institutes.map(i => i.title),
+            ...labs.map(l => l.title),
+            ...people.map(p => p.title)
+        ].slice(0, limit)
+    }, { ttl: 3600 }) // Cache for 1 hour
 }
 
 /**

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { unstable_cache } from 'next/cache'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
@@ -6,11 +7,22 @@ import { Badge } from '@/components/ui/badge'
 export const dynamic = 'force-dynamic'
 
 export default async function LeaderboardPage() {
-    const users = await prisma.user.findMany({
-        where: { role: 'STUDENT' }, // Only rank students
-        orderBy: { powerScore: 'desc' },
-        take: 50
-    })
+    const getCachedLeaderboard = unstable_cache(
+        async () => {
+            return prisma.user.findMany({
+                where: { role: 'STUDENT' }, // Only rank students
+                orderBy: { powerScore: 'desc' },
+                take: 50
+            })
+        },
+        ['leaderboard-data'],
+        {
+            tags: ['leaderboard'],
+            revalidate: 900 // 15 minutes
+        }
+    )
+
+    const users = await getCachedLeaderboard()
 
     return (
         <div className="container mx-auto py-10">

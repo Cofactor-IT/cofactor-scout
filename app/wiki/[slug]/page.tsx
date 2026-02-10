@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { unstable_cache } from 'next/cache'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -13,15 +14,27 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
     const { slug } = await params
     const session = await getServerSession(authOptions)
 
-    const uniPage = await prisma.uniPage.findUnique({
-        where: { slug },
-        include: {
-            revisions: {
-                orderBy: { createdAt: 'desc' },
-                take: 5
-            }
+    // Cache the wiki page data
+    const getCachedWikiPage = unstable_cache(
+        async (slug: string) => {
+            return prisma.uniPage.findUnique({
+                where: { slug },
+                include: {
+                    revisions: {
+                        orderBy: { createdAt: 'desc' },
+                        take: 5
+                    }
+                }
+            })
+        },
+        ['wiki-page'],
+        {
+            tags: [`wiki-${slug}`],
+            revalidate: 3600 // 1 hour
         }
-    })
+    )
+
+    const uniPage = await getCachedWikiPage(slug)
 
     // Access Control Check
     if (uniPage && uniPage.universityId) {

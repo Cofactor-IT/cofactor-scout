@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { unstable_cache } from 'next/cache'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
@@ -21,7 +22,23 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
     const limit = 20
     const skip = (page - 1) * limit
 
-    const [members, totalCount, studentCount, staffCount, adminCount] = await Promise.all([
+    const getCachedStats = unstable_cache(
+        async () => {
+            return Promise.all([
+                prisma.user.count(),
+                prisma.user.count({ where: { role: 'STUDENT' } }),
+                prisma.user.count({ where: { role: 'STAFF' } }),
+                prisma.user.count({ where: { role: 'ADMIN' } })
+            ])
+        },
+        ['members-stats-data'],
+        {
+            tags: ['members-stats'],
+            revalidate: 600 // 10 minutes
+        }
+    )
+
+    const [members, stats] = await Promise.all([
         prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
             select: {
@@ -76,11 +93,10 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
             take: limit,
             skip: skip
         }),
-        prisma.user.count(),
-        prisma.user.count({ where: { role: 'STUDENT' } }),
-        prisma.user.count({ where: { role: 'STAFF' } }),
-        prisma.user.count({ where: { role: 'ADMIN' } })
+        getCachedStats()
     ])
+
+    const [totalCount, studentCount, staffCount, adminCount] = stats
 
     const totalPages = Math.ceil(totalCount / limit)
     const currentPage = Math.max(1, Math.min(page, totalPages || 1))
@@ -215,11 +231,10 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                                 <div className="absolute z-10 bg-popover border rounded p-2 mt-1 shadow-lg max-h-48 overflow-auto">
                                                     {member.revisions.map(rev => (
                                                         <div key={rev.id} className="text-xs whitespace-nowrap">
-                                                            <span className={`px-1 rounded ${
-                                                                rev.status === 'APPROVED' ? 'bg-green-500/20 text-green-500' :
-                                                                rev.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500' :
-                                                                'bg-red-500/20 text-red-500'
-                                                            }`}>
+                                                            <span className={`px-1 rounded ${rev.status === 'APPROVED' ? 'bg-green-500/20 text-green-500' :
+                                                                    rev.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500' :
+                                                                        'bg-red-500/20 text-red-500'
+                                                                }`}>
                                                                 {rev.status}
                                                             </span>
                                                             {' '}{rev.uniPage.name}

@@ -27,6 +27,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - cofactor-net
     healthcheck:
@@ -56,6 +58,22 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cofactor} -d ${POSTGRES_DB:-cofactor}" ]
       interval: 5s
       timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cofactor-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
       retries: 5
 
   # Automated backup service - runs every 6 hours
@@ -124,5 +142,6 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:
   backup-data:
   uploads-data:
