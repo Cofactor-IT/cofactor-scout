@@ -9,6 +9,7 @@ import { authOptions } from "@/lib/auth-config"
 import { WikiRevision } from '@prisma/client'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 
 export default async function WikiPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
@@ -185,13 +186,12 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
             <Card>
                 <CardContent className="pt-6 p-8">
                     <div className="prose dark:prose-invert max-w-none">
-                        {uniPage.content.trim().startsWith('<') ? (
-                            <div dangerouslySetInnerHTML={{ __html: uniPage.content }} />
-                        ) : (
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {uniPage.content}
-                            </ReactMarkdown>
-                        )}
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                        >
+                            {uniPage.content}
+                        </ReactMarkdown>
                     </div>
                 </CardContent>
             </Card>

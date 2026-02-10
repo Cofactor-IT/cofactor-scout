@@ -84,8 +84,8 @@ export function WikiEditor({
                 setLocalValue(html)
                 onChange?.(html)
             }
-        }
-    })
+        },
+    }, [viewMode])
 
     useEffect(() => {
         setLocalValue(value)

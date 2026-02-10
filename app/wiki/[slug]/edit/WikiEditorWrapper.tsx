@@ -6,9 +6,9 @@ import { WikiEditor } from '@/components/editor/WikiEditor'
 export function WikiEditorWrapper({ defaultValue }: { defaultValue: string }) {
     const [content, setContent] = useState(defaultValue)
 
-    // Simple heuristic: if it starts with <, it's likely HTML/Rich Text.
+    // Simple heuristic: if it starts with < OR is empty (new page), it's likely HTML/Rich Text.
     // Otherwise, assume Markdown.
-    const initialViewMode = defaultValue.trim().startsWith('<') ? 'rich' : 'markdown'
+    const initialViewMode = !defaultValue || defaultValue.trim().startsWith('<') ? 'rich' : 'markdown'
 
     return (
         <>
