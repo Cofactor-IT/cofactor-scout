@@ -22,6 +22,22 @@ export default withAuth(
 
         const ip = getClientIp(req)
 
+        // Global Throughput Limit (DoS protection / Load Shedding)
+        // Limit to 200 requests per second globally across the entire instance
+        const globalResult = await checkRateLimitEdge('global_throughput', { limit: 200, window: 1000 })
+
+        if (!globalResult.success) {
+            return new NextResponse('System Busy - Too Many Requests', {
+                status: 429,
+                headers: {
+                    'Retry-After': '1',
+                    'X-RateLimit-Limit': '200',
+                    'X-RateLimit-Remaining': '0',
+                    'X-RateLimit-Reset': Math.ceil(globalResult.resetTime / 1000).toString()
+                }
+            })
+        }
+
         // Strict rate limiting for auth routes
         if (isAuthRoute) {
             const result = await checkRateLimitEdge(ip, RateLimits.AUTH)
