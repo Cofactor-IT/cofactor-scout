@@ -259,7 +259,7 @@ export async function proposeEdit(formData: FormData) {
 
     // PROCESS MENTIONS
     // Do this asynchronously without blocking
-    (async () => {
+    ; (async () => {
         try {
             const { processMentions } = await import('@/lib/mentions')
             const pageLink = `/wiki/${slug}`
@@ -273,7 +273,7 @@ export async function proposeEdit(formData: FormData) {
 
         // NOTIFY ARTICLE CREATOR (if not the current user)
         // Do this asynchronously
-        (async () => {
+        ; (async () => {
             try {
                 // Find the first revision of this page to identify the creator
                 const firstRevision = await prisma.wikiRevision.findFirst({
