@@ -26,8 +26,20 @@ COPY . .
 RUN npx prisma generate
 
 # Build Next.js
+# Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://cofactor:password@db:5432/cofactor"
+
+# Accept Sentry build arguments
+ARG NEXT_PUBLIC_SENTRY_DSN
+ARG SENTRY_ORG
+ARG SENTRY_PROJECT
+ARG SENTRY_AUTH_TOKEN
+
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+ENV SENTRY_ORG=$SENTRY_ORG
+ENV SENTRY_PROJECT=$SENTRY_PROJECT
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 RUN npm run build
 
 # ========================================

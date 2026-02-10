@@ -3,10 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
+        SENTRY_ORG: ${SENTRY_ORG}
+        SENTRY_PROJECT: ${SENTRY_PROJECT}
+        SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
     restart: always
     ports:
       - "3001:3000"
     environment:
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-cofactor}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cofactor}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3001}
