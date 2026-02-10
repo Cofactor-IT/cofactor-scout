@@ -27,7 +27,7 @@ RUN npx prisma generate
 
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
+ENV DATABASE_URL="postgresql://cofactor:password@db:5432/cofactor"
 RUN npm run build
 
 # ========================================
