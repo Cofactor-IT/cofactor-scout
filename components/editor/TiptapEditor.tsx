@@ -40,7 +40,7 @@ export function TiptapEditor({
         editable,
         editorProps: {
             attributes: {
-                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl max-w-none focus:outline-none min-h-[300px] px-4 py-3'
+                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl max-w-none focus:outline-none min-h-[300px] px-4 py-3'
             },
             handlePaste: (view, event) => {
                 const items = event.clipboardData?.items

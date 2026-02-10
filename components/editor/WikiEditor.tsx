@@ -48,7 +48,7 @@ export function WikiEditor({
         content: localValue,
         editorProps: {
             attributes: {
-                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl max-w-none focus:outline-none min-h-[300px] px-4 py-3'
+                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl max-w-none focus:outline-none min-h-[300px] px-4 py-3'
             },
             handlePaste: (view, event) => {
                 const items = event.clipboardData?.items
@@ -103,6 +103,12 @@ export function WikiEditor({
     }
 
     const handleViewToggle = (mode: ViewMode) => {
+        if (mode === 'markdown' && richEditor) {
+            // Convert HTML to plain text when switching to markdown
+            const htmlContent = richEditor.getHTML()
+            const plainText = htmlContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+            setLocalValue(plainText)
+        }
         setViewMode(mode)
         if (mode === 'rich' && richEditor) {
             richEditor.commands.setContent(localValue)
@@ -118,8 +124,8 @@ export function WikiEditor({
                         <button
                             onClick={() => handleViewToggle('rich')}
                             className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${viewMode === 'rich'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             Rich Text
@@ -127,8 +133,8 @@ export function WikiEditor({
                         <button
                             onClick={() => handleViewToggle('markdown')}
                             className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${viewMode === 'markdown'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             Markdown
