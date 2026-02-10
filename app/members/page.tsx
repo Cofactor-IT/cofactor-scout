@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-config"
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { RoleForm, ActionButtons } from './member-row'
+import { RoleForm, ActionButtons, TrustedToggle } from './member-row'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -49,6 +49,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                 referralCode: true,
                 powerScore: true,
                 emailVerified: true,
+                isTrusted: true,
                 createdAt: true,
                 referredBy: {
                     select: {
@@ -156,6 +157,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                 <th className="px-4 py-3 text-center text-sm font-medium">Wiki Edits</th>
                                 <th className="px-4 py-3 text-center text-sm font-medium">Power Score</th>
                                 <th className="px-4 py-3 text-center text-sm font-medium">Email Verified</th>
+                                <th className="px-4 py-3 text-center text-sm font-medium">Trusted</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
                             </tr>
                         </thead>
@@ -232,8 +234,8 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                                     {member.revisions.map(rev => (
                                                         <div key={rev.id} className="text-xs whitespace-nowrap">
                                                             <span className={`px-1 rounded ${rev.status === 'APPROVED' ? 'bg-green-500/20 text-green-500' :
-                                                                    rev.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500' :
-                                                                        'bg-red-500/20 text-red-500'
+                                                                rev.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500' :
+                                                                    'bg-red-500/20 text-red-500'
                                                                 }`}>
                                                                 {rev.status}
                                                             </span>
@@ -253,6 +255,18 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                         ) : (
                                             <span className="text-red-500 text-sm">✗ No</span>
                                         )}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        {/* We need to import TrustedToggle. It is not imported yet. I will add import in separate step or assume next step. */}
+                                        {/* Actually I can just put the component here if I imported it. */}
+                                        {/* Let's try to add the import in a previous step or use fully qualified name if possible? No. */}
+                                        {/* I will add import in the same multi_replace if possible, but the file is large. */}
+                                        {/* I'll just put the usage here and add import in another call to be safe, or just use it ensuring I add import. */}
+                                        <TrustedToggle
+                                            memberId={member.id}
+                                            isTrusted={member.isTrusted}
+                                            currentUserId={session.user.id}
+                                        />
                                     </td>
                                     <td className="px-4 py-3 text-sm">
                                         <ActionButtons

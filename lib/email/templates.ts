@@ -45,7 +45,7 @@ interface VerificationEmailData {
 
 export const verificationEmailTemplate: TemplateFn<VerificationEmailData> = ({ name, token }) => {
     const verifyUrl = `${getAppUrl()}/auth/verify?token=${token}`
-    
+
     return {
         subject: 'Verify your email address',
         text: `Hi ${name},\n\nPlease verify your email address by clicking the link below:\n\n${verifyUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create an account, please ignore this email.\n\nBest,\nThe Cofactor Team`,
@@ -73,7 +73,7 @@ interface PasswordResetEmailData {
 
 export const passwordResetEmailTemplate: TemplateFn<PasswordResetEmailData> = ({ resetCode }) => {
     const resetUrl = `${getAppUrl()}/auth/reset-password`
-    
+
     return {
         subject: 'Reset your password',
         text: `Hi,\n\nYou requested to reset your password. Use the code below to set a new password:\n\nReset Code: ${resetCode}\n\nGo to: ${resetUrl}\n\nThis code will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nBest,\nThe Cofactor Team`,
@@ -102,6 +102,33 @@ interface NotificationEmailData {
     link?: string
 }
 
+interface AdminActionEmailData {
+    adminName?: string
+    actionType: string
+    details: string
+    link: string
+}
+
+export const adminActionRequiredTemplate: TemplateFn<AdminActionEmailData> = ({ adminName = 'Admin', actionType, details, link }) => ({
+    subject: `Action Required: ${actionType}`,
+    text: `Hi ${adminName},\n\nA new action requires your attention: ${actionType}\n\nDetails: ${details}\n\nView Request: ${getAppUrl()}${link}\n\nBest,\nThe Cofactor System`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #6366f1;">Action Required: ${actionType}</h1>
+            <p>Hi ${adminName},</p>
+            <p>A new action requires your attention.</p>
+            <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                <p style="margin: 0; font-weight: bold;">${details}</p>
+            </div>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">View Request</a>
+            </div>
+            <p>Best,<br>The Cofactor System</p>
+        </div>
+    `
+})
+
+
 export const notificationEmailTemplate: TemplateFn<NotificationEmailData> = ({ name, title, message, link }) => ({
     subject: title,
     text: `Hi ${name},\n\n${message}\n\n${link ? `View details: ${getAppUrl()}${link}` : ''}\n\nBest,\nThe Cofactor Team`,
@@ -120,12 +147,87 @@ export const notificationEmailTemplate: TemplateFn<NotificationEmailData> = ({ n
     `
 })
 
+interface MentionEmailData {
+    name: string
+    actorName: string
+    context: string
+    link: string
+}
+
+export const mentionNotificationTemplate: TemplateFn<MentionEmailData> = ({ name, actorName, context, link }) => ({
+    subject: `You were mentioned in a Wiki article`,
+    text: `Hi ${name},\n\n${actorName} mentioned you in an article:\n\n"${context}..."\n\nView here: ${getAppUrl()}${link}\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #6366f1;">New Mention</h1>
+            <p>Hi ${name},</p>
+            <p><strong>${actorName}</strong> mentioned you in a Wiki article:</p>
+            <blockquote style="border-left: 4px solid #e5e7eb; padding-left: 15px; font-style: italic; color: #4b5563;">
+                "${context}..."
+            </blockquote>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">View Mention</a>
+            </div>
+            <p>Best,<br>The Cofactor Team</p>
+        </div>
+    `
+})
+
+interface ArticleUpdateEmailData {
+    name: string
+    articleTitle: string
+    actorName: string
+    link: string
+}
+
+export const articleUpdateNotificationTemplate: TemplateFn<ArticleUpdateEmailData> = ({ name, articleTitle, actorName, link }) => ({
+    subject: `Your article "${articleTitle}" was updated`,
+    text: `Hi ${name},\n\n${actorName} just edited an article you created: "${articleTitle}".\n\nView changes: ${getAppUrl()}${link}\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #6366f1;">Article Updated</h1>
+            <p>Hi ${name},</p>
+            <p><strong>${actorName}</strong> just edited an article you created:</p>
+            <h2 style="font-size: 18px; color: #111;">${articleTitle}</h2>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">View Article</a>
+            </div>
+            <p>Best,<br>The Cofactor Team</p>
+        </div>
+    `
+})
+
+interface ArticleDeleteEmailData {
+    name: string
+    articleTitle: string
+}
+
+export const articleDeleteNotificationTemplate: TemplateFn<ArticleDeleteEmailData> = ({ name, articleTitle }) => ({
+    subject: `Your article "${articleTitle}" was deleted`,
+    text: `Hi ${name},\n\nYour article "${articleTitle}" has been deleted by an administrator.\n\nIf you believe this was a mistake, please contact support.\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #ef4444;">Article Deleted</h1>
+            <p>Hi ${name},</p>
+            <p>Your article <strong>"${articleTitle}"</strong> has been deleted by an administrator.</p>
+            <p>If you believe this was a mistake, please contact support.</p>
+            <p>Best,<br>The Cofactor Team</p>
+        </div>
+    `
+})
+
 // Template registry for type-safe template access
 export const emailTemplates = {
     welcome: welcomeEmailTemplate,
     verification: verificationEmailTemplate,
     passwordReset: passwordResetEmailTemplate,
-    notification: notificationEmailTemplate
+    notification: notificationEmailTemplate,
+    adminAction: adminActionRequiredTemplate,
+    mention: mentionNotificationTemplate,
+    articleUpdate: articleUpdateNotificationTemplate,
+    articleDelete: articleDeleteNotificationTemplate
 } as const
+
+
 
 export type EmailTemplateName = keyof typeof emailTemplates

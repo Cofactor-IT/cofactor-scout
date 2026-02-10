@@ -161,12 +161,15 @@ export async function proposeEdit(formData: FormData) {
         })
     }
 
-    // 3. Create Revision Record
     // If Admin/Staff -> Status APPROVED
     // If Student -> Status PENDING
     let status: 'APPROVED' | 'PENDING' | 'REJECTED' | 'AUTO_REJECTED' | 'FLAGGED' = isAdminOrStaff ? 'APPROVED' : 'PENDING'
     let spamScore: number | null = null
     let filterViolations: any = null
+
+    // Lazy load email sender to avoid circular deps if any
+    const { sendAdminAlertEmail } = await import('@/lib/email')
+
 
     // For non-admins, run moderation and determine status
     if (!isAdminOrStaff) {
@@ -181,9 +184,36 @@ export async function proposeEdit(formData: FormData) {
             : undefined
 
         // Auto-approve if trusted and clean
-        if (moderationResult.reputation.canAutoApprove && moderationResult.action === 'approve') {
-            status = 'APPROVED'
+        // REPLACED: Reputation based auto-approval with Admin-assigned Trusted status
+        if (user.isTrusted && moderationResult.action === 'approve') {
+            // Check daily limit
+            const startOfDay = new Date()
+            startOfDay.setHours(0, 0, 0, 0)
+
+            const todaysApprovedEdits = await prisma.wikiRevision.count({
+                where: {
+                    authorId: user.id,
+                    status: 'APPROVED',
+                    createdAt: { gte: startOfDay }
+                }
+            })
+
+            if (todaysApprovedEdits < 5) {
+                status = 'APPROVED'
+
+                // CRITICAL FIX: Update the actual page content for auto-approved edits
+                await prisma.uniPage.update({
+                    where: { id: uniPage.id },
+                    data: {
+                        content,
+                        published: true
+                    }
+                })
+
+                logger.info('Wiki submission auto-approved for trusted user', { userId: user.id, pageId: uniPage.id })
+            }
         }
+
 
         // Auto-reject if spam score is too high
         if (moderationResult.action === 'reject') {
@@ -202,7 +232,7 @@ export async function proposeEdit(formData: FormData) {
         }
     }
 
-    await prisma.wikiRevision.create({
+    const revision = await prisma.wikiRevision.create({
         data: {
             uniPageId: uniPage.id,
             authorId: user.id,
@@ -213,7 +243,63 @@ export async function proposeEdit(formData: FormData) {
         }
     })
 
+    // NOTIFY ADMIN if pending
+    if (status === 'PENDING') {
+        try {
+            await sendAdminAlertEmail(
+                'New Wiki Revision Pending',
+                `Page: ${uniName || slug}. Author: ${user.name || user.email}.`,
+                `/admin/dashboard` // Link to dashboard where they can approve it
+            )
+        } catch (error) {
+            logger.error('Failed to send admin alert email', { revisionId: revision.id }, error as Error)
+            // Don't block the user flow for email failure
+        }
+    }
+
+    // PROCESS MENTIONS
+    // Do this asynchronously without blocking
+    (async () => {
+        try {
+            const { processMentions } = await import('@/lib/mentions')
+            const pageLink = `/wiki/${slug}`
+            // Extract a snippet for context
+            const contextSnippet = content.substring(0, 100).replace(/<[^>]*>/g, '')
+            await processMentions(content, pageLink, user.name || 'A user', contextSnippet)
+        } catch (error) {
+            logger.error('Failed to process mentions', { revisionId: revision.id }, error as Error)
+        }
+    })()
+
+        // NOTIFY ARTICLE CREATOR (if not the current user)
+        // Do this asynchronously
+        (async () => {
+            try {
+                // Find the first revision of this page to identify the creator
+                const firstRevision = await prisma.wikiRevision.findFirst({
+                    where: { uniPageId: uniPage.id },
+                    orderBy: { createdAt: 'asc' },
+                    select: { authorId: true, author: { select: { email: true, name: true } } }
+                })
+
+                // If creator exists and is NOT the current user
+                if (firstRevision && firstRevision.authorId !== user.id && firstRevision.author.email) {
+                    const { sendArticleUpdateEmail } = await import('@/lib/email')
+                    await sendArticleUpdateEmail(
+                        firstRevision.author.email,
+                        firstRevision.author.name || 'User',
+                        uniPage.name,
+                        user.name || 'A user',
+                        `/wiki/${slug}`
+                    )
+                }
+            } catch (error) {
+                logger.error('Failed to send article update email', { pageId: uniPage.id }, error as Error)
+            }
+        })()
+
     // 4. Increment Power Score
+
     // Usually yes, even admins get points (or we ignore it for them).
     // Let's give points to incentivize or track activity.
     if (status === 'APPROVED') {

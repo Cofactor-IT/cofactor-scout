@@ -5,6 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AddStaffDomainForm } from './AddStaffDomainForm'
 import { removeStaffDomain } from './actions'
 import { requireAdmin } from '@/lib/auth'
+import { getSystemSettings } from '@/lib/settings'
+import { NotificationSettingsForm } from '@/components/admin/NotificationSettingsForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,9 +17,13 @@ export default async function SettingsPage() {
         orderBy: { createdAt: 'desc' }
     })
 
+    const settings = await getSystemSettings()
+
     return (
         <div className="container mx-auto py-10 space-y-8">
             <h1 className="text-4xl font-bold">Admin Settings</h1>
+
+            <NotificationSettingsForm initialSettings={settings} />
 
             <Card>
                 <CardHeader>

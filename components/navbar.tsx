@@ -51,13 +51,15 @@ export function Navbar() {
                         ) : (
                             <>
 
-                                <Link href="/members">
-                                    <Button variant="ghost" size="sm">Members</Button>
-                                </Link>
                                 {isAdmin && (
-                                    <Link href="/admin/dashboard">
-                                        <Button variant="ghost" size="sm">Admin</Button>
-                                    </Link>
+                                    <>
+                                        <Link href="/members">
+                                            <Button variant="ghost" size="sm">Members</Button>
+                                        </Link>
+                                        <Link href="/admin/dashboard">
+                                            <Button variant="ghost" size="sm">Admin</Button>
+                                        </Link>
+                                    </>
                                 )}
                                 <div className="flex items-center space-x-2 border-l pl-2 ml-2">
                                     <Link href="/profile" className="text-sm font-medium hidden sm:inline hover:underline">

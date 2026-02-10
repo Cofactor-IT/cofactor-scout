@@ -142,3 +142,41 @@ export function MemberRevisions({ revisions, stats }: { revisions: Array<{ id: s
         </td>
     )
 }
+
+export function TrustedToggle({ memberId, isTrusted, currentUserId }: { memberId: string, isTrusted: boolean, currentUserId: string }) {
+    const [isDisabled, setIsDisabled] = useState(false)
+    const [optimisticTrusted, setOptimisticTrusted] = useState(isTrusted)
+    const isSelf = memberId === currentUserId
+
+    async function handleToggle() {
+        if (isDisabled || isSelf) return
+        setIsDisabled(true)
+        setOptimisticTrusted(!optimisticTrusted) // Optimistic update
+
+        try {
+            // dynamic import to avoid server action issues in client component if not passed as prop
+            const { toggleTrustedStatus } = await import('./actions')
+            await toggleTrustedStatus(memberId)
+        } catch (error) {
+            console.error(error)
+            setOptimisticTrusted(optimisticTrusted) // Revert
+            alert("Failed to update trusted status")
+        } finally {
+            setIsDisabled(false)
+        }
+    }
+
+    return (
+        <button
+            onClick={handleToggle}
+            type="button"
+            disabled={isDisabled || isSelf}
+            className={`text-xs px-2 py-1 rounded border transition-colors ${optimisticTrusted
+                    ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200'
+                    : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                } ${isDisabled || isSelf ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+            {optimisticTrusted ? 'Trusted' : 'Not Trusted'}
+        </button>
+    )
+}

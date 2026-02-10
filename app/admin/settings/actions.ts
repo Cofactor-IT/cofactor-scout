@@ -48,3 +48,34 @@ export async function removeStaffDomain(id: string) {
         logger.error('Failed to remove staff domain', { error: e })
     }
 }
+
+export async function updateNotificationSettings(data: {
+    enableStudentEmails: boolean
+    enableAdminEmails: boolean
+    enableInAppNotifications: boolean
+}) {
+    await requireAdmin()
+
+    try {
+        // Update the first found settings record, or create if missing
+        const existing = await prisma.systemSettings.findFirst()
+
+        if (existing) {
+            await prisma.systemSettings.update({
+                where: { id: existing.id },
+                data
+            })
+        } else {
+            await prisma.systemSettings.create({
+                data
+            })
+        }
+
+        revalidatePath('/admin/settings')
+        logger.info('Notification settings updated', { data })
+        return { success: true }
+    } catch (error) {
+        logger.error('Failed to update notification settings', error as Error)
+        throw new Error('Failed to update settings')
+    }
+}

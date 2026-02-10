@@ -369,10 +369,29 @@ export async function deletePage(slug: string) {
 
     const page = await prisma.uniPage.findUnique({
         where: { slug },
-        select: { id: true }
+        select: { id: true, name: true }
     })
 
     if (!page) return
+
+    // Find creator for notification
+    const firstRevision = await prisma.wikiRevision.findFirst({
+        where: { uniPageId: page.id },
+        orderBy: { createdAt: 'asc' },
+        select: { author: { select: { email: true, name: true } } }
+    })
+
+    // Send notification async
+    if (firstRevision?.author.email) {
+        // We use an IIFE to not block the deletion
+        const { sendArticleDeleteEmail } = await import('@/lib/email')
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        sendArticleDeleteEmail(
+            firstRevision.author.email,
+            firstRevision.author.name || 'User',
+            page.name
+        ).catch(err => logger.error('Failed to send delete email', { pageId: page.id }, err))
+    }
 
     await prisma.$transaction([
         prisma.wikiRevision.deleteMany({ where: { uniPageId: page.id } }),

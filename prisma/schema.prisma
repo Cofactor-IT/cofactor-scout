@@ -24,6 +24,7 @@ model User {
   failedLoginAttempts Int         @default(0)
   lockedUntil         DateTime?
   isPublicProfile     Boolean     @default(false)
+  isTrusted           Boolean     @default(false)
   publicPersonId      String?     @unique  // Link to Person record when public
   publicPerson        Person?     @relation("UserPublicPerson", fields: [publicPersonId], references: [id])
   universityId          String?
@@ -606,4 +607,12 @@ enum ReportStatus {
     RESOLVED
     DISMISSED
     BLOCKED
+}
+
+model SystemSettings {
+  id                      String   @id @default(cuid())
+  enableStudentEmails     Boolean  @default(true)
+  enableAdminEmails       Boolean  @default(true)
+  enableInAppNotifications Boolean @default(true)
+  updatedAt               DateTime @updatedAt
 }

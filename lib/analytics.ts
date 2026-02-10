@@ -1,5 +1,4 @@
 import { track as clientTrack } from '@vercel/analytics'
-import { logger } from './logger'
 
 async function track(name: string, properties?: Record<string, string | number | boolean>) {
     if (typeof window === 'undefined') {
@@ -63,12 +62,6 @@ export function trackPerformanceMetric(metricName: string, value: number, unit: 
 }
 
 export function trackApiRequest(endpoint: string, method: string, duration: number, status: number) {
-    // Log to terminal for live APM monitoring
-    if (typeof window === 'undefined') {
-        const statusEmoji = status >= 200 && status < 300 ? '✅' : '❌'
-        logger.info(`[PERF] ${method} ${endpoint} - ${duration}ms ${statusEmoji} (${status})`)
-    }
-
     track('api_request', {
         endpoint,
         method,
@@ -79,11 +72,6 @@ export function trackApiRequest(endpoint: string, method: string, duration: numb
 }
 
 export function trackDbQuery(operation: string, table: string, duration: number) {
-    // Log to terminal for live database monitoring
-    if (typeof window === 'undefined') {
-        logger.debug(`[DB] ${operation} on ${table} - ${duration}ms`)
-    }
-
     track('db_query', {
         operation,
         table,

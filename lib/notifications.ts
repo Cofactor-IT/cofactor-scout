@@ -7,7 +7,23 @@ export async function createNotification(
     title: string,
     message: string,
     link?: string
-): Promise<Notification> {
+): Promise<Notification | null> {
+    const { getSystemSettings } = await import('@/lib/settings')
+    const settings = await getSystemSettings()
+
+    if (!settings.enableInAppNotifications) {
+        // Return a dummy notification or null? 
+        // The return type is Promise<Notification>. 
+        // If we strictly follow types, we might throw or return a fake one.
+        // But throwing breaks the caller.
+        // Let's change the return type or just return null and update callers? 
+        // updating callers is expensive.
+        // Let's just NOT create it in DB, but we need to return something matching Notification type.
+        // Or we can return null and update the return type to Promise<Notification | null>.
+        // Let's update the return type to Promise<Notification | null> to be safe.
+        return null
+    }
+
     return prisma.notification.create({
         data: {
             userId,

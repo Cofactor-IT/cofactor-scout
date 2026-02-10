@@ -36,6 +36,33 @@ async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<
         return
     }
 
+    // CHECK GLOBAL SETTINGS
+    const { getSystemSettings } = await import('@/lib/settings')
+    const settings = await getSystemSettings()
+
+    // If it's an admin alert, we check enableAdminEmails (handled in sendAdminAlertEmail wrapper usually, but good to have safety)
+    // However, sendEmail is generic. 
+    // Let's rely on the wrappers to check specific flags, OR check here based on metadata type?
+    // Implementation Plan said: "Update sendEmail (or the wrapper functions)"
+    // It's safer to update the wrappers or check here if we can distinguish.
+    // "sendAdminAlertEmail will check enableAdminEmails. Other user-facing emails will check enableStudentEmails."
+
+    // Let's implement the check in the wrappers (sendWelcomeEmail, sendVerificationEmail, etc) to be precise.
+    // But to save tokens/steps, I can modify `sendEmail` to default to checking `enableStudentEmails` UNLESS metadata.type === 'adminAlert'.
+
+    if (metadata?.type === 'adminAlert') {
+        if (!settings.enableAdminEmails) {
+            logger.info('Admin emails disabled by global settings', { to })
+            return
+        }
+    } else {
+        // Default to student/user emails
+        if (!settings.enableStudentEmails) {
+            logger.info('Student emails disabled by global settings', { to })
+            return
+        }
+    }
+
     const mailOptions = {
         from: getFromAddress(),
         to,
@@ -158,6 +185,118 @@ export async function sendNotificationEmail(
         metadata: { type: 'notification', title }
     })
 }
+
+/**
+ * Send admin alert email
+ * Sends synchronously to ensure delivery
+ */
+export async function sendAdminAlertEmail(
+    actionType: string,
+    details: string,
+    link: string
+): Promise<void> {
+    const adminEmail = process.env.ADMIN_EMAIL
+
+    if (!adminEmail) {
+        logger.warn('ADMIN_EMAIL not configured, skipping admin alert', { actionType })
+        return
+    }
+
+    const template = emailTemplates.adminAction({
+        actionType,
+        details,
+        link
+    })
+
+    await sendEmail({
+        to: adminEmail,
+        template,
+        metadata: { type: 'adminAlert', actionType }
+    })
+}
+
+/**
+ * Send mention notification
+ */
+export async function sendMentionEmail(
+    toEmail: string,
+    name: string,
+    actorName: string,
+    context: string,
+    link: string
+): Promise<void> {
+    const isHealthy = await isQueueConnectionHealthy()
+    if (isHealthy) {
+        const job = await addEmailJob(EmailJobType.NOTIFICATION, toEmail, name, {
+            title: 'You were mentioned',
+            message: `${actorName} mentioned you: "${context}..."`,
+            link
+        })
+        if (job) return
+    }
+
+    const template = emailTemplates.mention({ name, actorName, context, link })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'mention', actorName }
+    })
+}
+
+/**
+ * Send article update notification
+ */
+export async function sendArticleUpdateEmail(
+    toEmail: string,
+    name: string,
+    articleTitle: string,
+    actorName: string,
+    link: string
+): Promise<void> {
+    const isHealthy = await isQueueConnectionHealthy()
+    if (isHealthy) {
+        const job = await addEmailJob(EmailJobType.NOTIFICATION, toEmail, name, {
+            title: 'Article Updated',
+            message: `${actorName} updated your article "${articleTitle}"`,
+            link
+        })
+        if (job) return
+    }
+
+    const template = emailTemplates.articleUpdate({ name, articleTitle, actorName, link })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'articleUpdate', articleTitle }
+    })
+}
+
+/**
+ * Send article deletion notification
+ */
+export async function sendArticleDeleteEmail(
+    toEmail: string,
+    name: string,
+    articleTitle: string
+): Promise<void> {
+    const isHealthy = await isQueueConnectionHealthy()
+    if (isHealthy) {
+        const job = await addEmailJob(EmailJobType.NOTIFICATION, toEmail, name, {
+            title: 'Article Deleted',
+            message: `Your article "${articleTitle}" has been deleted.`,
+        })
+        if (job) return
+    }
+
+    const template = emailTemplates.articleDelete({ name, articleTitle })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'articleDelete', articleTitle }
+    })
+}
+
+
 
 // Re-export utilities
 export { getAppUrl, isEmailConfigured, getFromAddress }
