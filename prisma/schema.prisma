@@ -209,6 +209,7 @@ model WikiRevision {
   moderatedBy     String?        // Admin who moderated
   moderatedAt     DateTime?      // When moderation occurred
   moderationReason String?       // Reason for rejection/flagging
+  title           String?        // Title of the page at this revision
   
   // Content filter results
   filterViolations Json?         // JSON array of violations found

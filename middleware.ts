@@ -99,6 +99,15 @@ export default withAuth(
         response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
         response.headers.set('Content-Security-Policy', cspHeader)
 
+        // Cache Control for rapid client-side navigation
+        const shouldCache = ['/wiki', '/members', '/leaderboard'].some(path =>
+            req.nextUrl.pathname.startsWith(path)
+        )
+
+        if (shouldCache) {
+            response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
+        }
+
         return response
     },
     {

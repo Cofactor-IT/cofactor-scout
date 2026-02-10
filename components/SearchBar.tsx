@@ -80,7 +80,7 @@ export function SearchBar() {
                         className="fixed inset-0 bg-black/20 z-40"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-96 bg-popover rounded-lg shadow-xl border border-border z-50">
+                    <div className="absolute right-0 mt-2 w-[90vw] sm:w-96 bg-popover rounded-lg shadow-xl border border-border z-50">
                         <form onSubmit={handleSearch} className="p-4">
                             <div className="flex items-center gap-2">
                                 <SearchIcon className="text-muted-foreground" size={20} />

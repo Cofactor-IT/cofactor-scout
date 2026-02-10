@@ -177,6 +177,9 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                             <Button variant="destructive" size="sm">Delete Page</Button>
                         </form>
                     )}
+                    <Link href={`/wiki/${slug}/history`}>
+                        <Button variant="ghost">History</Button>
+                    </Link>
                     <Link href={`/wiki/${slug}/edit`}>
                         <Button variant="outline">Edit Page</Button>
                     </Link>

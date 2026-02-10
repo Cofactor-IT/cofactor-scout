@@ -157,9 +157,14 @@ export async function proposeEdit(formData: FormData) {
             data: {
                 content,
                 published: true
+                // Note: Title updates are not yet supported here for existing pages via this form
+                // But we could support it if formData has uniName
             }
         })
     }
+
+    // Capture the title for the revision
+    const revisionTitle = uniPage.name;
 
     // If Admin/Staff -> Status APPROVED
     // If Student -> Status PENDING
@@ -239,7 +244,8 @@ export async function proposeEdit(formData: FormData) {
             content,
             status,
             spamScore,
-            filterViolations
+            filterViolations,
+            title: revisionTitle
         }
     })
 

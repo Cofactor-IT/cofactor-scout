@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button'
 import { useSession, signOut } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { SearchBar } from './SearchBar'
+import { Menu, X } from 'lucide-react'
 
 export function Navbar() {
     const { data: session, status } = useSession()
     const [mounted, setMounted] = useState(false)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -22,13 +24,21 @@ export function Navbar() {
     const isAdmin = user?.role === 'ADMIN'
 
     return (
-        <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative">
             <div className="container flex h-14 items-center">
-                <div className="mr-4 hidden md:flex">
+                {/* Mobile Menu Toggle */}
+                <div className="md:hidden mr-2">
+                    <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                        {isMobileMenuOpen ? <X /> : <Menu />}
+                    </Button>
+                </div>
+
+                {/* Logo and Desktop Nav */}
+                <div className="mr-4 flex items-center">
                     <Link href="/" className="mr-6 flex items-center space-x-2 font-bold text-xl">
                         Cofactor Club
                     </Link>
-                    <nav className="flex items-center space-x-6 text-sm font-medium">
+                    <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
                         <Link href="/leaderboard" className="transition-colors hover:text-foreground/80 text-foreground/60">Leaderboard</Link>
                         <Link href="/wiki" className="transition-colors hover:text-foreground/80 text-foreground/60">Wiki</Link>
                         <Link href="/search" className="transition-colors hover:text-foreground/80 text-foreground/60">Search</Link>
@@ -78,7 +88,55 @@ export function Navbar() {
                     </nav>
                 </div>
             </div>
-        </nav>
+
+
+            {/* Mobile Menu Overlay */}
+            {
+                isMobileMenuOpen && (
+                    <div className="md:hidden absolute top-14 left-0 w-full bg-background border-b shadow-lg p-4 flex flex-col space-y-4 z-50 animate-in slide-in-from-top-2">
+                        <Link
+                            href="/leaderboard"
+                            className="text-sm font-medium transition-colors hover:text-primary"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                            Leaderboard
+                        </Link>
+                        <Link
+                            href="/wiki"
+                            className="text-sm font-medium transition-colors hover:text-primary"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                            Wiki
+                        </Link>
+                        <Link
+                            href="/search"
+                            className="text-sm font-medium transition-colors hover:text-primary"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                            Search
+                        </Link>
+                        {isAdmin && (
+                            <>
+                                <Link
+                                    href="/members"
+                                    className="text-sm font-medium transition-colors hover:text-primary"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    Members
+                                </Link>
+                                <Link
+                                    href="/admin/dashboard"
+                                    className="text-sm font-medium transition-colors hover:text-primary"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    Admin Dashboard
+                                </Link>
+                            </>
+                        )}
+                    </div>
+                )
+            }
+        </nav >
     )
 }
 
