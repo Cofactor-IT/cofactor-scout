@@ -108,8 +108,8 @@ export const wikiSubmissionSchema = z.object({
         .max(200, 'Title is too long')
         .trim()
         .transform((title) => {
-            const result = sanitizeString(title, { 
-                maxLength: 200, 
+            const result = sanitizeString(title, {
+                maxLength: 200,
                 minLength: 1,
                 allowNewlines: false,
                 allowHtml: false
@@ -120,7 +120,7 @@ export const wikiSubmissionSchema = z.object({
             return result.sanitized
         }),
     content: z.string()
-        .min(50, 'Content must be at least 50 characters')
+        .min(1, 'Content is required')
         .max(100000, 'Content is too long')
         .trim()
 })
@@ -146,8 +146,8 @@ export const socialConnectSchema = z.object({
         .transform((username) => {
             // Remove @ symbol if present
             const clean = username.replace(/^@/, '')
-            const result = sanitizeString(clean, { 
-                maxLength: 100, 
+            const result = sanitizeString(clean, {
+                maxLength: 100,
                 minLength: 1,
                 allowNewlines: false,
                 allowHtml: false

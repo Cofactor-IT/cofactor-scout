@@ -172,9 +172,13 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
             <Card>
                 <CardContent className="pt-6 p-8">
                     <div className="prose dark:prose-invert max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {uniPage.content}
-                        </ReactMarkdown>
+                        {uniPage.content.trim().startsWith('<') ? (
+                            <div dangerouslySetInnerHTML={{ __html: uniPage.content }} />
+                        ) : (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {uniPage.content}
+                            </ReactMarkdown>
+                        )}
                     </div>
                 </CardContent>
             </Card>

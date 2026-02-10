@@ -110,35 +110,33 @@ export function WikiEditor({
     }
 
     return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2 bg-gray-50">
+        <div className="border border-border rounded-lg overflow-hidden bg-background">
+            <div className="flex items-center justify-between border-b border-border px-4 py-2 bg-muted/30">
                 <div className="flex items-center gap-4">
-                    <Type size={20} className="text-gray-500" />
-                    <div className="flex gap-2">
+                    <Type size={20} className="text-muted-foreground" />
+                    <div className="flex bg-muted p-1 rounded-lg">
                         <button
                             onClick={() => handleViewToggle('rich')}
-                            className={`px-3 py-1.5 rounded-lg font-medium transition-colors text-sm ${
-                                viewMode === 'rich'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
+                            className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${viewMode === 'rich'
+                                    ? 'bg-background text-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                }`}
                         >
                             Rich Text
                         </button>
                         <button
                             onClick={() => handleViewToggle('markdown')}
-                            className={`px-3 py-1.5 rounded-lg font-medium transition-colors text-sm ${
-                                viewMode === 'markdown'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
+                            className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${viewMode === 'markdown'
+                                    ? 'bg-background text-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                }`}
                         >
                             Markdown
                         </button>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-sm text-gray-500">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <span>{wordCount} words</span>
                     <span>|</span>
                     <span>{charCount} characters</span>
@@ -152,24 +150,24 @@ export function WikiEditor({
                         <EditorContent editor={richEditor} />
                     </>
                 ) : (
-                    <div className="grid grid-cols-2 divide-x divide-gray-200">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2 px-4 pt-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+                        <div className="flex flex-col">
+                            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-4 pt-3">
                                 Markdown Editor
                             </label>
                             <textarea
                                 value={localValue}
                                 onChange={handleMarkdownChange}
                                 placeholder={placeholder}
-                                className="w-full min-h-[400px] px-4 py-3 border-0 focus:ring-0 focus:outline-none resize-none font-mono text-sm"
+                                className="w-full min-h-[400px] px-4 py-3 border-0 focus:ring-0 focus:outline-none resize-none font-mono text-sm bg-transparent text-foreground"
                                 spellCheck={false}
                             />
                         </div>
-                        <div className="bg-gray-50">
-                            <label className="block text-sm font-medium text-gray-700 mb-2 px-4 pt-3">
+                        <div className="bg-muted/10 flex flex-col">
+                            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-4 pt-3">
                                 Preview
                             </label>
-                            <div className="p-4 overflow-y-auto prose prose-sm max-w-none min-h-[400px]">
+                            <div className="p-4 overflow-y-auto prose dark:prose-invert prose-sm max-w-none min-h-[400px] text-foreground">
                                 <Markdown
                                     remarkPlugins={[remarkGfm]}
                                 >

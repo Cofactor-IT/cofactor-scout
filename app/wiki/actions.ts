@@ -25,7 +25,7 @@ export async function proposeEdit(formData: FormData) {
     // Validate and sanitize content
     const contentValidation = wikiSubmissionSchema.shape.content.safeParse(rawContent)
     if (!contentValidation.success) {
-        throw new Error('Invalid content format')
+        throw new Error(contentValidation.error.issues[0].message)
     }
 
     // Sanitize content with DOMPurify
