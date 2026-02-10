@@ -17,8 +17,9 @@ interface SearchFilters {
 
 /**
  * Search wiki pages with SQL injection protection
+ * @param allowedUniversityIds - Array of university IDs user can access, or null for all (admin)
  */
-export async function searchWiki(query: string, limit: number = 20): Promise<SearchResult[]> {
+export async function searchWiki(query: string, limit: number = 20, allowedUniversityIds?: string[] | null): Promise<SearchResult[]> {
     if (!query || query.length < 2) {
         return []
     }
@@ -31,8 +32,13 @@ export async function searchWiki(query: string, limit: number = 20): Promise<Sea
 
     const sanitizedQuery = sanitizeForSql(query)
     const pattern = `%${sanitizedQuery}%`
-    
+
     try {
+        // Build WHERE clause with university filtering if needed
+        const universityFilter = allowedUniversityIds !== null && allowedUniversityIds !== undefined
+            ? `AND up."universityId" = ANY(ARRAY[${allowedUniversityIds.map(id => `'${sanitizeForSql(id)}'`).join(',')}]::text[])`
+            : ''
+
         const results = await prisma.$queryRaw<Array<{
             id: string
             type: string
@@ -51,6 +57,7 @@ export async function searchWiki(query: string, limit: number = 20): Promise<Sea
             FROM "UniPage" up
             WHERE
                 up.published = true
+                ${universityFilter ? `${universityFilter}` : ''}
                 AND (
                     up.name ILIKE ${pattern}
                     OR up.content ILIKE ${pattern}
@@ -76,8 +83,9 @@ export async function searchWiki(query: string, limit: number = 20): Promise<Sea
 
 /**
  * Search institutes
+ * @param allowedUniversityIds - Array of university IDs user can access, or null for all (admin)
  */
-export async function searchInstitutes(query: string, limit: number = 10): Promise<SearchResult[]> {
+export async function searchInstitutes(query: string, limit: number = 10, allowedUniversityIds?: string[] | null): Promise<SearchResult[]> {
     if (!query || query.length < 2) {
         return []
     }
@@ -94,7 +102,10 @@ export async function searchInstitutes(query: string, limit: number = 10): Promi
                 { name: { contains: query, mode: 'insensitive' } },
                 { keywords: { has: query } }
             ],
-            approved: true
+            approved: true,
+            ...(allowedUniversityIds !== null && allowedUniversityIds !== undefined ? {
+                universityId: { in: allowedUniversityIds }
+            } : {})
         },
         include: {
             university: true
@@ -115,8 +126,9 @@ export async function searchInstitutes(query: string, limit: number = 10): Promi
 
 /**
  * Search labs
+ * @param allowedUniversityIds - Array of university IDs user can access, or null for all (admin)
  */
-export async function searchLabs(query: string, limit: number = 10): Promise<SearchResult[]> {
+export async function searchLabs(query: string, limit: number = 10, allowedUniversityIds?: string[] | null): Promise<SearchResult[]> {
     if (!query || query.length < 2) {
         return []
     }
@@ -133,7 +145,12 @@ export async function searchLabs(query: string, limit: number = 10): Promise<Sea
                 { name: { contains: query, mode: 'insensitive' } },
                 { keywords: { has: query } }
             ],
-            approved: true
+            approved: true,
+            ...(allowedUniversityIds !== null && allowedUniversityIds !== undefined ? {
+                institute: {
+                    universityId: { in: allowedUniversityIds }
+                }
+            } : {})
         },
         include: {
             institute: {
@@ -158,8 +175,9 @@ export async function searchLabs(query: string, limit: number = 10): Promise<Sea
 
 /**
  * Search people
+ * @param allowedUniversityIds - Array of university IDs user can access, or null for all (admin)
  */
-export async function searchPeople(query: string, limit: number = 10): Promise<SearchResult[]> {
+export async function searchPeople(query: string, limit: number = 10, allowedUniversityIds?: string[] | null): Promise<SearchResult[]> {
     if (!query || query.length < 2) {
         return []
     }
@@ -178,7 +196,12 @@ export async function searchPeople(query: string, limit: number = 10): Promise<S
                 { fieldOfStudy: { contains: query, mode: 'insensitive' } },
                 { bio: { contains: query, mode: 'insensitive' } },
                 { keywords: { has: query } }
-            ]
+            ],
+            ...(allowedUniversityIds !== null && allowedUniversityIds !== undefined ? {
+                institute: {
+                    universityId: { in: allowedUniversityIds }
+                }
+            } : {})
         },
         take: limit,
         orderBy: { name: 'asc' }
@@ -196,11 +219,13 @@ export async function searchPeople(query: string, limit: number = 10): Promise<S
 
 /**
  * Unified search across all entities
+ * @param allowedUniversityIds - Array of university IDs user can access, or null for all (admin)
  */
 export async function unifiedSearch(
     query: string,
     filters?: SearchFilters,
-    limit: number = 20
+    limit: number = 20,
+    allowedUniversityIds?: string[] | null
 ): Promise<{ results: SearchResult[]; totalCount: number }> {
     if (!query || query.length < 2) {
         return { results: [], totalCount: 0 }
@@ -213,35 +238,28 @@ export async function unifiedSearch(
     }
 
     const [pages, institutes, labs, people] = await Promise.all([
-        filters?.type === 'page' || !filters?.type ? searchWiki(query, limit) : Promise.resolve([]),
-        filters?.type === 'institute' || !filters?.type ? searchInstitutes(query, limit) : Promise.resolve([]),
-        filters?.type === 'lab' || !filters?.type ? searchLabs(query, limit) : Promise.resolve([]),
-        filters?.type === 'person' || !filters?.type ? searchPeople(query, limit) : Promise.resolve([])
+        filters?.type === 'page' || !filters?.type ? searchWiki(query, limit, allowedUniversityIds) : Promise.resolve([]),
+        filters?.type === 'institute' || !filters?.type ? searchInstitutes(query, limit, allowedUniversityIds) : Promise.resolve([]),
+        filters?.type === 'lab' || !filters?.type ? searchLabs(query, limit, allowedUniversityIds) : Promise.resolve([]),
+        filters?.type === 'person' || !filters?.type ? searchPeople(query, limit, allowedUniversityIds) : Promise.resolve([])
     ])
 
     const allResults = [...pages, ...institutes, ...labs, ...people]
 
-    let filteredResults = allResults
-
-    if (filters?.universityId) {
-        filteredResults = allResults.filter(() => {
-            return true
-        })
-    }
-
-    const totalCount = filteredResults.length
-    filteredResults.sort((a, b) => b.score - a.score)
+    const totalCount = allResults.length
+    allResults.sort((a, b) => b.score - a.score)
 
     return {
-        results: filteredResults.slice(0, limit),
+        results: allResults.slice(0, limit),
         totalCount
     }
 }
 
 /**
  * Get search suggestions
+ * @param allowedUniversityIds - Array of university IDs user can access, or null for all (admin)
  */
-export async function getSearchSuggestions(query: string, limit: number = 5): Promise<string[]> {
+export async function getSearchSuggestions(query: string, limit: number = 5, allowedUniversityIds?: string[] | null): Promise<string[]> {
     if (!query || query.length < 2) {
         return []
     }
@@ -253,10 +271,10 @@ export async function getSearchSuggestions(query: string, limit: number = 5): Pr
     }
 
     const [pages, institutes, labs, people] = await Promise.all([
-        searchWiki(query, limit),
-        searchInstitutes(query, limit),
-        searchLabs(query, limit),
-        searchPeople(query, limit)
+        searchWiki(query, limit, allowedUniversityIds),
+        searchInstitutes(query, limit, allowedUniversityIds),
+        searchLabs(query, limit, allowedUniversityIds),
+        searchPeople(query, limit, allowedUniversityIds)
     ])
 
     return [
