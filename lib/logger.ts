@@ -39,7 +39,54 @@ export function clearRequestId() {
     currentRequestId = null
 }
 
+/**
+ * Partially masks an email address for privacy
+ */
+export function maskEmail(email: string): string {
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+        return email
+    }
+    const [local, domain] = email.split('@')
+    const maskedLocal = local.length > 3
+        ? local.substring(0, 3) + '***'
+        : local.charAt(0) + '***'
+    return `${maskedLocal}@${domain}`
+}
+
+/**
+ * Recursively masks sensitive fields in an object
+ */
+export function maskSensitiveData(obj: any): any {
+    if (typeof obj !== 'object' || obj === null) {
+        return obj
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map(maskSensitiveData)
+    }
+
+    const masked: Record<string, any> = {}
+    for (const [key, value] of Object.entries(obj)) {
+        const lowerKey = key.toLowerCase()
+        if (typeof value === 'string' && (
+            lowerKey.includes('email') ||
+            lowerKey === 'to' ||
+            lowerKey === 'useremail' ||
+            lowerKey === 'toemail'
+        )) {
+            masked[key] = maskEmail(value)
+        } else if (typeof value === 'object') {
+            masked[key] = maskSensitiveData(value)
+        } else {
+            masked[key] = value
+        }
+    }
+    return masked
+}
+
 function log(entry: LogEntry): void {
+    const maskedContext = entry.context ? maskSensitiveData(entry.context) : undefined
+
     const logOutput = {
         level: entry.level,
         message: entry.message,
@@ -47,7 +94,7 @@ function log(entry: LogEntry): void {
         requestId: entry.requestId || currentRequestId || undefined,
         ...(entry.userId && { userId: entry.userId }),
         ...(entry.sessionId && { sessionId: entry.sessionId }),
-        ...(entry.context && { context: entry.context }),
+        ...(maskedContext && { context: maskedContext }),
         ...(entry.error && {
             error: {
                 name: entry.error.name,
@@ -71,7 +118,7 @@ function log(entry: LogEntry): void {
         console.log(`${emoji} [${entry.level.toUpperCase()}] ${entry.message}`, {
             requestId: entry.requestId || currentRequestId,
             ...(entry.userId && { userId: entry.userId }),
-            ...(entry.context && { ...entry.context }),
+            ...(maskedContext && { ...maskedContext }),
             ...(entry.error && { error: entry.error.message })
         })
     }
@@ -134,7 +181,7 @@ export function fatal(message: string, context?: Record<string, any>, err?: Erro
 export function logUserLogin(userId: string, email: string, method: string): void {
     info('User logged in', {
         userId,
-        email: email.substring(0, 3) + '***',
+        email: maskEmail(email),
         method
     })
     setSentryUser(userId, email, method)
@@ -148,7 +195,7 @@ export function logUserLogout(userId: string): void {
 export function logUserSignup(userId: string, email: string, method: string): void {
     info('User signed up', {
         userId,
-        email: email.substring(0, 3) + '***',
+        email: maskEmail(email),
         method
     })
 }

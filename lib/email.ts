@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer'
-import { logger } from './logger'
+import { logger, maskEmail } from './logger'
 import { addEmailJob, EmailJobType } from './queues'
 import { isQueueConnectionHealthy } from './queues/connection'
 import {
@@ -32,7 +32,7 @@ interface SendEmailOptions {
  */
 async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<void> {
     if (!isEmailConfigured()) {
-        logger.info('SMTP not configured, skipping email', { to, ...metadata })
+        logger.info('SMTP not configured, skipping email', { to: maskEmail(to), ...metadata })
         return
     }
 
@@ -52,13 +52,13 @@ async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<
 
     if (metadata?.type === 'adminAlert') {
         if (!settings.enableAdminEmails) {
-            logger.info('Admin emails disabled by global settings', { to })
+            logger.info('Admin emails disabled by global settings', { to: maskEmail(to) })
             return
         }
     } else {
         // Default to student/user emails
         if (!settings.enableStudentEmails) {
-            logger.info('Student emails disabled by global settings', { to })
+            logger.info('Student emails disabled by global settings', { to: maskEmail(to) })
             return
         }
     }
@@ -73,9 +73,9 @@ async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<
 
     try {
         await transporter.sendMail(mailOptions)
-        logger.info('Email sent successfully', { to, subject: template.subject, ...metadata })
+        logger.info('Email sent successfully', { to: maskEmail(to), subject: template.subject, ...metadata })
     } catch (error) {
-        logger.error('Failed to send email', { to, subject: template.subject, ...metadata }, error as Error)
+        logger.error('Failed to send email', { to: maskEmail(to), subject: template.subject, ...metadata }, error as Error)
         throw error
     }
 }
@@ -90,13 +90,13 @@ export async function sendWelcomeEmail(toEmail: string, name: string): Promise<v
     if (isHealthy) {
         const job = await addEmailJob(EmailJobType.WELCOME, toEmail, name)
         if (job) {
-            logger.info('Welcome email queued', { toEmail, jobId: job.id })
+            logger.info('Welcome email queued', { toEmail: maskEmail(toEmail), jobId: job.id })
             return
         }
     }
 
     // Fallback to synchronous sending if queue is unavailable
-    logger.info('Queue unavailable, sending welcome email synchronously', { toEmail })
+    logger.info('Queue unavailable, sending welcome email synchronously', { toEmail: maskEmail(toEmail) })
     const template = emailTemplates.welcome({ name })
     await sendEmail({
         to: toEmail,
@@ -115,13 +115,13 @@ export async function sendVerificationEmail(toEmail: string, name: string, token
     if (isHealthy) {
         const job = await addEmailJob(EmailJobType.VERIFICATION, toEmail, name, { token })
         if (job) {
-            logger.info('Verification email queued', { toEmail, jobId: job.id })
+            logger.info('Verification email queued', { toEmail: maskEmail(toEmail), jobId: job.id })
             return
         }
     }
 
     // Fallback to synchronous sending
-    logger.info('Queue unavailable, sending verification email synchronously', { toEmail })
+    logger.info('Queue unavailable, sending verification email synchronously', { toEmail: maskEmail(toEmail) })
     const template = emailTemplates.verification({ name, token })
     await sendEmail({
         to: toEmail,
@@ -140,13 +140,13 @@ export async function sendPasswordResetEmail(toEmail: string, resetCode: string)
     if (isHealthy) {
         const job = await addEmailJob(EmailJobType.PASSWORD_RESET, toEmail, '', { resetCode })
         if (job) {
-            logger.info('Password reset email queued', { toEmail, jobId: job.id })
+            logger.info('Password reset email queued', { toEmail: maskEmail(toEmail), jobId: job.id })
             return
         }
     }
 
     // Fallback to synchronous sending
-    logger.info('Queue unavailable, sending password reset email synchronously', { toEmail })
+    logger.info('Queue unavailable, sending password reset email synchronously', { toEmail: maskEmail(toEmail) })
     const template = emailTemplates.passwordReset({ resetCode })
     await sendEmail({
         to: toEmail,
@@ -171,13 +171,13 @@ export async function sendNotificationEmail(
     if (isHealthy) {
         const job = await addEmailJob(EmailJobType.NOTIFICATION, toEmail, name, { title, message, link })
         if (job) {
-            logger.info('Notification email queued', { toEmail, jobId: job.id, title })
+            logger.info('Notification email queued', { toEmail: maskEmail(toEmail), jobId: job.id, title })
             return
         }
     }
 
     // Fallback to synchronous sending
-    logger.info('Queue unavailable, sending notification email synchronously', { toEmail, title })
+    logger.info('Queue unavailable, sending notification email synchronously', { toEmail: maskEmail(toEmail), title })
     const template = emailTemplates.notification({ name, title, message, link })
     await sendEmail({
         to: toEmail,
@@ -232,7 +232,10 @@ export async function sendMentionEmail(
             message: `${actorName} mentioned you: "${context}..."`,
             link
         })
-        if (job) return
+        if (job) {
+            logger.info('Mention email queued', { toEmail: maskEmail(toEmail), jobId: job.id })
+            return
+        }
     }
 
     const template = emailTemplates.mention({ name, actorName, context, link })
@@ -260,7 +263,10 @@ export async function sendArticleUpdateEmail(
             message: `${actorName} updated your article "${articleTitle}"`,
             link
         })
-        if (job) return
+        if (job) {
+            logger.info('Article update email queued', { toEmail: maskEmail(toEmail), jobId: job.id })
+            return
+        }
     }
 
     const template = emailTemplates.articleUpdate({ name, articleTitle, actorName, link })
@@ -285,7 +291,10 @@ export async function sendArticleDeleteEmail(
             title: 'Article Deleted',
             message: `Your article "${articleTitle}" has been deleted.`,
         })
-        if (job) return
+        if (job) {
+            logger.info('Article delete email queued', { toEmail: maskEmail(toEmail), jobId: job.id })
+            return
+        }
     }
 
     const template = emailTemplates.articleDelete({ name, articleTitle })
