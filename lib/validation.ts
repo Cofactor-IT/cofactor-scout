@@ -70,10 +70,14 @@ export const signUpSchema = z.object({
         .min(2, 'Name must be at least 2 characters')
         .max(100, 'Name is too long')
         .trim()
-        .transform((name) => {
+        .transform((name, ctx) => {
             const result = sanitizeName(name)
             if (!result.isValid) {
-                throw new Error(result.error)
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: result.error
+                })
+                return z.NEVER
             }
             return result.sanitized
         }),
@@ -107,7 +111,7 @@ export const wikiSubmissionSchema = z.object({
         .min(1, 'Title is required')
         .max(200, 'Title is too long')
         .trim()
-        .transform((title) => {
+        .transform((title, ctx) => {
             const result = sanitizeString(title, {
                 maxLength: 200,
                 minLength: 1,
@@ -115,7 +119,11 @@ export const wikiSubmissionSchema = z.object({
                 allowHtml: false
             })
             if (!result.isValid) {
-                throw new Error(result.error)
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: result.error
+                })
+                return z.NEVER
             }
             return result.sanitized
         }),
@@ -143,7 +151,7 @@ export const socialConnectSchema = z.object({
         .min(1, 'Username is required')
         .max(100, 'Username is too long')
         .trim()
-        .transform((username) => {
+        .transform((username, ctx) => {
             // Remove @ symbol if present
             const clean = username.replace(/^@/, '')
             const result = sanitizeString(clean, {
@@ -153,7 +161,11 @@ export const socialConnectSchema = z.object({
                 allowHtml: false
             })
             if (!result.isValid) {
-                throw new Error(result.error)
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: result.error
+                })
+                return z.NEVER
             }
             return result.sanitized
         }),
@@ -172,10 +184,14 @@ export const socialConnectSchema = z.object({
  */
 export const urlSchema = z.string()
     .max(2048, 'URL is too long')
-    .transform((url) => {
+    .transform((url, ctx) => {
         const result = validateAndSanitizeUrl(url)
         if (!result.isValid) {
-            throw new Error(result.error)
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error
+            })
+            return z.NEVER
         }
         return result.sanitizedUrl
     })
@@ -187,11 +203,15 @@ export const urlSchema = z.string()
  */
 export const linkedinUrlSchema = z.string()
     .max(2048, 'LinkedIn URL is too long')
-    .transform((url) => {
+    .transform((url, ctx) => {
         if (!url || url.trim() === '') return null
         const result = validateSocialUrl(url.trim(), 'linkedin')
         if (!result.isValid) {
-            throw new Error(result.error || 'Invalid LinkedIn URL')
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error || 'Invalid LinkedIn URL'
+            })
+            return z.NEVER
         }
         return result.sanitizedUrl
     })
@@ -203,11 +223,15 @@ export const linkedinUrlSchema = z.string()
  */
 export const twitterUrlSchema = z.string()
     .max(2048, 'Twitter URL is too long')
-    .transform((url) => {
+    .transform((url, ctx) => {
         if (!url || url.trim() === '') return null
         const result = validateSocialUrl(url.trim(), 'twitter')
         if (!result.isValid) {
-            throw new Error(result.error || 'Invalid Twitter URL')
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error || 'Invalid Twitter URL'
+            })
+            return z.NEVER
         }
         return result.sanitizedUrl
     })
@@ -219,11 +243,15 @@ export const twitterUrlSchema = z.string()
  */
 export const websiteUrlSchema = z.string()
     .max(2048, 'Website URL is too long')
-    .transform((url) => {
+    .transform((url, ctx) => {
         if (!url || url.trim() === '') return null
         const result = validateAndSanitizeUrl(url.trim())
         if (!result.isValid) {
-            throw new Error(result.error || 'Invalid website URL')
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error || 'Invalid website URL'
+            })
+            return z.NEVER
         }
         return result.sanitizedUrl
     })
@@ -235,11 +263,15 @@ export const websiteUrlSchema = z.string()
  */
 export const googleScholarUrlSchema = z.string()
     .max(2048, 'Google Scholar URL is too long')
-    .transform((url) => {
+    .transform((url, ctx) => {
         if (!url || url.trim() === '') return null
         const result = validateSocialUrl(url.trim(), 'googleScholar')
         if (!result.isValid) {
-            throw new Error(result.error || 'Invalid Google Scholar URL')
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error || 'Invalid Google Scholar URL'
+            })
+            return z.NEVER
         }
         return result.sanitizedUrl
     })
@@ -251,11 +283,15 @@ export const googleScholarUrlSchema = z.string()
  */
 export const researchGateUrlSchema = z.string()
     .max(2048, 'ResearchGate URL is too long')
-    .transform((url) => {
+    .transform((url, ctx) => {
         if (!url || url.trim() === '') return null
         const result = validateSocialUrl(url.trim(), 'researchGate')
         if (!result.isValid) {
-            throw new Error(result.error || 'Invalid ResearchGate URL')
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error || 'Invalid ResearchGate URL'
+            })
+            return z.NEVER
         }
         return result.sanitizedUrl
     })
@@ -317,10 +353,14 @@ export const wikiImageUploadSchema = fileUploadSchema
  */
 export const searchQuerySchema = z.string()
     .max(100, 'Search query is too long')
-    .transform((query) => {
+    .transform((query, ctx) => {
         const result = sanitizeSearchQuery(query, 100)
         if (!result.isValid) {
-            throw new Error(result.error)
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error
+            })
+            return z.NEVER
         }
         return result.sanitized
     })
@@ -344,10 +384,14 @@ export const searchFiltersSchema = z.object({
  */
 export const safeJsonStringSchema = z.string()
     .max(10000, 'JSON data is too large')
-    .transform((json) => {
+    .transform((json, ctx) => {
         const result = safeJsonParse(json)
         if (!result.success) {
-            throw new Error(result.error)
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error
+            })
+            return z.NEVER
         }
         return result.data
     })
@@ -389,10 +433,14 @@ export const customFieldValuesSchema = z.array(customFieldValueSchema)
 export const nameFieldSchema = z.string()
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name is too long')
-    .transform((name) => {
+    .transform((name, ctx) => {
         const result = sanitizeName(name, 100)
         if (!result.isValid) {
-            throw new Error(result.error)
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error
+            })
+            return z.NEVER
         }
         return result.sanitized
     })
@@ -402,11 +450,15 @@ export const nameFieldSchema = z.string()
  */
 export const bioFieldSchema = z.string()
     .max(1000, 'Bio is too long')
-    .transform((bio) => {
+    .transform((bio, ctx) => {
         if (!bio || bio.trim() === '') return null
         const result = sanitizeBio(bio, 1000)
         if (!result.isValid) {
-            throw new Error(result.error)
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error
+            })
+            return z.NEVER
         }
         return result.sanitized
     })
@@ -418,7 +470,7 @@ export const bioFieldSchema = z.string()
  */
 export const roleFieldSchema = z.string()
     .max(100, 'Role is too long')
-    .transform((role) => {
+    .transform((role, ctx) => {
         if (!role || role.trim() === '') return null
         const result = sanitizeString(role, {
             maxLength: 100,
@@ -427,7 +479,11 @@ export const roleFieldSchema = z.string()
             allowHtml: false
         })
         if (!result.isValid) {
-            throw new Error(result.error)
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error
+            })
+            return z.NEVER
         }
         return result.sanitized
     })
@@ -439,7 +495,7 @@ export const roleFieldSchema = z.string()
  */
 export const fieldOfStudySchema = z.string()
     .max(200, 'Field of study is too long')
-    .transform((field) => {
+    .transform((field, ctx) => {
         if (!field || field.trim() === '') return null
         const result = sanitizeString(field, {
             maxLength: 200,
@@ -448,7 +504,11 @@ export const fieldOfStudySchema = z.string()
             allowHtml: false
         })
         if (!result.isValid) {
-            throw new Error(result.error)
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: result.error
+            })
+            return z.NEVER
         }
         return result.sanitized
     })
