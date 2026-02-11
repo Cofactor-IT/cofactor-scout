@@ -143,7 +143,7 @@ export const socialConnectSchema = z.object({
         .min(1, 'Username is required')
         .max(100, 'Username is too long')
         .trim()
-        .transform((username) => {
+        .transform((username, ctx) => {
             // Remove @ symbol if present
             const clean = username.replace(/^@/, '')
             const result = sanitizeString(clean, {
@@ -153,7 +153,11 @@ export const socialConnectSchema = z.object({
                 allowHtml: false
             })
             if (!result.isValid) {
-                throw new Error(result.error)
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: result.error
+                })
+                return z.NEVER
             }
             return result.sanitized
         }),
