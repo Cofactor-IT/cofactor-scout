@@ -1,5 +1,4 @@
 import DOMPurify from 'isomorphic-dompurify'
-import { z } from 'zod'
 
 /**
  * Comprehensive input sanitization utilities
@@ -36,7 +35,8 @@ export function normalizeUnicode(input: string): string {
 // ============================================================================
 
 const EXCESSIVE_WHITESPACE = /\s+/g
-const CONTROL_CHARS = /[\x00-\x1F\x7F-\x9F]/g
+// Exclude \t (0x09), \n (0x0A), \r (0x0D) from control chars so they are handled by whitespace normalization
+const CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g
 
 /**
  * Normalize whitespace in strings
@@ -350,7 +350,7 @@ export function safeJsonParse<T = unknown>(json: string): {
         }
 
         return { success: true, data: parsed as T }
-    } catch (error) {
+    } catch (_) {
         return { success: false, error: 'Invalid JSON format' }
     }
 }
@@ -452,11 +452,26 @@ export function sanitizeString(
     sanitized = normalizeUnicode(sanitized)
 
     // Normalize whitespace
-    sanitized = normalizeWhitespace(sanitized)
+    if (allowNewlines) {
+        // Remove control chars
+        sanitized = sanitized.replace(CONTROL_CHARS, '')
+        // Normalize spaces (preserve newlines)
+        sanitized = sanitized.replace(/[ \t]+/g, ' ')
+        // Trim
+        sanitized = sanitized.trim()
+    } else {
+        // Normalize whitespace (collapses everything including newlines to space)
+        sanitized = normalizeWhitespace(sanitized)
+    }
 
     // Handle newlines
     if (!allowNewlines) {
         sanitized = sanitized.replace(/\n/g, ' ').replace(/\r/g, '')
+    }
+
+    // Sanitize HTML if not allowed
+    if (!allowHtml) {
+        sanitized = DOMPurify.sanitize(sanitized, { ALLOWED_TAGS: [] })
     }
 
     // Check minimum length
@@ -475,11 +490,6 @@ export function sanitizeString(
             isValid: false,
             error: `Input must be no more than ${maxLength} characters`
         }
-    }
-
-    // Sanitize HTML if not allowed
-    if (!allowHtml) {
-        sanitized = DOMPurify.sanitize(sanitized, { ALLOWED_TAGS: [] })
     }
 
     return { sanitized, isValid: true }
