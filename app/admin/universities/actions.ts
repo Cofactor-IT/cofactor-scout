@@ -36,14 +36,18 @@ export async function createUniversity(prevState: { error?: string } | undefined
     }
 
     // Check for duplicate domains
-    for (const domain of domains) {
-        const existingDomain = await prisma.university.findFirst({
-            where: {
-                domains: { has: domain }
+    const existingUniversitiesWithDomains = await prisma.university.findMany({
+        where: {
+            domains: { hasSome: domains }
+        }
+    })
+
+    if (existingUniversitiesWithDomains.length > 0) {
+        for (const domain of domains) {
+            const match = existingUniversitiesWithDomains.find(u => u.domains.includes(domain))
+            if (match) {
+                return { error: `Domain "${domain}" is already registered to ${match.name}` }
             }
-        })
-        if (existingDomain) {
-            return { error: `Domain "${domain}" is already registered to ${existingDomain.name}` }
         }
     }
 
@@ -121,15 +125,20 @@ export async function updateUniversity(universityId: string, name: string, domai
     }
 
     // Check for duplicate domains (excluding current university)
-    for (const domain of domains) {
-        const existingDomain = await prisma.university.findFirst({
-            where: {
-                domains: { has: domain.toLowerCase() },
-                NOT: { id: universityId }
+    const normalizedDomainsForCheck = domains.map(d => d.toLowerCase())
+    const existingUniversitiesWithDomains = await prisma.university.findMany({
+        where: {
+            domains: { hasSome: normalizedDomainsForCheck },
+            NOT: { id: universityId }
+        }
+    })
+
+    if (existingUniversitiesWithDomains.length > 0) {
+        for (const domain of domains) {
+            const match = existingUniversitiesWithDomains.find(u => u.domains.includes(domain.toLowerCase()))
+            if (match) {
+                throw new Error(`Domain "${domain}" is already registered to ${match.name}`)
             }
-        })
-        if (existingDomain) {
-            throw new Error(`Domain "${domain}" is already registered to ${existingDomain.name}`)
         }
     }
 
@@ -183,18 +192,22 @@ export async function importUniversities(universities: { name: string, domains: 
             }
 
             // Check if domains exist
-            let domainExists = false
-            for (const domain of uni.domains) {
-                const existingDomain = await prisma.university.findFirst({
-                    where: { domains: { has: domain } }
-                })
-                if (existingDomain) {
-                    results.errors.push(`Domain "${domain}" is already registered to ${existingDomain.name}`)
-                    domainExists = true
-                    break
+            const existingUnisWithDomains = await prisma.university.findMany({
+                where: { domains: { hasSome: uni.domains } }
+            })
+
+            if (existingUnisWithDomains.length > 0) {
+                let domainExists = false
+                for (const domain of uni.domains) {
+                    const match = existingUnisWithDomains.find(u => u.domains.includes(domain))
+                    if (match) {
+                        results.errors.push(`Domain "${domain}" is already registered to ${match.name}`)
+                        domainExists = true
+                        break
+                    }
                 }
+                if (domainExists) continue
             }
-            if (domainExists) continue
 
             // Create
             await prisma.university.create({
