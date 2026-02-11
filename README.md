@@ -3,8 +3,8 @@
 A student ambassador network platform for managing referrals, tracking viral growth, and building a moderated University Wiki with a gamified Power Score system.
 
 > **📚 Documentation:**
-> *   [**Product Overview**](./Docs/Product/README.md): Features, Roles, and Workflow.
-> *   [**Developer Guide**](./Docs/Developer/README.md): Architecture, Schema, and Deployment.
+> *   [**Product Overview**](./docs/Product/README.md): Features, Roles, and Workflow.
+> *   [**Developer Guide**](./docs/Developer/README.md): Architecture, Schema, and Deployment.
 
 ## Branches
 
