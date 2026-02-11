@@ -16,6 +16,7 @@ import {
     sanitizeBio,
     containsSqlInjection
 } from '@/lib/sanitization'
+import { generateSlug } from '@/lib/utils'
 import { validateContent, filterContent } from '@/lib/moderation/content-filter'
 import { logger } from '@/lib/logger'
 import { ValidationError, NotFoundError, AuthenticationError } from '@/lib/errors'
@@ -542,7 +543,7 @@ export async function updatePublicProfile(isPublic: boolean, data?: PublicProfil
                 data: {
                     name: user.name || 'Anonymous',
                     bio: user.bio || '',
-                    slug: (user.name || 'anonymous').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6)
+                    slug: generateSlug(user.name || 'anonymous') + '-' + Math.random().toString(36).substring(2, 6)
                 }
             })
             personId = person.id

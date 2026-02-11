@@ -640,24 +640,6 @@ export function sanitizeForPrisma(input: string): string {
 }
 
 // ============================================================================
-// SLUG GENERATION
-// ============================================================================
-
-/**
- * Generate a URL-safe slug from a string
- */
-export function generateSlug(input: string): string {
-    return input
-        .normalize('NFKD')
-        .replace(/[^\w\s-]/g, '')
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .substring(0, 100)
-}
-
-// ============================================================================
 // COMBINED SANITIZATION
 // ============================================================================
 
