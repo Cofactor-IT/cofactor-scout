@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { generateSlug } from '@/lib/utils'
 
 export function AddArticleButton({ universityId, instituteId, labId }: { universityId?: string | null, instituteId?: string | null, labId?: string | null }) {
     const [open, setOpen] = useState(false)
@@ -23,13 +24,7 @@ export function AddArticleButton({ universityId, instituteId, labId }: { univers
     const handleCreate = () => {
         if (!title) return
 
-        // Simple slugify: lowercase, replace spaces with dashes, remove special chars
-        const slug = title
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_-]+/g, '-')
-            .replace(/^-+|-+$/g, '')
+        const slug = generateSlug(title)
 
         if (slug) {
             setOpen(false)

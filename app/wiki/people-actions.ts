@@ -10,9 +10,9 @@ import {
     sanitizeName,
     sanitizeBio,
     sanitizeString,
-    generateSlug,
     containsSqlInjection
 } from '@/lib/sanitization'
+import { generateSlug } from '@/lib/utils'
 import { validateContent, filterContent } from '@/lib/moderation/content-filter'
 import { logger } from '@/lib/logger'
 import { getDailyChangeCount } from '@/lib/user-limits'
