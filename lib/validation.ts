@@ -107,7 +107,7 @@ export const wikiSubmissionSchema = z.object({
         .min(1, 'Title is required')
         .max(200, 'Title is too long')
         .trim()
-        .transform((title) => {
+        .transform((title, ctx) => {
             const result = sanitizeString(title, {
                 maxLength: 200,
                 minLength: 1,
@@ -115,7 +115,11 @@ export const wikiSubmissionSchema = z.object({
                 allowHtml: false
             })
             if (!result.isValid) {
-                throw new Error(result.error)
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: result.error
+                })
+                return z.NEVER
             }
             return result.sanitized
         }),
