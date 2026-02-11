@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { proposeEdit } from '../../actions'
 import { WikiEditorWrapper } from './WikiEditorWrapper'
+import { SubmitButton } from './SubmitButton'
 
 export default async function EditWikiPage({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams: Promise<{ title?: string, universityId?: string, instituteId?: string, labId?: string }> }) {
     const { slug } = await params
@@ -46,7 +46,7 @@ export default async function EditWikiPage({ params, searchParams }: { params: P
                         </div>
 
                         <div className="flex justify-end gap-4">
-                            <Button type="submit">Submit Proposal</Button>
+                            <SubmitButton />
                         </div>
                     </form>
                 </CardContent>

@@ -15,6 +15,9 @@ A student ambassador network platform for managing referrals, tracking viral gro
 
 ## Features
 
+### 📱 Mobile First
+- **Responsive Design**: Optimized for all devices with touch-friendly interfaces.
+
 ### 🎯 Power Score System
 - **Referrals**: +50 points per successful invite
 - **Wiki Contributions**: +20 points for approved edits
@@ -24,6 +27,7 @@ A student ambassador network platform for managing referrals, tracking viral gro
 | Role | Capabilities |
 |------|-------------|
 | **Student** | Create referrals, propose wiki edits, sync social accounts |
+| **Trusted Student** | Limited daily auto-approved edits, same as student |
 | **Staff** | Auto-approved wiki edits, same as student |
 | **Pending Staff** | Awaiting admin approval for staff privileges |
 | **Admin** | Full access: approve/reject revisions, manage users, delete pages |
@@ -37,7 +41,9 @@ A student ambassador network platform for managing referrals, tracking viral gro
 - **@ Mentions**: Tag people, labs, and institutes in wiki articles with `@` autocomplete; links directly to profiles.
 - **Person Profiles**: Dedicated profile pages for persons showing bio, affiliations, and "Mentioned In" articles.
 - **Person Directory**: Add, edit, and delete persons from institutes and labs.
-- **Revision System**: Proposed edits require approval (Students) or are auto-approved (Staff).
+- **Revision System**: Proposed edits require approval (Students) or are auto-approved (Staff/Trusted Users).
+- **Recent Changes**: Aggregated view of latest edits across the university.
+- **History Access**: Detailed revision history restricted to Admins and Staff.
 - **Published State**: Pages only visible after first approval
 - **Diff Viewer**: Visual comparison of edit proposals
 - **XSS Protection**: All content sanitized with DOMPurify
@@ -58,6 +64,7 @@ A student ambassador network platform for managing referrals, tracking viral gro
 
 ### 📊 Admin Dashboard
 - **KPI Cards**: Total users, referals, social reach, pending actions
+- **Notification Settings**: Granular control over system notifications.
 - **Leaderboard**: Top 10 performers by Power Score
 - **Recent Signups**: Latest members with role badges
 - **Activity Hotspots**: Most edited wiki pages
@@ -218,6 +225,7 @@ cofactor-club/
 |-----------|------------|
 | Framework | Next.js 16 (App Router, Standalone Output) |
 | Database | PostgreSQL 15 + Prisma ORM |
+| Caching | Redis (Search & Suggestions), Client-side SWR |
 | Auth | NextAuth.js (Credentials) |
 | Styling | Tailwind CSS + Shadcn UI |
 | Icons | Lucide React |

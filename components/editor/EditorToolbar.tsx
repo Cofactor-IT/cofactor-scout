@@ -43,6 +43,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title: string
     }) => (
         <button
+            type="button"
             onClick={onClick}
             disabled={disabled}
             className={`p-2 rounded hover:bg-muted transition-colors ${active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'

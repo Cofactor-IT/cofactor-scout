@@ -135,6 +135,7 @@ export function WikiEditor({
                     <Type size={20} className="text-muted-foreground" />
                     <div className="flex bg-muted p-1 rounded-lg">
                         <button
+                            type="button"
                             onClick={() => handleViewToggle('rich')}
                             className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${viewMode === 'rich'
                                 ? 'bg-background text-foreground shadow-sm'
@@ -144,6 +145,7 @@ export function WikiEditor({
                             Rich Text
                         </button>
                         <button
+                            type="button"
                             onClick={() => handleViewToggle('markdown')}
                             className={`px-3 py-1.5 rounded-md font-medium transition-colors text-sm ${viewMode === 'markdown'
                                 ? 'bg-background text-foreground shadow-sm'
