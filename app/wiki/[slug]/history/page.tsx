@@ -1,7 +1,7 @@
-import { prisma } from '@/lib/prisma'
-import { getHistory, rollbackToRevision } from '../../history-actions'
+import { prisma } from '@/lib/database/prisma'
+import { getHistory, rollbackToRevision } from '@/actions/wiki-history.actions'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

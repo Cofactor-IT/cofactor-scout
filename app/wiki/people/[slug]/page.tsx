@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma'
-import { ensureAbsoluteUrl } from '@/lib/utils'
+import { prisma } from '@/lib/database/prisma'
+import { ensureAbsoluteUrl } from '@/lib/utils/formatting'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'

@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/prisma'
-import { getRecentActivity } from '@/app/wiki/activity-actions'
+import { prisma } from '@/lib/database/prisma'
+import { getRecentActivity } from '@/actions/wiki-activity.actions'
 import { ActivityTimeline } from '@/components/wiki/ActivityTimeline'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from 'next/link'

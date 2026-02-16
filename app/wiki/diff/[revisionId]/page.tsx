@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TextDiffViewer } from '@/components/wiki/TextDiffViewer'

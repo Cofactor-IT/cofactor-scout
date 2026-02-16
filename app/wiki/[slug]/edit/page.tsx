@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { proposeEdit } from '../../actions'
+import { proposeEdit } from '@/actions/wiki.actions'
 import { WikiEditorWrapper } from './WikiEditorWrapper'
 import { SubmitButton } from './SubmitButton'
 
