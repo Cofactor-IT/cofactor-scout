@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/database/prisma'
 import { requireAdmin } from '@/lib/auth/session'
-import { UniversityManager } from './UniversityManager'
+import { UniversityManager } from '@/components/features/admin/UniversityManager'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 

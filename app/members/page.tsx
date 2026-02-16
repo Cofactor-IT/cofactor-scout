@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { RoleForm, ActionButtons, TrustedToggle } from './member-row'
+import { RoleForm, ActionButtons, TrustedToggle } from '@/components/features/members/MemberRow'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
