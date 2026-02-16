@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { unstable_cache } from 'next/cache'
 
 // Use unstable_cache for performance, revalidating when settings change

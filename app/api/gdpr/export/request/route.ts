@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-config'
-import { prisma } from '@/lib/prisma'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { authOptions } from '@/lib/auth/config'
+import { prisma } from '@/lib/database/prisma'
+import { checkRateLimit, getClientIp } from '@/lib/security/rate-limit'
 import { logger } from '@/lib/logger'
 import { jobQueue } from '@/lib/gdpr/queue'
 import { generateUserExport } from '@/lib/gdpr/export'
-import { sendNotificationEmail } from '@/lib/email'
+import { sendNotificationEmail } from '@/lib/email/send'
 import { logExportRequest } from '@/lib/gdpr/audit'
 
 // Register the export job handler

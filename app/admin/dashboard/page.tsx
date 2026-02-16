@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +10,7 @@ import {
     approveInstitute, rejectInstitute,
     approveLab, rejectLab,
     approveSecondaryUniversityRequest, rejectSecondaryUniversityRequest
-} from '../actions'
+} from '@/actions/admin.actions'
 import { SocialStats } from '@/lib/types'
 import { logger } from '@/lib/logger'
 

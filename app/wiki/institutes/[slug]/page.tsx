@@ -1,15 +1,15 @@
-import { prisma } from '@/lib/prisma'
-import { ensureAbsoluteUrl } from '@/lib/utils'
+import { prisma } from '@/lib/database/prisma'
+import { ensureAbsoluteUrl } from '@/lib/utils/formatting'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { notFound } from 'next/navigation'
-import { ProposeStructureModal } from '../../ProposeStructureModal'
-import { AddPersonModal } from '../../AddPersonModal'
-import { EditPersonModal, DeletePersonButton } from '../../EditPersonModal'
-import { AddArticleButton } from '../../AddArticleButton'
+import { ProposeStructureModal } from '@/components/features/wiki/ProposeStructureModal'
+import { AddPersonModal } from '@/components/features/wiki/AddPersonModal'
+import { EditPersonModal, DeletePersonButton } from '@/components/features/wiki/EditPersonModal'
+import { AddArticleButton } from '@/components/features/wiki/AddArticleButton'
 
 export const dynamic = 'force-dynamic'
 

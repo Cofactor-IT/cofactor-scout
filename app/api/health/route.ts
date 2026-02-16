@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAllQueueStatus } from '@/lib/queues/status'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 
 export async function GET() {
     const checks: Record<string, { status: string; error?: string }> = {}

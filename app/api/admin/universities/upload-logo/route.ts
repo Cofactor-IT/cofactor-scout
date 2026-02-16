@@ -1,11 +1,11 @@
 import { randomBytes } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-config'
+import { authOptions } from '@/lib/auth/config'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import { existsSync } from 'fs'
-import { containsSqlInjection } from '@/lib/sanitization'
+import { containsSqlInjection } from '@/lib/security/sanitization'
 
 // Allowed types for university logos (includes SVG)
 const ALLOWED_LOGO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'] as const

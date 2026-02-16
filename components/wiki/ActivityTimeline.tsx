@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import Link from 'next/link'
 import { WikiRevision } from '@prisma/client'
 import { Button } from '@/components/ui/button'
-import { rollbackToRevision } from '@/app/wiki/history-actions'
+import { rollbackToRevision } from '@/actions/wiki-history.actions'
 
 type ActivityTimelineProps = {
     grouped: {

@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-config'
-import { unifiedSearch, getSearchSuggestions } from '@/lib/search'
-import { searchQuerySchema, searchFiltersSchema } from '@/lib/validation'
-import { containsSqlInjection, sanitizeForSql } from '@/lib/sanitization'
+import { authOptions } from '@/lib/auth/config'
+import { unifiedSearch, getSearchSuggestions } from '@/lib/utils/search'
+import { searchQuerySchema, searchFiltersSchema } from '@/lib/validation/schemas'
+import { containsSqlInjection } from '@/lib/security/sanitization'
 
 export const dynamic = 'force-dynamic'
 

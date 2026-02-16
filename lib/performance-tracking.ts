@@ -1,4 +1,4 @@
-import { trackApiRequest } from './analytics'
+import { trackApiRequest } from '@/lib/analytics'
 
 interface ErrorWithStatus extends Error {
     status?: number

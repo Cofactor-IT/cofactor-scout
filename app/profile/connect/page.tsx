@@ -1,13 +1,13 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { redirect } from 'next/navigation'
-import { saveSocialApiKeys } from './actions'
+import { saveSocialApiKeys } from '@/actions/social-connect.actions'
 import { SocialStats } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'

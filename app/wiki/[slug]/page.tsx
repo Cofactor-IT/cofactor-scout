@@ -1,11 +1,11 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { unstable_cache } from 'next/cache'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { WikiRevision } from '@prisma/client'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -103,7 +103,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                         {session?.user?.role === 'ADMIN' && (
                             <form action={async () => {
                                 'use server'
-                                const { deletePage } = await import('@/app/admin/actions')
+                                const { deletePage } = await import('@/actions/admin.actions')
                                 await deletePage(slug)
                             }}>
                                 <Button variant="destructive" size="sm">Delete Page</Button>
@@ -171,7 +171,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                     {session?.user?.role === 'ADMIN' && (
                         <form action={async () => {
                             'use server'
-                            const { deletePage } = await import('@/app/admin/actions')
+                            const { deletePage } = await import('@/actions/admin.actions')
                             await deletePage(slug)
                         }}>
                             <Button variant="destructive" size="sm">Delete Page</Button>

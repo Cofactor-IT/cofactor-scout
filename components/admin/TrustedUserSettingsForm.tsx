@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { updateTrustedUserSettings } from '@/app/admin/settings/actions'
+import { updateTrustedUserSettings } from '@/actions/admin-settings.actions'
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 
 interface TrustedUserSettingsFormProps {

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,9 +7,9 @@ import { Settings } from 'lucide-react'
 import { SocialStats } from '@/lib/types'
 import Link from 'next/link'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { redirect } from 'next/navigation'
-import { SecondaryUniversityCard } from './SecondaryUniversityCard'
+import { SecondaryUniversityCard } from '@/components/features/profile/SecondaryUniversityCard'
 
 export const dynamic = 'force-dynamic'
 
