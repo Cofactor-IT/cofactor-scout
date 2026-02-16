@@ -1,6 +1,6 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
-import { checkRateLimitEdge, RateLimitConfig, getClientIp } from '@/lib/security/rate-limit-edge'
+import { checkRateLimitEdge, getClientIp } from '@/lib/security/rate-limit-edge'
 
 // Define simple rate limits for edge
 const RateLimits = {
