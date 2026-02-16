@@ -1,0 +1,64 @@
+
+> cofactor-club@0.1.0 build
+> next build
+
+ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\thies\Antigravity\Cofactor Club\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\thies\Antigravity\Cofactor Club\cofactor-scout\package-lock.json
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Experiments (use with caution):
+  ┬╖ clientTraceMetadata
+  ┬╖ serverActions
+
+  Creating an optimized production build ...
+Turbopack build encountered 2 warnings:
+./cofactor-scout/node_modules/bullmq/dist/esm/classes
+Package ioredis can't be external
+The request ioredis/built/utils matches serverExternalPackages (or the default list).
+The request could not be resolved by Node.js from the importing module. The way Node.js resolves modules is slightly different from the way Next.js resolves modules. Next.js was able to resolve it, while Node.js would not be able to.
+Try to remove this package from serverExternalPackages.
+Or update the import side to use a compatible request that can be resolved by Node.js.
+
+
+./cofactor-scout/node_modules/bullmq/dist/esm/utils
+Package ioredis can't be external
+The request ioredis/built/utils matches serverExternalPackages (or the default list).
+The request could not be resolved by Node.js from the importing module. The way Node.js resolves modules is slightly different from the way Next.js resolves modules. Next.js was able to resolve it, while Node.js would not be able to.
+Try to remove this package from serverExternalPackages.
+Or update the import side to use a compatible request that can be resolved by Node.js.
+
+
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./cofactor-scout/lib/auth/permissions.ts:119:30
+Module not found: Can't resolve './prisma'
+  117 |  */
+  118 | export async function getUserWithUniversities() {
+> 119 |     const { prisma } = await import('./prisma')
+      |                              ^^^^^^^^^^^^^^^^^^
+  120 |     const session = await getServerSession(authOptions)
+  121 |
+  122 |     if (!session?.user?.id) return null
+
+
+
+Import traces:
+  App Route:
+    ./cofactor-scout/lib/auth/permissions.ts
+    ./cofactor-scout/app/api/admin/backups/[filename]/route.ts
+
+  Server Component:
+    ./cofactor-scout/lib/auth/permissions.ts
+    ./cofactor-scout/actions/admin.actions.ts
+    ./cofactor-scout/app/admin/dashboard/page.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (./cofactor-scout/lib/auth/permissions.ts:119:30)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)

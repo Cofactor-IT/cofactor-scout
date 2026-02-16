@@ -1,6 +1,6 @@
 export async function register() {
     if (process.env.NEXT_RUNTIME === 'nodejs') {
-        const { prisma } = await import('@/lib/prisma')
+        const { prisma } = await import('@/lib/database/prisma')
         const adminEmail = process.env.ADMIN_EMAIL
         const adminPassword = process.env.ADMIN_PASSWORD
 

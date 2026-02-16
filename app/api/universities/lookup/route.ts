@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { extractEmailDomain, isPersonalEmail, findUniversityByDomain } from '@/lib/universityUtils'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { prisma } from '@/lib/database/prisma'
+import { extractEmailDomain, isPersonalEmail, findUniversityByDomain } from '@/lib/utils/university'
+import { checkRateLimit, getClientIp } from '@/lib/security/rate-limit'
 
 export const dynamic = 'force-dynamic'
 

@@ -1,17 +1,17 @@
 import { randomBytes } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-config'
+import { authOptions } from '@/lib/auth/config'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import { existsSync } from 'fs'
-import { wikiImageUploadSchema } from '@/lib/validation'
+import { wikiImageUploadSchema } from '@/lib/validation/schemas'
 import { 
     validateFileMagicBytes, 
     ALLOWED_IMAGE_TYPES,
     MAX_FILE_SIZE,
     containsSqlInjection 
-} from '@/lib/sanitization'
+} from '@/lib/security/sanitization'
 
 export async function POST(request: NextRequest) {
     try {

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { getConfig, MODERATION_FEATURES } from './config'
 import { logger } from '@/lib/logger'
 

@@ -1,10 +1,10 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { proposeEdit } from '../../actions'
-import { WikiEditorWrapper } from './WikiEditorWrapper'
-import { SubmitButton } from './SubmitButton'
+import { proposeEdit } from '@/actions/wiki.actions'
+import { WikiEditorWrapper } from '@/components/features/wiki/WikiEditorWrapper'
+import { SubmitButton } from '@/components/features/wiki/SubmitButton'
 
 export default async function EditWikiPage({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams: Promise<{ title?: string, universityId?: string, instituteId?: string, labId?: string }> }) {
     const { slug } = await params

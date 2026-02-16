@@ -3,7 +3,7 @@
  * Handles user data export for portability requests
  */
 
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { createHash } from 'crypto'
 import { writeFile, mkdir, unlink } from 'fs/promises'
 import { join } from 'path'

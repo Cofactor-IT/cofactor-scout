@@ -1,7 +1,7 @@
-import { prisma } from '@/lib/prisma'
-import { getHistory, rollbackToRevision } from '../../history-actions'
+import { prisma } from '@/lib/database/prisma'
+import { getHistory, rollbackToRevision } from '@/actions/wiki-history.actions'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -125,7 +125,7 @@ export default async function HistoryPage({ params }: { params: Promise<{ slug: 
 
                                             // Re-importing inside server action scope or calling the imported one directly?
                                             // Importing at top level works for server components.
-                                            const { rollbackToRevision } = await import('../../history-actions')
+                                            const { rollbackToRevision } = await import('@/actions/wiki-history.actions')
                                             await rollbackToRevision(rev.id)
                                             redirect(`/wiki/${slug}`)
                                         }}>
