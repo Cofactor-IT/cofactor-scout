@@ -1,7 +1,7 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { unstable_cache } from 'next/cache'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
+import { authOptions } from "@/lib/auth/config"
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { RoleForm, ActionButtons, TrustedToggle } from './member-row'

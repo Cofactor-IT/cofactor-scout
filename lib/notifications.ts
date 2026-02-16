@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { NotificationType, Notification, NotificationPreference } from '@prisma/client'
 
 export async function createNotification(
@@ -123,7 +123,7 @@ export async function sendEmailNotification(
     userId: string,
     notification: Notification
 ): Promise<void> {
-    const { sendNotificationEmail } = await import('@/lib/email')
+    const { sendNotificationEmail } = await import('@/lib/email/send')
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { email: true, name: true }

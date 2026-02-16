@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
-import { prisma } from '@/lib/prisma'
+import { authOptions } from "@/lib/auth/config"
+import { prisma } from '@/lib/database/prisma'
 import { logger } from '@/lib/logger'
 import { randomInt } from 'crypto'
-import { validateCsrfToken } from '@/lib/csrf'
+import { validateCsrfToken } from '@/lib/security/csrf'
 
 function generateResetCode(): string {
     // Generate a cryptographically secure 6-digit code
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         }
     })
 
-    const { sendPasswordResetEmail } = await import('@/lib/email')
+    const { sendPasswordResetEmail } = await import('@/lib/email/send')
     sendPasswordResetEmail(user.email, resetCode).catch(err =>
         logger.error('Failed to send password reset email', { email: user.email, error: err })
     )

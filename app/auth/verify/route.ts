@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 
 // Get the base URL for redirects
 function getBaseUrl(): string {

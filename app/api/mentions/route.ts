@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { NextResponse } from 'next/server'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
-import { checkRateLimit } from '@/lib/rate-limit'
+import { authOptions } from "@/lib/auth/config"
+import { checkRateLimit } from '@/lib/security/rate-limit'
 
 export async function GET(request: Request) {
     const session = await getServerSession(authOptions)

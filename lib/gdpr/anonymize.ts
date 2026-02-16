@@ -3,7 +3,7 @@
  * Handles user data anonymization for right to be forgotten requests
  */
 
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { Prisma } from '@prisma/client'
 import { createHash, randomBytes } from 'crypto'
 import { logger } from '@/lib/logger'

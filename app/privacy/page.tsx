@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-config'
+import { authOptions } from '@/lib/auth/config'
 import { FileDown, Trash2, Shield, Eye, Clock, Database, Lock } from 'lucide-react'
 
 export const metadata = {

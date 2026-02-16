@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/database/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -6,9 +6,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-config"
-import { AddArticleButton } from './AddArticleButton'
-import { ProposeStructureModal } from './ProposeStructureModal'
+import { authOptions } from "@/lib/auth/config"
+import { AddArticleButton } from '@/components/features/wiki/AddArticleButton'
+import { ProposeStructureModal } from '@/components/features/wiki/ProposeStructureModal'
 
 export const dynamic = 'force-dynamic'
 

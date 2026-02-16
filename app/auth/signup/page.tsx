@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useActionState, useState, useEffect, useCallback } from 'react'
-import { signUp } from '../actions'
+import { signUp } from '@/actions/auth.actions'
 
 const initialState = {
     error: '' as string | undefined
@@ -158,8 +158,8 @@ export default function SignUpPage() {
                             <Input id="password" name="password" type="password" required />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="referralCode">Referral Code</Label>
-                            <Input id="referralCode" name="referralCode" placeholder="Enter code" required />
+                            <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                            <Input id="referralCode" name="referralCode" placeholder="Enter code" />
                             <p className="text-xs text-muted-foreground">
                                 Use a friend&apos;s code or the staff secret code to join.
                             </p>
