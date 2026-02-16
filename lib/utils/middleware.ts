@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { RateLimits, checkRateLimit, getClientIp } from '@/lib/security/rate-limit'
+import { RateLimits, getClientIp } from '@/lib/security/rate-limit'
 import { checkRateLimitRedis } from '@/lib/security/rate-limit-redis'
 import { logger } from '@/lib/logger'
 import { getServerSession } from 'next-auth'
