@@ -125,7 +125,7 @@ export default async function HistoryPage({ params }: { params: Promise<{ slug: 
 
                                             // Re-importing inside server action scope or calling the imported one directly?
                                             // Importing at top level works for server components.
-                                            const { rollbackToRevision } = await import('../../history-actions')
+                                            const { rollbackToRevision } = await import('@/actions/wiki-history.actions')
                                             await rollbackToRevision(rev.id)
                                             redirect(`/wiki/${slug}`)
                                         }}>

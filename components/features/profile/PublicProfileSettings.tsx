@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { updatePublicProfile, getLabsForInstitute } from '../settings-actions'
+import { updatePublicProfile, getLabsForInstitute } from '@/actions/profile-settings.actions'
 
 interface Institute {
     id: string

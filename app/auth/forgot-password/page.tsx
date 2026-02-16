@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useActionState } from 'react'
-import { requestPasswordReset } from '../actions'
+import { requestPasswordReset } from '@/actions/auth.actions'
 
 const initialState = { error: '', success: '' } as { error?: string; success?: string }
 

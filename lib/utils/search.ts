@@ -296,7 +296,7 @@ export async function unifiedSearch(
     }
 
     // Generate a cache key based on query, filters, and user access
-    const { getOrSetCache } = await import('./cache')
+    const { getOrSetCache } = await import('@/lib/cache')
     const cacheKey = `search:unified:${Buffer.from(query).toString('base64')}:${JSON.stringify(filters)}:${limit}:${allowedUniversityIds ? allowedUniversityIds.sort().join(',') : 'all'}`
 
     return getOrSetCache(cacheKey, async () => {
@@ -342,7 +342,7 @@ export async function getSearchSuggestions(query: string, limit: number = 5, all
     }
 
     // Cache suggestions with a shorter TTL or same as search
-    const { getOrSetCache } = await import('./cache')
+    const { getOrSetCache } = await import('@/lib/cache')
     const cacheKey = `search:suggestions:${Buffer.from(query).toString('base64')}:${limit}:${allowedUniversityIds ? allowedUniversityIds.sort().join(',') : 'all'}`
 
     return getOrSetCache(cacheKey, async () => {

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { changePassword } from '../settings-actions'
+import { changePassword } from '@/actions/profile-settings.actions'
 
 export function ChangePasswordForm() {
     const [currentPassword, setCurrentPassword] = useState('')

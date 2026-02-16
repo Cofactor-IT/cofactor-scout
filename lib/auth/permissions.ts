@@ -116,7 +116,7 @@ export async function checkUniversityAccess(targetUniversityId: string | null): 
  * Get user with university info for access control
  */
 export async function getUserWithUniversities() {
-    const { prisma } = await import('./prisma')
+    const { prisma } = await import('@/lib/database/prisma')
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.id) return null

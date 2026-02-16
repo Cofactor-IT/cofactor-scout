@@ -155,7 +155,7 @@ export function TrustedToggle({ memberId, isTrusted, currentUserId }: { memberId
 
         try {
             // dynamic import to avoid server action issues in client component if not passed as prop
-            const { toggleTrustedStatus } = await import('./actions')
+            const { toggleTrustedStatus } = await import('@/actions/members.actions')
             await toggleTrustedStatus(memberId)
         } catch (error) {
             console.error(error)
@@ -172,8 +172,8 @@ export function TrustedToggle({ memberId, isTrusted, currentUserId }: { memberId
             type="button"
             disabled={isDisabled || isSelf}
             className={`text-xs px-2 py-1 rounded border transition-colors ${optimisticTrusted
-                    ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200'
-                    : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200'
+                : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
                 } ${isDisabled || isSelf ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
             {optimisticTrusted ? 'Trusted' : 'Not Trusted'}

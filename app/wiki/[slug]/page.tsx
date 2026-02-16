@@ -103,7 +103,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                         {session?.user?.role === 'ADMIN' && (
                             <form action={async () => {
                                 'use server'
-                                const { deletePage } = await import('@/app/admin/actions')
+                                const { deletePage } = await import('@/actions/admin.actions')
                                 await deletePage(slug)
                             }}>
                                 <Button variant="destructive" size="sm">Delete Page</Button>
@@ -171,7 +171,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                     {session?.user?.role === 'ADMIN' && (
                         <form action={async () => {
                             'use server'
-                            const { deletePage } = await import('@/app/admin/actions')
+                            const { deletePage } = await import('@/actions/admin.actions')
                             await deletePage(slug)
                         }}>
                             <Button variant="destructive" size="sm">Delete Page</Button>

@@ -9,7 +9,7 @@ import { ArrowLeft } from 'lucide-react'
 import { ChangePasswordForm } from '@/components/features/profile/ChangePasswordForm'
 import { EditProfileForm } from '@/components/features/profile/EditProfileForm'
 import { PublicProfileSettings } from '@/components/features/profile/PublicProfileSettings'
-import { getInstitutesForUser } from '../settings-actions'
+import { getInstitutesForUser } from '@/actions/profile-settings.actions'
 
 export const dynamic = 'force-dynamic'
 

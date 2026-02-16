@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/database/prisma'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { requireAdmin } from '@/lib/auth/session/permissions'
+import { requireAdmin } from '@/lib/auth/permissions'
 import { POWER_SCORE, parseSocialStats, calculateSocialReach } from '@/lib/types'
 import { logger } from '@/lib/logger'
 import { updateReputationAfterModeration, calculateReputation } from '@/lib/moderation/reputation'
