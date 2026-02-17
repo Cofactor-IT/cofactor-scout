@@ -33,7 +33,7 @@ export default async function SocialConnectPage() {
         <div className="container mx-auto py-10 max-w-2xl">
             <h1 className="text-4xl font-bold mb-2">Connect Social Accounts</h1>
             <p className="text-muted-foreground mb-8">
-                Link your social media accounts and enter your follower count to boost your Power Score.
+                Link your social media accounts and enter your follower count to build your verified profile.
             </p>
 
             <div className="space-y-6">

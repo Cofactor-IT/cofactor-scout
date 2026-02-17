@@ -102,7 +102,7 @@ export default async function ProfilePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Referral Program</CardTitle>
-                        <CardDescription>Share your unique code to earn points.</CardDescription>
+                        <CardDescription>Share your unique code.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -113,7 +113,7 @@ export default async function ProfilePage() {
                             </div>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Earn 50 points for every student who joins using your code.
+                            Share your unique code to invite others to the platform.
                         </p>
                     </CardContent>
                 </Card>
@@ -121,7 +121,7 @@ export default async function ProfilePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Social Reach</CardTitle>
-                        <CardDescription>Connect your accounts to boost your Power Score.</CardDescription>
+                        <CardDescription>Connect your accounts to build your verified profile.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-3 gap-2 text-center">
