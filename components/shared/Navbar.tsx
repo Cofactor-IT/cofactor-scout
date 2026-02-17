@@ -36,7 +36,7 @@ export function Navbar() {
                 {/* Logo and Desktop Nav */}
                 <div className="mr-4 flex items-center">
                     <Link href="/" className="mr-6 flex items-center space-x-2 font-bold font-sans text-xl text-navy">
-                        Cofactor Club
+                        Cofactor <span className="text-teal">Scout</span>
                     </Link>
                     <nav className="hidden md:flex items-center space-x-6 text-base font-medium font-sans">
                         <Link href="/search" className="transition-colors hover:text-teal text-navy">Search</Link>
