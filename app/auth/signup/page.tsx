@@ -75,7 +75,7 @@ export default function SignUpPage() {
         email.includes('@')
 
     return (
-        <div className="container mx-auto flex items-center justify-center min-h-screen py-10">
+        <div className="container mx-auto flex items-center justify-center min-h-screen py-10 bg-off-white">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle className="text-2xl">Create an Account</CardTitle>
@@ -104,20 +104,20 @@ export default function SignUpPage() {
 
                             {/* University Detection Feedback */}
                             {isLookingUp && (
-                                <p className="text-sm text-muted-foreground">Checking university...</p>
+                                <p className="text-sm text-cool-gray">Checking university...</p>
                             )}
 
                             {universityLookup?.isStaffDomain && (
-                                <div className="p-3 bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-md">
-                                    <p className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">
+                                <div className="p-3 bg-purple/10 border-2 border-purple rounded-sharp">
+                                    <p className="text-sm text-purple font-semibold">
                                         ✓ Staff domain detected. Account will be created as Staff.
                                     </p>
                                 </div>
                             )}
 
                             {universityLookup?.university && (
-                                <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
-                                    <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                                <div className="p-3 bg-green/10 border-2 border-green rounded-sharp">
+                                    <p className="text-sm text-green font-semibold">
                                         ✓ University detected: {universityLookup.university.name}
                                     </p>
                                     <input type="hidden" name="universityId" value={universityLookup.university.id} />
@@ -125,8 +125,8 @@ export default function SignUpPage() {
                             )}
 
                             {universityLookup?.isPersonalEmail && (
-                                <div className="p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md">
-                                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                <div className="p-3 bg-amber/10 border-2 border-amber rounded-sharp">
+                                    <p className="text-sm text-amber">
                                         ⚠ Please use your university email for better features and verification.
                                     </p>
                                 </div>
@@ -136,8 +136,8 @@ export default function SignUpPage() {
                         {/* University Name Input for Unknown Domains */}
                         {showUniversityNameInput && (
                             <div className="space-y-2">
-                                <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md mb-2">
-                                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                                <div className="p-3 bg-teal/10 border-2 border-teal rounded-sharp mb-2">
+                                    <p className="text-sm text-teal">
                                         We don&apos;t recognize this email domain. Please enter your university name.
                                     </p>
                                 </div>
@@ -147,7 +147,7 @@ export default function SignUpPage() {
                                     name="universityName"
                                     placeholder="e.g., Technical University of Berlin"
                                 />
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-cool-gray">
                                     Your university will be added pending admin approval.
                                 </p>
                             </div>
@@ -160,22 +160,22 @@ export default function SignUpPage() {
                         <div className="space-y-2">
                             <Label htmlFor="referralCode">Referral Code (Optional)</Label>
                             <Input id="referralCode" name="referralCode" placeholder="Enter code" />
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-cool-gray">
                                 Use a friend&apos;s code or the staff secret code to join.
                             </p>
                         </div>
 
                         {state?.error && (
-                            <p className="text-sm text-destructive">{state.error}</p>
+                            <p className="text-sm text-red">{state.error}</p>
                         )}
 
                         <Button type="submit" className="w-full" disabled={isPending}>
                             {isPending ? 'Creating Account...' : 'Sign Up'}
                         </Button>
 
-                        <div className="text-center text-sm">
+                        <div className="text-center text-sm text-navy">
                             Already have an account?{' '}
-                            <Link href="/auth/signin" className="underline">
+                            <Link href="/auth/signin" className="text-teal underline hover:text-teal-dark">
                                 Sign in
                             </Link>
                         </div>

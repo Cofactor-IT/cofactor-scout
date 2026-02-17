@@ -25,10 +25,10 @@ export default async function LeaderboardPage() {
     const users = await getCachedLeaderboard()
 
     return (
-        <div className="container mx-auto py-6 md:py-10">
-            <h1 className="text-2xl md:text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent">Global Leaderboard</h1>
+        <div className="container mx-auto py-6 md:py-10 bg-off-white">
+            <h1 className="text-4xl font-bold font-sans mb-8 text-center text-navy tracking-[-0.005em]">Global Leaderboard</h1>
 
-            <Card className="max-w-4xl mx-auto border-zinc-800 bg-zinc-950/50 backdrop-blur">
+            <Card className="max-w-4xl mx-auto">
                 <CardHeader>
                     <CardTitle>Top Students</CardTitle>
                 </CardHeader>
