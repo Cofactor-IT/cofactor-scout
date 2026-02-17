@@ -79,7 +79,7 @@ function SignInForm() {
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <Label htmlFor="password">Password</Label>
-                            <Link href="/auth/forgot-password" className="text-xs text-muted-foreground hover:underline">
+                            <Link href="/auth/forgot-password" className="text-xs text-cool-gray hover:text-teal">
                                 Forgot password?
                             </Link>
                         </div>
@@ -87,11 +87,11 @@ function SignInForm() {
                     </div>
 
                     {signInError && (
-                        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                            <p className="text-sm text-destructive">{signInError}</p>
+                        <div className="p-3 bg-red/10 border-2 border-red rounded-sharp">
+                            <p className="text-sm text-red">{signInError}</p>
                             <Link
                                 href={`/auth/signup?email=${encodeURIComponent(email)}`}
-                                className="text-sm underline mt-1 inline-block"
+                                className="text-sm text-teal underline mt-1 inline-block hover:text-teal-dark"
                             >
                                 Create an account with this email →
                             </Link>
@@ -99,13 +99,13 @@ function SignInForm() {
                     )}
 
                     {error && !signInError && (
-                        <p className="text-sm text-destructive">
+                        <p className="text-sm text-red">
                             {error === 'AccessDenied' ? 'Access Denied: You do not have permission.' : 'Invalid credentials. Please try again.'}
                         </p>
                     )}
 
                     {message && showMessage && (
-                        <p className="text-sm text-green-600">
+                        <p className="text-sm text-green">
                             {message}
                         </p>
                     )}
@@ -114,9 +114,9 @@ function SignInForm() {
                         {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
 
-                    <div className="text-center text-sm">
+                    <div className="text-center text-sm text-navy">
                         Don&apos;t have an account?{' '}
-                        <Link href="/auth/signup" className="underline">
+                        <Link href="/auth/signup" className="text-teal underline hover:text-teal-dark">
                             Sign up
                         </Link>
                     </div>
@@ -128,7 +128,7 @@ function SignInForm() {
 
 export default function SignInPage() {
     return (
-        <div className="container mx-auto flex items-center justify-center min-h-screen py-10">
+        <div className="container mx-auto flex items-center justify-center min-h-screen py-10 bg-off-white">
             <Suspense fallback={
                 <Card className="w-full max-w-md">
                     <CardHeader>
