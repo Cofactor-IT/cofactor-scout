@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
 import { checkRateLimit } from '@/lib/security/rate-limit'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
     const session = await getServerSession(authOptions)
     if (!session) {

@@ -154,7 +154,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                 <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Referred By</th>
                                 <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Referrals</th>
                                 <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Wiki Edits</th>
-                                <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Power Score</th>
+
                                 <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Email Verified</th>
                                 <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Trusted</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Actions</th>
@@ -245,9 +245,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                             </details>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <span className="font-bold text-purple-600">{(member as any).powerScore || 0}</span>
-                                    </td>
+
                                     <td className="px-4 py-3 text-center">
                                         {member.emailVerified ? (
                                             <span className="text-green text-sm">✓ Yes</span>
@@ -360,7 +358,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                     <div><span className="text-green-600">Green</span> - Approved edits</div>
                     <div><span className="text-amber-500">Yellow</span> - Pending edits</div>
                     <div><span className="text-red-600">Red</span> - Rejected edits</div>
-                    <div><span className="text-purple-600">Purple</span> - Power Score</div>
+
                 </div>
                 <div className="mt-3 text-sm text-cool-gray">
                     <strong>Roles:</strong> Student (regular member) → Staff Editor (can edit wiki) → Admin (full access)

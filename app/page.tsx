@@ -12,9 +12,7 @@ export default function Home() {
         Manage the knowledge base, and earn your place.
       </p>
       <div className="flex gap-4">
-        <Link href="/leaderboard">
-          <Button size="lg">View Leaderboard</Button>
-        </Link>
+
         <Link href="/wiki">
           <Button size="lg" variant="secondary">Explore Wiki</Button>
         </Link>

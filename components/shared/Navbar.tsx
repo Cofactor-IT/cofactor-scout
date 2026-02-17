@@ -39,7 +39,7 @@ export function Navbar() {
                         Cofactor Club
                     </Link>
                     <nav className="hidden md:flex items-center space-x-6 text-base font-medium font-sans">
-                        <Link href="/leaderboard" className="transition-colors hover:text-teal-600 text-navy">Leaderboard</Link>
+
                         <Link href="/wiki" className="transition-colors hover:text-teal-600 text-navy">Wiki</Link>
                         <Link href="/search" className="transition-colors hover:text-teal-600 text-navy">Search</Link>
                     </nav>
@@ -94,13 +94,7 @@ export function Navbar() {
             {
                 isMobileMenuOpen && (
                     <div className="md:hidden absolute top-20 left-0 w-full bg-white border-b border-light-gray shadow-md p-4 flex flex-col space-y-4 z-50 animate-in slide-in-from-top-2">
-                        <Link
-                            href="/leaderboard"
-                            className="text-base font-medium font-sans transition-colors hover:text-teal-600 text-navy"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                            Leaderboard
-                        </Link>
+
                         <Link
                             href="/wiki"
                             className="text-base font-medium font-sans transition-colors hover:text-teal-600 text-navy"
