@@ -43,7 +43,7 @@ async function sendWelcomeEmail(toEmail: string, name: string): Promise<void> {
         from: process.env.SMTP_FROM || '"Cofactor Club" <no-reply@cofactor.world>',
         to: toEmail,
         subject: 'Welcome to Cofactor Club',
-        text: `Hi ${name},\n\nWelcome to Cofactor Club! We're excited to have you join our student ambassador network.\n\nStart referring friends and contributing to the Wiki to climb the leaderboard!\n\nBest,\nThe Cofactor Team`,
+        text: `Hi ${name},\n\nWelcome to Cofactor Club! We're excited to have you join our student ambassador network.\n\nStart referring friends and contributing to the Wiki!\n\nBest,\nThe Cofactor Team`,
         html: `
             <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
                 <h1 style="color: #6366f1;">Welcome to Cofactor Club!</h1>
@@ -53,7 +53,7 @@ async function sendWelcomeEmail(toEmail: string, name: string): Promise<void> {
                 <ul>
                     <li>Share your referral code to earn points.</li>
                     <li>Contribute to your university's wiki page.</li>
-                    <li>Climb the leaderboard!</li>
+
                 </ul>
                 <p>Best,<br>The Cofactor Team</p>
             </div>

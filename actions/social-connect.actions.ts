@@ -72,5 +72,5 @@ export async function saveSocialApiKeys(formData: FormData) {
 
     revalidatePath('/profile')
     revalidatePath('/profile/connect')
-    revalidatePath('/leaderboard')
+
 }

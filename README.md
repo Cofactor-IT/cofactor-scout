@@ -67,7 +67,7 @@ A student ambassador network platform for managing referrals, tracking viral gro
 ### 📊 Admin Dashboard
 - **KPI Cards**: Total users, referals, social reach, pending actions
 - **Notification Settings**: Granular control over system notifications.
-- **Leaderboard**: Top 10 performers by Power Score
+
 - **Recent Signups**: Latest members with role badges
 - **Activity Hotspots**: Most edited wiki pages
 - **Staff Applications**: Approve/reject pending staff
@@ -200,7 +200,7 @@ cofactor-club/
 │   │   ├── people/       # Person profile pages
 │   │   ├── institutes/   # Institute pages
 │   │   └── labs/         # Lab pages
-│   ├── leaderboard/      # Power Score rankings
+
 │   └── members/          # Members directory (admin only)
 ├── components/           # React components
 │   ├── ui/               # Shadcn UI components
