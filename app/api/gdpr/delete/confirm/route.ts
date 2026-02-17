@@ -3,6 +3,8 @@ import { prisma } from '@/lib/database/prisma'
 import { logger } from '@/lib/logger'
 import { anonymizeUser } from '@/lib/gdpr/anonymize'
 
+export const dynamic = 'force-dynamic'
+
 
 export async function POST(request: NextRequest) {
     const requestId = crypto.randomUUID()

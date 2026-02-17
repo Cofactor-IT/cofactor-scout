@@ -161,8 +161,7 @@ export async function shouldSendNotification(
             return preferences.staffStatus
         case 'REFERRAL_USED':
             return preferences.inAppEnabled
-        case 'POWER_SCORE_UPDATED':
-            return preferences.inAppEnabled
+
         case 'USER_FOLLOWED':
             return preferences.activityFeed
         case 'MENTION':

@@ -5,6 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 
+export const dynamic = 'force-dynamic'
+
 // Helper to check admin permission
 async function checkAdmin() {
     const session = await getServerSession(authOptions);

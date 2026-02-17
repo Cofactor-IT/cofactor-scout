@@ -15,7 +15,7 @@ export interface UserReputation {
     riskLevel: 'low' | 'medium' | 'high'
 }
 
-interface ReputationFactors {
+export interface ReputationFactors {
     accountAge: number // days
     isVerified: boolean
     approvalHistory: { approved: number; rejected: number }
