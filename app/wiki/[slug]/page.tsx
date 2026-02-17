@@ -55,7 +55,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                         <Card className="max-w-2xl mx-auto text-center p-10 border-destructive">
                             <CardTitle className="text-3xl mb-4 text-destructive">Access Denied</CardTitle>
                             <p className="text-muted-foreground mb-6">
-                                An admin will review your contribution soon. If approved, it will be published.sion to view it.
+                                This wiki page belongs to another university. You do not have permission to view it.
                             </p>
                             <Link href="/wiki">
                                 <Button>Return to Wiki</Button>
