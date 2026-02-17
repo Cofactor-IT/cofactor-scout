@@ -24,8 +24,8 @@ export function Navbar() {
     const isAdmin = user?.role === 'ADMIN'
 
     return (
-        <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative">
-            <div className="container flex h-14 items-center">
+        <nav className="border-b border-light-gray bg-white h-20">
+            <div className="container flex h-full items-center px-[120px]">
                 {/* Mobile Menu Toggle */}
                 <div className="md:hidden mr-2">
                     <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -35,19 +35,20 @@ export function Navbar() {
 
                 {/* Logo and Desktop Nav */}
                 <div className="mr-4 flex items-center">
-                    <Link href="/" className="mr-6 flex items-center space-x-2 font-bold text-xl">
+                    <Link href="/" className="mr-6 flex items-center space-x-2 font-bold font-sans text-xl text-navy">
                         Cofactor Club
                     </Link>
-                    <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-                        <Link href="/wiki" className="transition-colors hover:text-foreground/80 text-foreground/60">Wiki</Link>
-                        <Link href="/search" className="transition-colors hover:text-foreground/80 text-foreground/60">Search</Link>
+                    <nav className="hidden md:flex items-center space-x-6 text-base font-medium font-sans">
+                        <Link href="/leaderboard" className="transition-colors hover:text-teal-600 text-navy">Leaderboard</Link>
+                        <Link href="/wiki" className="transition-colors hover:text-teal-600 text-navy">Wiki</Link>
+                        <Link href="/search" className="transition-colors hover:text-teal-600 text-navy">Search</Link>
                     </nav>
                 </div>
                 <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
                     <nav className="flex items-center space-x-2">
                         <SearchBar />
                         {status === 'loading' ? (
-                            <div className="h-8 w-20 animate-pulse bg-muted rounded" />
+                            <div className="h-8 w-20 animate-pulse bg-light-gray rounded-pill" />
                         ) : !user ? (
                             <>
                                 <Link href="/auth/signin">
@@ -70,8 +71,8 @@ export function Navbar() {
                                         </Link>
                                     </>
                                 )}
-                                <div className="flex items-center space-x-2 border-l pl-2 ml-2">
-                                    <Link href="/profile" className="text-sm font-medium hidden sm:inline hover:underline">
+                                <div className="flex items-center space-x-2 border-l border-light-gray pl-2 ml-2">
+                                    <Link href="/profile" className="text-sm font-medium font-sans text-navy hidden sm:inline hover:text-teal">
                                         {user.name || user.email}
                                     </Link>
                                     <Button
@@ -92,17 +93,24 @@ export function Navbar() {
             {/* Mobile Menu Overlay */}
             {
                 isMobileMenuOpen && (
-                    <div className="md:hidden absolute top-14 left-0 w-full bg-background border-b shadow-lg p-4 flex flex-col space-y-4 z-50 animate-in slide-in-from-top-2">
+                    <div className="md:hidden absolute top-20 left-0 w-full bg-white border-b border-light-gray shadow-md p-4 flex flex-col space-y-4 z-50 animate-in slide-in-from-top-2">
+                        <Link
+                            href="/leaderboard"
+                            className="text-base font-medium font-sans transition-colors hover:text-teal-600 text-navy"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                            Leaderboard
+                        </Link>
                         <Link
                             href="/wiki"
-                            className="text-sm font-medium transition-colors hover:text-primary"
+                            className="text-base font-medium font-sans transition-colors hover:text-teal-600 text-navy"
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
                             Wiki
                         </Link>
                         <Link
                             href="/search"
-                            className="text-sm font-medium transition-colors hover:text-primary"
+                            className="text-base font-medium font-sans transition-colors hover:text-teal text-navy"
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
                             Search
@@ -111,14 +119,14 @@ export function Navbar() {
                             <>
                                 <Link
                                     href="/members"
-                                    className="text-sm font-medium transition-colors hover:text-primary"
+                                    className="text-base font-medium font-sans transition-colors hover:text-teal text-navy"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
                                     Members
                                 </Link>
                                 <Link
                                     href="/admin/dashboard"
-                                    className="text-sm font-medium transition-colors hover:text-primary"
+                                    className="text-base font-medium font-sans transition-colors hover:text-teal text-navy"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
                                     Admin Dashboard

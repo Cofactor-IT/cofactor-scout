@@ -112,11 +112,11 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
     }))
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-10 bg-off-white">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-4xl font-bold">Admin Members Directory</h1>
-                    <p className="text-muted-foreground mt-2">
+                    <h1 className="text-4xl font-bold font-sans text-navy tracking-[-0.005em]">Admin Members Directory</h1>
+                    <p className="text-base font-serif text-cool-gray mt-2 leading-[1.5]">
                         Manage all {totalCount} members, roles, and view detailed metrics.
                     </p>
                 </div>
@@ -124,50 +124,51 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
             {/* Summary Stats */}
             <div className="grid gap-4 md:grid-cols-4 mb-8">
-                <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{totalCount}</div>
-                    <div className="text-sm text-muted-foreground">Total Members</div>
+                <div className="p-4 border border-light-gray rounded-sharp bg-white">
+                    <div className="text-2xl font-bold font-sans text-navy">{totalCount}</div>
+                    <div className="text-sm text-cool-gray">Total Members</div>
                 </div>
-                <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{studentCount}</div>
-                    <div className="text-sm text-muted-foreground">Students</div>
+                <div className="p-4 border border-light-gray rounded-sharp bg-white">
+                    <div className="text-2xl font-bold font-sans text-navy">{studentCount}</div>
+                    <div className="text-sm text-cool-gray">Students</div>
                 </div>
-                <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{staffCount}</div>
-                    <div className="text-sm text-muted-foreground">Staff</div>
+                <div className="p-4 border border-light-gray rounded-sharp bg-white">
+                    <div className="text-2xl font-bold font-sans text-navy">{staffCount}</div>
+                    <div className="text-sm text-cool-gray">Staff</div>
                 </div>
-                <div className="p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{adminCount}</div>
-                    <div className="text-sm text-muted-foreground">Admins</div>
+                <div className="p-4 border border-light-gray rounded-sharp bg-white">
+                    <div className="text-2xl font-bold font-sans text-navy">{adminCount}</div>
+                    <div className="text-sm text-cool-gray">Admins</div>
                 </div>
             </div>
 
             {/* Members Table */}
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border border-light-gray rounded-sharp overflow-hidden bg-white">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-muted">
+                        <thead className="bg-off-white">
                             <tr>
-                                <th className="px-4 py-3 text-left text-sm font-medium">User</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium">Role</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium">Joined</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium">Referred By</th>
-                                <th className="px-4 py-3 text-center text-sm font-medium">Referrals</th>
-                                <th className="px-4 py-3 text-center text-sm font-medium">Wiki Edits</th>
-                                <th className="px-4 py-3 text-center text-sm font-medium">Email Verified</th>
-                                <th className="px-4 py-3 text-center text-sm font-medium">Trusted</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">User</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Role</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Joined</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Referred By</th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Referrals</th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Wiki Edits</th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Power Score</th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Email Verified</th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Trusted</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y">
+                        <tbody className="divide-y divide-light-gray">
                             {membersWithStats.map((member) => (
-                                <tr key={member.id} className="hover:bg-muted/50">
+                                <tr key={member.id} className="hover:bg-off-white">
                                     <td className="px-4 py-3">
                                         <div>
                                             <div className="font-medium">{member.name || 'Anonymous'}</div>
-                                            <div className="text-sm text-muted-foreground">{member.email}</div>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                                Code: <code className="bg-muted px-1 rounded">{member.referralCode}</code>
+                                            <div className="text-sm text-cool-gray">{member.email}</div>
+                                            <div className="text-xs text-cool-gray mt-1">
+                                                Code: <code className="bg-off-white px-1 rounded-sharp">{member.referralCode}</code>
                                             </div>
                                         </div>
                                     </td>
@@ -181,7 +182,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                     <td className="px-4 py-3 text-sm">
                                         {new Date(member.createdAt).toLocaleDateString()}
                                         <br />
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-xs text-cool-gray">
                                             {new Date(member.createdAt).toLocaleTimeString()}
                                         </span>
                                     </td>
@@ -189,12 +190,12 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                         {member.referredBy?.referrer ? (
                                             <div>
                                                 <div>{member.referredBy.referrer.name}</div>
-                                                <div className="text-xs text-muted-foreground">
+                                                <div className="text-xs text-cool-gray">
                                                     ({member.referredBy.referrer.referralCode})
                                                 </div>
                                             </div>
                                         ) : (
-                                            <span className="text-muted-foreground">None</span>
+                                            <span className="text-cool-gray">None</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
@@ -244,12 +245,14 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                             </details>
                                         )}
                                     </td>
-
+                                    <td className="px-4 py-3 text-center">
+                                        <span className="font-bold text-purple-600">{(member as any).powerScore || 0}</span>
+                                    </td>
                                     <td className="px-4 py-3 text-center">
                                         {member.emailVerified ? (
-                                            <span className="text-green-500 text-sm">✓ Yes</span>
+                                            <span className="text-green text-sm">✓ Yes</span>
                                         ) : (
-                                            <span className="text-red-500 text-sm">✗ No</span>
+                                            <span className="text-red text-sm">✗ No</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
@@ -282,7 +285,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
             {/* Pagination */}
             {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-cool-gray">
                         Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalCount)} of {totalCount} members
                     </div>
                     <div className="flex items-center gap-2">
@@ -351,15 +354,15 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
             )}
 
             {/* Legend */}
-            <div className="mt-6 p-4 border rounded-lg bg-muted/50">
-                <h3 className="font-medium mb-2">Legend:</h3>
+            <div className="mt-6 p-4 border border-light-gray rounded-sharp bg-white">
+                <h3 className="font-semibold font-sans text-navy mb-2">Legend:</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div><span className="text-green-500">Green</span> - Approved edits</div>
-                    <div><span className="text-yellow-500">Yellow</span> - Pending edits</div>
-                    <div><span className="text-red-500">Red</span> - Rejected edits</div>
-
+                    <div><span className="text-green-600">Green</span> - Approved edits</div>
+                    <div><span className="text-amber-500">Yellow</span> - Pending edits</div>
+                    <div><span className="text-red-600">Red</span> - Rejected edits</div>
+                    <div><span className="text-purple-600">Purple</span> - Power Score</div>
                 </div>
-                <div className="mt-3 text-sm text-muted-foreground">
+                <div className="mt-3 text-sm text-cool-gray">
                     <strong>Roles:</strong> Student (regular member) → Staff Editor (can edit wiki) → Admin (full access)
                 </div>
             </div>
