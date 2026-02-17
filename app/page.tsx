@@ -9,12 +9,9 @@ export default function Home() {
       </h1>
       <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
         Cofactor Club is the exclusive network for student ambassadors.
-        Climb the leaderboard, manage the knowledge base, and earn your place.
+        Manage the knowledge base, and earn your place.
       </p>
       <div className="flex gap-4">
-        <Link href="/leaderboard">
-          <Button size="lg" className="h-12 px-8 text-lg">View Leaderboard</Button>
-        </Link>
         <Link href="/wiki">
           <Button size="lg" variant="outline" className="h-12 px-8 text-lg">Explore Wiki</Button>
         </Link>

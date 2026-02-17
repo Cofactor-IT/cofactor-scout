@@ -4,7 +4,7 @@ import { prisma } from '@/lib/database/prisma'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
 import { revalidatePath } from 'next/cache'
-import { recalculatePowerScore } from '@/actions/admin.actions'
+
 import { SocialStats } from '@/lib/types'
 import { socialConnectSchema } from '@/lib/validation/schemas'
 import DOMPurify from 'isomorphic-dompurify'
@@ -68,7 +68,7 @@ export async function saveSocialApiKeys(formData: FormData) {
     })
 
     // Recalculate power score with new social data
-    await recalculatePowerScore(user.id)
+
 
     revalidatePath('/profile')
     revalidatePath('/profile/connect')

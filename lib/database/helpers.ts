@@ -14,7 +14,6 @@ export const userSelectFields = {
     email: true,
     name: true,
     role: true,
-    powerScore: true,
     universityId: true,
     referralCode: true,
     isPublicProfile: true,

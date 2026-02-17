@@ -55,7 +55,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                         <Card className="max-w-2xl mx-auto text-center p-10 border-destructive">
                             <CardTitle className="text-3xl mb-4 text-destructive">Access Denied</CardTitle>
                             <p className="text-muted-foreground mb-6">
-                                This wiki page belongs to another university. You do not have permission to view it.
+                                An admin will review your contribution soon. If approved, it will be published.sion to view it.
                             </p>
                             <Link href="/wiki">
                                 <Button>Return to Wiki</Button>
@@ -137,9 +137,6 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                         )}
                         {hasPendingRevisions && (
                             <div className="flex justify-center gap-2">
-                                <Link href="/leaderboard">
-                                    <Button variant="ghost">View Leaderboard</Button>
-                                </Link>
                                 {session?.user?.role === 'ADMIN' && (
                                     <Link href="/admin/dashboard">
                                         <Button variant="outline">Review as Admin</Button>
@@ -149,7 +146,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                         )}
                     </CardContent>
                 </Card>
-            </div>
+            </div >
         )
     }
 

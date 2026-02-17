@@ -4,7 +4,7 @@ import { prisma } from '@/lib/database/prisma'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/permissions'
-import { POWER_SCORE, parseSocialStats, calculateSocialReach } from '@/lib/types'
+import { parseSocialStats, calculateSocialReach } from '@/lib/types'
 import { logger } from '@/lib/logger'
 import { updateReputationAfterModeration, calculateReputation } from '@/lib/moderation/reputation'
 
@@ -23,7 +23,6 @@ interface RevisionWithDetails {
         id: string
         name: string | null
         email: string
-        powerScore: number
         createdAt: Date
         emailVerified: Date | null
     }
@@ -106,7 +105,6 @@ async function fetchRevisionForModeration(revisionId: string) {
                     id: true,
                     name: true,
                     email: true,
-                    powerScore: true,
                     createdAt: true,
                     emailVerified: true
                 }
@@ -134,12 +132,6 @@ async function executeApprovalTransaction(
             data: {
                 content: revision.content,
                 published: true
-            }
-        }),
-        prisma.user.update({
-            where: { id: revision.authorId },
-            data: {
-                powerScore: { increment: POWER_SCORE.WIKI_APPROVAL_POINTS }
             }
         })
     ])
@@ -253,7 +245,6 @@ export async function getPendingRevisionsWithModerationInfo() {
                     id: true,
                     name: true,
                     email: true,
-                    powerScore: true,
                     createdAt: true,
                     emailVerified: true
                 }
@@ -314,51 +305,9 @@ export async function rejectStaff(userId: string, _formData?: FormData) {
     logger.info('Staff rejected', { userId })
 }
 
-// ============================================================================
-// Power Score Management
-// ============================================================================
+// Simplified analytic removal
+// recalculatePowerScore function removed
 
-export async function incrementPowerScore(userId: string, points: number) {
-    await requireAdmin()
-    await prisma.user.update({
-        where: { id: userId },
-        data: { powerScore: { increment: points } }
-    })
-    logger.info('Power score incremented', { userId, points })
-}
-
-export async function recalculatePowerScore(userId: string) {
-    await requireAdmin()
-
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, socialStats: true }
-    })
-
-    if (!user) return
-
-    const [referralsCount, approvedEditsCount] = await Promise.all([
-        prisma.referral.count({ where: { referrerId: userId } }),
-        prisma.wikiRevision.count({
-            where: { authorId: userId, status: 'APPROVED' }
-        })
-    ])
-
-    const socialStats = parseSocialStats(user.socialStats)
-    const socialReach = calculateSocialReach(socialStats)
-
-    const powerScore =
-        (referralsCount * POWER_SCORE.REFERRAL_POINTS) +
-        (approvedEditsCount * POWER_SCORE.WIKI_APPROVAL_POINTS) +
-        Math.floor(socialReach / POWER_SCORE.SOCIAL_DIVISOR)
-
-    await prisma.user.update({
-        where: { id: userId },
-        data: { powerScore }
-    })
-
-    logger.info('Power score recalculated', { userId, powerScore })
-}
 
 // ============================================================================
 // Page Management

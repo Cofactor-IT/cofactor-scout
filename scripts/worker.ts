@@ -224,7 +224,7 @@ async function processExportJob(job: Job<ExportJobData>): Promise<string> {
         // Update status to COMPLETED
         await prisma.exportJob.update({
             where: { id: exportJobId },
-            data: { 
+            data: {
                 status: 'COMPLETED',
                 fileUrl: mockFileUrl,
                 completedAt: new Date()
@@ -232,13 +232,13 @@ async function processExportJob(job: Job<ExportJobData>): Promise<string> {
         })
 
         info('Export completed successfully', { jobId: job.id, exportJobId, type, recordCount: exportData.length })
-        
+
         return mockFileUrl
     } catch (err) {
         // Update status to FAILED
         await prisma.exportJob.update({
             where: { id: exportJobId },
-            data: { 
+            data: {
                 status: 'FAILED',
                 completedAt: new Date()
             }
@@ -282,7 +282,6 @@ async function exportMembers(filters?: Record<string, any>): Promise<any[]> {
             name: true,
             role: true,
             university: true,
-            powerScore: true,
             createdAt: true,
         },
         take: 1000
@@ -327,10 +326,10 @@ async function startWorkers() {
     })
 
     emailWorker.on('failed', (job, err) => {
-        error('Email job failed permanently', { 
-            jobId: job?.id, 
+        error('Email job failed permanently', {
+            jobId: job?.id,
             type: job?.data.type,
-            error: err.message 
+            error: err.message
         })
     })
 
@@ -345,10 +344,10 @@ async function startWorkers() {
     })
 
     exportWorker.on('failed', (job, err) => {
-        error('Export job failed permanently', { 
-            jobId: job?.id, 
+        error('Export job failed permanently', {
+            jobId: job?.id,
             exportJobId: job?.data.exportJobId,
-            error: err.message 
+            error: err.message
         })
     })
 

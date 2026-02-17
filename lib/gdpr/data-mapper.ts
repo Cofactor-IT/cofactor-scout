@@ -45,7 +45,7 @@ export const userDataMap: UserDataMap = {
     activity: {
         entity: 'User Activity',
         description: 'Records of user actions and engagement',
-        fields: ['powerScore', 'role', 'socialStats'],
+        fields: ['role', 'socialStats'],
         sensitive: false,
         retention: 'Until account deletion',
         purpose: 'Gamification and platform engagement',
@@ -194,7 +194,7 @@ export function getUserDataCategories(): string[] {
 
 export function isSensitiveField(field: string): boolean {
     const sensitiveFields = [
-        'email', 'name', 'bio', 'password', 'socialStats', 
+        'email', 'name', 'bio', 'password', 'socialStats',
         'referralCode', 'verificationToken', 'publicPerson'
     ]
     return sensitiveFields.includes(field)

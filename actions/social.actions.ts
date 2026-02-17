@@ -4,7 +4,6 @@ import { randomInt } from 'crypto'
 import { prisma } from '@/lib/database/prisma'
 import { revalidatePath } from 'next/cache'
 import { SocialStats } from '@/lib/types'
-import { recalculatePowerScore } from '@/actions/admin.actions'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
 import { socialStatsSchema } from '@/lib/validation/schemas'
@@ -54,12 +53,7 @@ export async function syncSocials() {
         }
     })
 
-    // Social stats changed, so recalculate full power score
-    // This is one of the few cases where full recalculation is needed
-    await recalculatePowerScore(user.id)
-
     revalidatePath('/profile')
-    revalidatePath('/leaderboard')
 }
 
 /**
@@ -91,8 +85,6 @@ export async function updateSocialStats(userId: string, stats: unknown) {
             socialStats: validationResult.data as unknown as Record<string, number>
         }
     })
-
-    await recalculatePowerScore(userId)
 }
 
 /**
@@ -102,7 +94,7 @@ export async function updateSocialStats(userId: string, stats: unknown) {
 export async function parseSocialStats(jsonString: string): Promise<SocialStats> {
     // Safe JSON parsing with prototype pollution protection
     const parseResult = safeJsonParse<Record<string, number>>(jsonString)
-    
+
     if (!parseResult.success) {
         throw new Error(parseResult.error || 'Invalid JSON format')
     }

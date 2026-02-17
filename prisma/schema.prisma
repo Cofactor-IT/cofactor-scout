@@ -17,7 +17,6 @@ model User {
   role                Role        @default(STUDENT)
   referralCode        String      @unique
   socialStats         Json?
-  powerScore          Int         @default(0)
   emailVerified       DateTime?
   verificationToken   String?     @unique
   verificationExpires DateTime?
@@ -59,7 +58,6 @@ model User {
 
   @@index([email])
   @@index([referralCode])
-  @@index([powerScore(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@index([role])
   @@index([universityId])
@@ -331,7 +329,6 @@ enum NotificationType {
     STAFF_APPROVED
     STAFF_REJECTED
     REFERRAL_USED
-    POWER_SCORE_UPDATED
     USER_FOLLOWED
     MENTION
     COMMENT

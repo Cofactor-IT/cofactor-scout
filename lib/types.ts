@@ -10,14 +10,7 @@ export interface SocialStats {
     linkedinUrl?: string
 }
 
-/**
- * Constants for Power Score calculation
- */
-export const POWER_SCORE = {
-    REFERRAL_POINTS: 50,
-    WIKI_APPROVAL_POINTS: 20,
-    SOCIAL_DIVISOR: 100
-} as const
+
 
 /**
  * Helper to safely parse SocialStats from JSON

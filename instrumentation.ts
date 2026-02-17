@@ -25,7 +25,7 @@ export async function register() {
                         name: 'System Admin',
                         role: 'ADMIN',
                         referralCode: 'ADMIN_MASTER',
-                        powerScore: 9999
+
                     }
                 })
                 console.log('Admin user created successfully')

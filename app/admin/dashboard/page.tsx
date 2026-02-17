@@ -45,7 +45,7 @@ export default async function AdminDashboard() {
             prisma.user.count(),
             prisma.referral.count(),
             prisma.user.findMany({
-                orderBy: { powerScore: 'desc' },
+                orderBy: { createdAt: 'desc' },
                 take: 10,
                 include: {
                     university: true,
@@ -257,7 +257,7 @@ export default async function AdminDashboard() {
                     <Card className="col-span-4">
                         <CardHeader>
                             <CardTitle>Top Performers</CardTitle>
-                            <CardDescription>Highest scoring users by Power Score.</CardDescription>
+                            <CardDescription>Members by activity highlights.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -266,7 +266,6 @@ export default async function AdminDashboard() {
                                         <TableHead className="w-[100px]">Rank</TableHead>
                                         <TableHead>User</TableHead>
                                         <TableHead>University</TableHead>
-                                        <TableHead>Score</TableHead>
                                         <TableHead>Referrals</TableHead>
                                         <TableHead className="text-right">Edits</TableHead>
                                     </TableRow>
@@ -288,7 +287,7 @@ export default async function AdminDashboard() {
                                                     <span className="text-xs text-muted-foreground">-</span>
                                                 )}
                                             </TableCell>
-                                            <TableCell>{user.powerScore}</TableCell>
+
                                             <TableCell>{user._count.referralsMade}</TableCell>
                                             <TableCell className="text-right">{user._count.revisions}</TableCell>
                                         </TableRow>

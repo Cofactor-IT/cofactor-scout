@@ -16,18 +16,16 @@ export default async function ThankYouPage({ params }: { params: Promise<{ slug:
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-muted-foreground">
-                        An admin will review your contribution soon. If approved, it will be published and you&apos;ll earn Power Score points!
+                        An admin will review your contribution soon. If approved, it will be published.
                     </p>
                     <div className="flex justify-center gap-4 pt-4">
                         <Link href={`/wiki/${slug}`}>
                             <Button variant="outline">Back to Page</Button>
-                        </Link>
-                        <Link href="/leaderboard">
-                            <Button>View Leaderboard</Button>
+
                         </Link>
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }
