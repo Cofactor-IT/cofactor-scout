@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest'
-import { cn } from './utils'
+import { cn } from '@/lib/utils/formatting'
 
 describe('cn utility', () => {
   test('merges class names correctly', () => {
