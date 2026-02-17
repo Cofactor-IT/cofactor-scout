@@ -8,628 +8,216 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                  String      @id @default(cuid())
-  email               String      @unique
-  name                String?
-  bio                 String?     // Personal description/bio
-  password            String?
-  role                Role        @default(STUDENT)
-  referralCode        String      @unique
-  socialStats         Json?
-  emailVerified       DateTime?
-  verificationToken   String?     @unique
-  verificationExpires DateTime?
-  failedLoginAttempts Int         @default(0)
-  lockedUntil         DateTime?
-  isPublicProfile     Boolean     @default(false)
-  isTrusted           Boolean     @default(false)
-  publicPersonId      String?     @unique  // Link to Person record when public
-  publicPerson        Person?     @relation("UserPublicPerson", fields: [publicPersonId], references: [id])
-  universityId          String?
-  university            University? @relation("PrimaryUniversity", fields: [universityId], references: [id])
-  secondaryUniversityId String?
-  secondaryUniversity   University? @relation("SecondaryUniversity", fields: [secondaryUniversityId], references: [id])
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
-
-  revisions                    WikiRevision[]
-  referralsMade                Referral[]                   @relation("Referrer")
-  referredBy                   Referral?                    @relation("Referee")
-  passwordResetTokens          PasswordReset[]
-  secondaryUniversityRequests  SecondaryUniversityRequest[]
-  notifications                Notification[]
-  notificationPreference       NotificationPreference?
-  pageVersions                 PageVersion[]
-  bookmarks                    Bookmark[]
-  experimentAssignments        ExperimentAssignment[]
-  calendarEvents               CalendarEvent[]
-  customFieldValues            CustomFieldValue[]
-  exportJobs                   ExportJob[]
-  importJobs                   ImportJob[]
-  userPreference               UserPreference?
-  deletionRequest              DeletionRequest?     @relation("DeletionRequestUser")
-  reportsMade                  Report[]             @relation("ReportReporter")
-  reportsResolved              Report[]             @relation("ReportResolver")
-
-  institutesProposed           Institute[]
-  labsProposed                 Lab[]
-  peopleProposed               Person[]             @relation("PersonAuthor")
-
-  @@index([email])
-  @@index([referralCode])
-  @@index([createdAt(sort: Desc)])
-  @@index([role])
-  @@index([universityId])
-}
-
-model University {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  domains   String[] // Array of email domains (e.g., ["tu-berlin.de", "campus.tu-berlin.de"])
-  logo      String?  // Optional logo image path
-  approved  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users             User[] @relation("PrimaryUniversity")
-  secondaryUsers    User[] @relation("SecondaryUniversity")
-  pages             UniPage[]
-  institutes        Institute[]
-  secondaryRequests SecondaryUniversityRequest[]
-
-  @@index([name])
-}
-
+// User roles in the platform
 enum Role {
-  STUDENT
+  CONTRIBUTOR
+  SCOUT
   ADMIN
-  STAFF
-  PENDING_STAFF
 }
 
-model UniPage {
-  id            String   @id @default(cuid())
-  name          String
-  slug          String   @unique
-  content       String
-  published     Boolean  @default(false)
-  searchVector  String?
-  keywords      String[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  revisions WikiRevision[]
-  versions  PageVersion[]
-
-  universityId String?
-  university   University? @relation(fields: [universityId], references: [id])
-
-  instituteId  String?
-  institute    Institute?  @relation(fields: [instituteId], references: [id])
-
-  labId        String?
-  lab          Lab?        @relation(fields: [labId], references: [id])
-
-  bookmarks    Bookmark[]
-  pageTags     PageTag[]
-
-  @@index([searchVector])
-  @@index([keywords])
+// Academic/professional roles
+enum UserRole {
+  PHD_STUDENT
+  POSTDOC
+  PROFESSOR
+  INDUSTRY_RESEARCHER
+  INDEPENDENT_RESEARCHER
+  OTHER
 }
 
-model Institute {
-  id           String   @id @default(cuid())
-  name         String
-  slug         String   @unique
-  approved     Boolean  @default(false)
-  searchVector String?
-  keywords     String[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  universityId String
-  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-
-  labs      Lab[]
-  people    Person[]
-  pages     UniPage[]
-
-  authorId    String?
-  author      User?      @relation(fields: [authorId], references: [id])
-
-  @@index([universityId])
-  @@index([slug])
-  @@index([searchVector])
-  @@index([keywords])
-  @@index([authorId])
-}
-
-model Lab {
-  id           String   @id @default(cuid())
-  name         String
-  slug         String   @unique
-  approved     Boolean  @default(false)
-  searchVector String?
-  keywords     String[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  instituteId String
-  institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
-
-  people    Person[]
-  pages     UniPage[]
-
-  authorId    String?
-  author      User?      @relation(fields: [authorId], references: [id])
-
-  @@index([instituteId])
-  @@index([slug])
-  @@index([searchVector])
-  @@index([keywords])
-  @@index([authorId])
-}
-
-model Person {
-  id           String   @id @default(cuid())
-  name         String
-  slug         String?  @unique
-  role         String?
-  fieldOfStudy String?
-  image        String?
-  bio          String?
-  linkedin     String?
-  twitter      String?
-  website      String?
-  email        String?
-  searchVector String?
-  keywords     String[]
-
-  instituteId String?
-  institute   Institute? @relation(fields: [instituteId], references: [id])
-
-  labId       String?
-  lab         Lab?       @relation(fields: [labId], references: [id])
-
-  linkedUser  User?      @relation("UserPublicPerson")  // Link to user if this is their public profile
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  approved    Boolean  @default(false)
-
-  authorId    String?
-  author      User?    @relation("PersonAuthor", fields: [authorId], references: [id])
-
-  @@index([instituteId])
-  @@index([labId])
-  @@index([slug])
-  @@index([searchVector])
-  @@index([keywords])
-  @@index([approved])
-  @@index([authorId])
-}
-
-model WikiRevision {
-  id              String         @id @default(cuid())
-  uniPageId       String
-  uniPage         UniPage        @relation(fields: [uniPageId], references: [id], onDelete: Cascade)
-  authorId        String
-  author          User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  content         String
-  status          RevisionStatus @default(PENDING)
-  
-  // Moderation fields
-  spamScore       Int?           // Spam detection score (0-100)
-  moderationNotes String?        // Notes from moderator
-  moderatedBy     String?        // Admin who moderated
-  moderatedAt     DateTime?      // When moderation occurred
-  moderationReason String?       // Reason for rejection/flagging
-  title           String?        // Title of the page at this revision
-  
-  // Content filter results
-  filterViolations Json?         // JSON array of violations found
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt @default(now())
-
-  @@index([status])
-  @@index([authorId])
-  @@index([uniPageId])
-  @@index([createdAt(sort: Desc)])
-  @@index([authorId, status])
-  @@index([uniPageId, status(sort: Desc)])
-  @@index([status, createdAt(sort: Desc)])
-  @@index([spamScore])
-  @@index([status, spamScore(sort: Desc)])
-}
-
-enum RevisionStatus {
+// Scout application workflow status
+enum ScoutApplicationStatus {
+  NOT_APPLIED
   PENDING
   APPROVED
   REJECTED
-  AUTO_REJECTED    // Auto-rejected by spam detection
-  FLAGGED          // Flagged for review by filters
 }
 
-
-
-model Referral {
-  id         String   @id @default(cuid())
-  referrerId String
-  referrer   User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
-  refereeId  String   @unique
-  referee    User     @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-
-  @@unique([referrerId, refereeId])
-  @@index([referrerId])
+// Research submission pipeline stages
+enum SubmissionStatus {
+  PENDING_RESEARCH
+  VALIDATING
+  PITCHED_MATCHMAKING
+  MATCH_MADE
+  REJECTED
 }
 
+// Career stage of researcher
+enum CareerStage {
+  PHD_STUDENT
+  POSTDOC
+  PROFESSOR
+  INDUSTRY_RESEARCHER
+  INDEPENDENT_RESEARCHER
+  OTHER
+}
+
+// Research maturity level
+enum ResearchStage {
+  EARLY_CONCEPT
+  ACTIVE_RESEARCH
+  HAS_RESULTS
+  PUBLISHED
+}
+
+// Funding status of research
+enum FundingStatus {
+  NOT_SEEKING
+  SEEKING_SEED
+  SEEKING_SERIES_A
+  GRANT_FUNDED
+  INDUSTRY_FUNDED
+  VC_BACKED
+}
+
+// How the scout found this lead
+enum SubmissionSource {
+  CONFERENCE
+  ACADEMIC_PAPER
+  LINKEDIN
+  PERSONAL_CONNECTION
+  LAB_VISIT
+  OTHER
+}
+
+// Scout's relationship to researcher
+enum Relationship {
+  LAB_MATE
+  CLASSMATE
+  COLLEAGUE
+  NO_RELATIONSHIP
+  OTHER
+}
+
+// Core user model - handles authentication and profile
+model User {
+  // Core Identity
+  id            String  @id @default(cuid())
+  email         String  @unique
+  password      String
+  fullName      String
+  firstName     String
+  lastName      String
+  preferredName String?
+  role          Role    @default(CONTRIBUTOR)
+
+  // Authentication
+  emailVerified       DateTime?
+  verificationToken   String?   @unique
+  verificationExpires DateTime?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Scout Profile (populated via scout application)
+  university             String?
+  department             String?
+  linkedinUrl            String?
+  userRole               UserRole?
+  researchAreas          String?
+  whyScout               String?
+  howSourceLeads         String?
+  scoutApplicationStatus ScoutApplicationStatus @default(NOT_APPLIED)
+  scoutApplicationDate   DateTime?
+
+  // Stats
+  totalSubmissions    Int @default(0)
+  pendingSubmissions  Int @default(0)
+  approvedSubmissions Int @default(0)
+
+  // Relations
+  submissions    ResearchSubmission[]
+  comments       SubmissionComment[]
+  passwordResets PasswordReset[]
+
+  @@index([email])
+  @@index([role])
+  @@index([scoutApplicationStatus])
+  @@index([createdAt])
+}
+
+// Research lead submission - 3-step form
+model ResearchSubmission {
+  // Core
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      SubmissionStatus @default(PENDING_RESEARCH)
+  isDraft     Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  submittedAt DateTime?
+
+  // Step 1 - Research Summary
+  researchTopic         String?
+  researchDescription   String?
+  researcherName        String?
+  researcherEmail       String?
+  researcherInstitution String?
+  researcherDepartment  String?
+
+  // Step 2 - Additional Details
+  researcherCareerStage    CareerStage?
+  researcherLinkedin       String?
+  researchStage            ResearchStage?
+  fundingStatus            FundingStatus?
+  keyPublications          String?
+  potentialApplications    String?
+  submissionSource         SubmissionSource?
+  relationshipToResearcher Relationship?
+  researcherAwareness      Boolean           @default(false)
+
+  // Step 3 - Scout Pitch
+  whyInteresting String?
+
+  // System
+  isDuplicate Boolean @default(false)
+  duplicateOf String?
+
+  // Relations
+  comments SubmissionComment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([isDraft])
+  @@index([researcherEmail])
+  @@index([createdAt])
+  @@index([submittedAt])
+}
+
+// Comments on research submissions
+model SubmissionComment {
+  id           String             @id @default(cuid())
+  submissionId String
+  submission   ResearchSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content      String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([submissionId])
+  @@index([userId])
+}
+
+// Password reset tokens
 model PasswordReset {
   id        String   @id @default(cuid())
-  token     String   @unique // 6-digit code
+  token     String   @unique
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expires   DateTime
   createdAt DateTime @default(now())
 
+  @@index([userId])
   @@index([token])
-  @@index([userId])
 }
 
-model StaffDomain {
-  id        String   @id @default(cuid())
-  domain    String   @unique
-  createdAt DateTime @default(now())
-}
-
-model SecondaryUniversityRequest {
-  id           String        @id @default(cuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  universityId String
-  university   University    @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  proofText    String        // User's explanation/proof for affiliation
-  status       RequestStatus @default(PENDING)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  @@unique([userId, universityId])
-  @@index([status])
-  @@index([userId])
-}
-
-enum RequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-model Notification {
-    id        String   @id @default(cuid())
-    userId    String
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    type      NotificationType
-    title     String
-    message   String
-    link      String?
-    read      Boolean  @default(false)
-    createdAt DateTime @default(now())
-
-    @@index([userId])
-    @@index([read])
-    @@index([createdAt(sort: Desc)])
-}
-
-enum NotificationType {
-    WIKI_APPROVED
-    WIKI_REJECTED
-    WIKI_PUBLISHED
-    STAFF_APPROVED
-    STAFF_REJECTED
-    REFERRAL_USED
-    USER_FOLLOWED
-    MENTION
-    COMMENT
-}
-
-model NotificationPreference {
-    id        String   @id @default(cuid())
-    userId    String   @unique
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    emailEnabled      Boolean  @default(true)
-    pushEnabled       Boolean  @default(false)
-    inAppEnabled     Boolean  @default(true)
-    wikiApproval     Boolean  @default(true)
-    staffStatus      Boolean  @default(true)
-    activityFeed     Boolean  @default(true)
-    createdAt        DateTime @default(now())
-    updatedAt        DateTime @updatedAt
-
-    @@index([userId])
-}
-
-model PageVersion {
-    id              String   @id @default(cuid())
-    uniPageId       String
-    uniPage         UniPage  @relation(fields: [uniPageId], references: [id], onDelete: Cascade)
-    content         String
-    title           String
-    version         Int      @default(1)
-    createdBy       String
-    author          User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-    createdAt       DateTime @default(now())
-
-    @@index([uniPageId, version])
-    @@index([createdAt(sort: Desc)])
-}
-
-model Bookmark {
-    id        String   @id @default(cuid())
-    userId    String
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    pageId    String
-    page      UniPage  @relation(fields: [pageId], references: [id], onDelete: Cascade)
-    note      String?
-    createdAt DateTime @default(now())
-
-    @@unique([userId, pageId])
-    @@index([userId])
-    @@index([pageId])
-}
-
-model FeatureFlag {
-    id        String   @id @default(cuid())
-    key       String   @unique
-    enabled   Boolean  @default(false)
-    rollout   Float    @default(0)
-    users     String[] 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@index([key])
-}
-
-model Experiment {
-    id           String   @id @default(cuid())
-    name         String   @unique
-    description  String?
-    status       ExperimentStatus @default(DRAFT)
-    variants     Json
-    traffic      Float    @default(0.5)
-    startDate    DateTime?
-    endDate      DateTime?
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
-    assignments  ExperimentAssignment[]
-}
-
-enum ExperimentStatus {
-    DRAFT
-    RUNNING
-    PAUSED
-    COMPLETED
-}
-
-model ExperimentAssignment {
-    id           String   @id @default(cuid())
-    experimentId String
-    experiment   Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
-    userId       String
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    variant      String
-    createdAt    DateTime @default(now())
-
-    @@unique([experimentId, userId])
-    @@index([experimentId])
-    @@index([userId])
-}
-
-model CalendarEvent {
-    id        String   @id @default(cuid())
-    title     String
-    description String?
-    startTime DateTime
-    endTime   DateTime
-    location  String?
-    type      EventType @default(MEETING)
-    userId    String?
-    user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@index([userId])
-    @@index([startTime])
-}
-
-enum EventType {
-    MEETING
-    DEADLINE
-    REMINDER
-    EVENT
-}
-
-model CustomField {
-    id        String   @id @default(cuid())
-    key       String   @unique
-    label     String
-    type      FieldType
-    required  Boolean  @default(false)
-    options   String[]
-    createdAt DateTime @default(now())
-    values    CustomFieldValue[]
-}
-
-enum FieldType {
-    TEXT
-    NUMBER
-    SELECT
-    MULTI_SELECT
-    DATE
-    BOOLEAN
-}
-
-model CustomFieldValue {
-    id          String      @id @default(cuid())
-    userId      String
-    user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-    fieldId     String
-    field       CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-    value       String
-    createdAt   DateTime    @default(now())
-    updatedAt   DateTime    @updatedAt
-
-    @@unique([userId, fieldId])
-    @@index([userId])
-    @@index([fieldId])
-}
-
-model Tag {
-    id        String   @id @default(cuid())
-    name      String   @unique
-    slug      String   @unique
-    color     String   @default("#3B82F6")
-    createdAt DateTime @default(now())
-    pages     PageTag[]
-
-    @@index([slug])
-}
-
-model PageTag {
-    id        String   @id @default(cuid())
-    pageId    String
-    page      UniPage  @relation(fields: [pageId], references: [id], onDelete: Cascade)
-    tagId     String
-    tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-    createdAt DateTime @default(now())
-
-    @@unique([pageId, tagId])
-    @@index([pageId])
-    @@index([tagId])
-}
-
-model ExportJob {
-    id        String   @id @default(cuid())
-    userId    String
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    type      ExportType
-    status    JobStatus @default(PENDING)
-    fileUrl   String?
-    createdAt DateTime @default(now())
-    completedAt DateTime?
-}
-
-enum ExportType {
-    USER_DATA
-    WIKI_PAGES
-    MEMBERS
-    ANALYTICS
-}
-
-enum JobStatus {
-    PENDING
-    PROCESSING
-    COMPLETED
-    FAILED
-}
-
-model ImportJob {
-    id        String   @id @default(cuid())
-    userId    String
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    type      ImportType
-    status    JobStatus @default(PENDING)
-    records   Int      @default(0)
-    errors    Json?
-    createdAt DateTime @default(now())
-    completedAt DateTime?
-}
-
-enum ImportType {
-    USERS
-    WIKI_PAGES
-}
-
-model UserPreference {
-    id        String   @id @default(cuid())
-    userId    String   @unique
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    timezone  String   @default("UTC")
-    language  String   @default("en")
-    theme     String   @default("system")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-}
-
-model DeletionRequest {
-    id          String   @id @default(cuid())
-    userId      String   @unique
-    user        User     @relation("DeletionRequestUser", fields: [userId], references: [id], onDelete: Cascade)
-    token       String   @unique
-    mode        DeletionMode
-    status      DeletionStatus @default(PENDING)
-    expiresAt   DateTime
-    confirmedAt DateTime?
-    createdAt   DateTime @default(now())
-
-    @@index([token])
-    @@index([userId])
-    @@index([status])
-}
-
-enum DeletionMode {
-    SOFT
-    HARD
-}
-
-enum DeletionStatus {
-    PENDING
-    CONFIRMED
-    EXPIRED
-    FAILED
-}
-
-model Report {
-    id          String       @id @default(cuid())
-    reporterId  String
-    reporter    User         @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
-    contentType ReportContentType
-    contentId   String
-    reason      String
-    description String?
-    status      ReportStatus @default(PENDING)
-    createdAt   DateTime     @default(now())
-    resolvedAt  DateTime?
-    resolvedBy  String?
-    resolver    User?       @relation("ReportResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
-
-    @@index([reporterId])
-    @@index([contentType, contentId])
-    @@index([status])
-    @@index([createdAt(sort: Desc)])
-}
-
-enum ReportContentType {
-    WIKI_REVISION
-    COMMENT
-    USER
-    PERSON
-}
-
-enum ReportStatus {
-    PENDING
-    UNDER_REVIEW
-    RESOLVED
-    DISMISSED
-    BLOCKED
-}
-
+// Global system settings
 model SystemSettings {
-  id                      String   @id @default(cuid())
-  enableStudentEmails     Boolean  @default(true)
-  enableAdminEmails       Boolean  @default(true)
-  enableInAppNotifications Boolean @default(true)
-  trustedUserDailyLimit   Int      @default(5)
-  updatedAt               DateTime @updatedAt
+  id                       String   @id @default(cuid())
+  enableEmailNotifications Boolean  @default(true)
+  enableInAppNotifications Boolean  @default(true)
+  updatedAt                DateTime @updatedAt
 }

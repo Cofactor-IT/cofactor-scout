@@ -75,46 +75,18 @@ async function generateUniqueReferralCode(): Promise<string> {
  * Determine user role based on referral code and email domain
  */
 async function determineUserRole(email: string, referralCode?: string): Promise<{
-    role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF'
+    role: 'CONTRIBUTOR' | 'SCOUT' | 'ADMIN'
     referrerId: string | null
 }> {
     const STAFF_SECRET = process.env.STAFF_SECRET_CODE
 
     // Check for staff secret code
     if (STAFF_SECRET && referralCode === STAFF_SECRET) {
-        return { role: 'PENDING_STAFF', referrerId: null }
+        return { role: 'SCOUT', referrerId: null }
     }
 
-    // Check email domain for staff access
-    const emailDomain = email.split('@')[1]?.toLowerCase()
-    if (emailDomain) {
-        const staffDomain = await prisma.staffDomain.findUnique({
-            where: { domain: emailDomain },
-            select: { id: true }
-        })
-
-        if (staffDomain) {
-            logger.info('User assigned STAFF role via domain match', { email, domain: emailDomain })
-            return { role: 'STAFF', referrerId: null }
-        }
-    }
-
-    // If no referral code provided, allow signup without referrer
-    if (!referralCode || referralCode.trim() === '') {
-        return { role: 'STUDENT', referrerId: null }
-    }
-
-    // Validate referral code for regular signup
-    const referrer = await prisma.user.findUnique({
-        where: { referralCode },
-        select: { id: true }
-    })
-
-    if (!referrer) {
-        throw new ValidationError('Invalid referral code')
-    }
-
-    return { role: 'STUDENT', referrerId: referrer.id }
+    // Default to CONTRIBUTOR role
+    return { role: 'CONTRIBUTOR', referrerId: null }
 }
 
 /**
@@ -124,59 +96,9 @@ async function determineUniversity(
     email: string,
     formData: FormData
 ): Promise<string | null> {
-    const universityIdFromForm = formData.get('universityId') as string | null
+    // University field is now just a string in User model
     const universityName = formData.get('universityName') as string | null
-
-    // Import university utilities
-    const { extractEmailDomain, isPersonalEmail, findUniversityByDomain, createPendingUniversity } =
-        await import('@/lib/utils/university')
-
-    const emailDomain = extractEmailDomain(email)
-
-    // Use pre-selected university if provided
-    if (universityIdFromForm) {
-        const existingUni = await prisma.university.findUnique({
-            where: { id: universityIdFromForm },
-            select: { id: true }
-        })
-        return existingUni?.id || null
-    }
-
-    // Try to match by email domain
-    if (!isPersonalEmail(email) && emailDomain) {
-        const foundUniversity = await findUniversityByDomain(emailDomain)
-        if (foundUniversity) {
-            return foundUniversity.id
-        }
-    }
-
-    // Create pending university if name provided
-    if (universityName?.trim()) {
-        const normalizedName = universityName.trim()
-
-        // Check existing by name
-        const existingByName = await prisma.university.findFirst({
-            where: {
-                name: { equals: normalizedName, mode: 'insensitive' }
-            },
-            select: { id: true }
-        })
-
-        if (existingByName) {
-            return existingByName.id
-        }
-
-        // Create new pending university
-        try {
-            const newUniversity = await createPendingUniversity(normalizedName, emailDomain || '')
-            return newUniversity.id
-        } catch (e) {
-            logger.warn('Failed to create pending university', { name: normalizedName, error: e })
-            return null
-        }
-    }
-
-    return null
+    return universityName?.trim() || null
 }
 
 /**
@@ -185,31 +107,29 @@ async function determineUniversity(
 async function createUserWithReferral(
     userData: SignUpInput,
     hashedPassword: string,
-    referralCode: string,
-    role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF',
-    universityId: string | null,
-    referrerId: string | null
+    role: 'CONTRIBUTOR' | 'SCOUT' | 'ADMIN',
+    university: string | null
 ): Promise<void> {
     const verificationToken = generateSecureToken()
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-    await prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({
-            data: {
-                email: userData.email,
-                name: userData.name,
-                password: hashedPassword,
-                role,
-                referralCode,
-                verificationToken,
-                verificationExpires,
-                universityId,
-                referredBy: referrerId ? { create: { referrerId } } : undefined
-            },
-            select: { id: true }
-        })
+    // Split name into first and last
+    const nameParts = userData.name.trim().split(' ')
+    const firstName = nameParts[0] || userData.name
+    const lastName = nameParts.slice(1).join(' ') || userData.name
 
-
+    await prisma.user.create({
+        data: {
+            email: userData.email,
+            fullName: userData.name,
+            firstName,
+            lastName,
+            password: hashedPassword,
+            role,
+            verificationToken,
+            verificationExpires,
+            university
+        }
     })
 
     // Send verification email asynchronously
@@ -220,8 +140,7 @@ async function createUserWithReferral(
     logger.info('User registered successfully', {
         email: userData.email,
         role,
-        referralCode,
-        universityId
+        university
     })
 }
 
@@ -285,24 +204,21 @@ export async function signUp(
             logger.warn('Signup attempt with existing email', { email: validatedEmail })
         }
 
-        // Determine role and referrer
-        const { role, referrerId } = await determineUserRole(validatedEmail, referralCode)
+        // Determine role
+        const { role } = await determineUserRole(validatedEmail, referralCode)
 
         // Determine university
-        const universityId = await determineUniversity(validatedEmail, formData)
+        const university = await determineUniversity(validatedEmail, formData)
 
         // Create user only if doesn't exist
         if (!existingUser) {
             const hashedPassword = await bcrypt.hash(password, 10)
-            const newReferralCode = await generateUniqueReferralCode()
 
             await createUserWithReferral(
                 validationResult.data,
                 hashedPassword,
-                newReferralCode,
                 role,
-                universityId,
-                referrerId
+                university
             )
         }
 
