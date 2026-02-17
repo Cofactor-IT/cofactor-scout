@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
-import { POWER_SCORE } from '@/lib/types'
+
 import { wikiSubmissionSchema, wikiSlugSchema } from '@/lib/validation/schemas'
 import { sanitizeHtmlContent, containsSqlInjection } from '@/lib/security/sanitization'
 import { moderateContent } from '@/lib/moderation'
@@ -298,17 +298,6 @@ export async function proposeEdit(formData: FormData) {
                 logger.error('Failed to send article update email', { pageId: uniPage.id }, error as Error)
             }
         })()
-
-    // 4. Increment Power Score
-
-    // Usually yes, even admins get points (or we ignore it for them).
-    // Let's give points to incentivize or track activity.
-    if (status === 'APPROVED') {
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { powerScore: { increment: POWER_SCORE.WIKI_APPROVAL_POINTS } }
-        })
-    }
 
     // revalidatePath only works if we don't redirect inside it?
     // standard pattern: revalidate then redirect.

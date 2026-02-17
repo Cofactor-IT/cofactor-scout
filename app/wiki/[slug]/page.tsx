@@ -137,9 +137,6 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                         )}
                         {hasPendingRevisions && (
                             <div className="flex justify-center gap-2">
-                                <Link href="/leaderboard">
-                                    <Button variant="ghost">View Leaderboard</Button>
-                                </Link>
                                 {session?.user?.role === 'ADMIN' && (
                                     <Link href="/admin/dashboard">
                                         <Button variant="outline">Review as Admin</Button>
@@ -149,7 +146,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
                         )}
                     </CardContent>
                 </Card>
-            </div>
+            </div >
         )
     }
 

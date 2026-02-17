@@ -209,12 +209,7 @@ async function createUserWithReferral(
             select: { id: true }
         })
 
-        if (referrerId) {
-            await tx.user.update({
-                where: { id: referrerId },
-                data: { powerScore: { increment: 50 } }
-            })
-        }
+
     })
 
     // Send verification email asynchronously

@@ -1,5 +1,5 @@
 import { describe, it, expect, test } from 'vitest'
-import { signInSchema, signUpSchema, socialConnectSchema, wikiSubmissionSchema } from './validation'
+import { signInSchema, signUpSchema, socialConnectSchema, wikiSubmissionSchema } from '@/lib/validation/schemas'
 
 describe('signInSchema', () => {
     test('validates valid email and password', () => {

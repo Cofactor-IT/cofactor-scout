@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculateSocialReach, SocialStats, parseSocialStats } from './types'
+import { calculateSocialReach, SocialStats, parseSocialStats } from '@/lib/types'
 
 describe('calculateSocialReach', () => {
   it('should return 0 when all stats are undefined', () => {

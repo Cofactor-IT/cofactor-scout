@@ -9,7 +9,7 @@ export default function Home() {
       </h1>
       <p className="text-base font-serif text-cool-gray mb-8 max-w-2xl leading-[1.5]">
         Cofactor Club is the exclusive network for student ambassadors.
-        Climb the leaderboard, manage the knowledge base, and earn your place.
+        Manage the knowledge base, and earn your place.
       </p>
       <div className="flex gap-4">
         <Link href="/leaderboard">

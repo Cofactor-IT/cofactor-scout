@@ -47,7 +47,6 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                 email: true,
                 role: true,
                 referralCode: true,
-                powerScore: true,
                 emailVerified: true,
                 isTrusted: true,
                 createdAt: true,
@@ -247,7 +246,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                        <span className="font-bold text-purple">{member.powerScore}</span>
+                                        <span className="font-bold text-purple-600">{(member as any).powerScore || 0}</span>
                                     </td>
                                     <td className="px-4 py-3 text-center">
                                         {member.emailVerified ? (
@@ -358,10 +357,10 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
             <div className="mt-6 p-4 border border-light-gray rounded-sharp bg-white">
                 <h3 className="font-semibold font-sans text-navy mb-2">Legend:</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div><span className="text-green">Green</span> - Approved edits</div>
-                    <div><span className="text-amber">Yellow</span> - Pending edits</div>
-                    <div><span className="text-red">Red</span> - Rejected edits</div>
-                    <div><span className="text-purple">Purple</span> - Power Score</div>
+                    <div><span className="text-green-600">Green</span> - Approved edits</div>
+                    <div><span className="text-amber-500">Yellow</span> - Pending edits</div>
+                    <div><span className="text-red-600">Red</span> - Rejected edits</div>
+                    <div><span className="text-purple-600">Purple</span> - Power Score</div>
                 </div>
                 <div className="mt-3 text-sm text-cool-gray">
                     <strong>Roles:</strong> Student (regular member) → Staff Editor (can edit wiki) → Admin (full access)

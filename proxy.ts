@@ -100,7 +100,7 @@ export default withAuth(
         response.headers.set('Content-Security-Policy', cspHeader)
 
         // Cache Control for rapid client-side navigation
-        const shouldCache = ['/wiki', '/members', '/leaderboard'].some(path =>
+        const shouldCache = ['/wiki', '/members'].some(path =>
             req.nextUrl.pathname.startsWith(path)
         )
 

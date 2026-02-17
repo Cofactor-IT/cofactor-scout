@@ -15,10 +15,9 @@ export interface UserReputation {
     riskLevel: 'low' | 'medium' | 'high'
 }
 
-export interface ReputationFactors {
+interface ReputationFactors {
     accountAge: number // days
     isVerified: boolean
-    powerScore: number
     approvalHistory: { approved: number; rejected: number }
     recentActivity: number // submissions in last 7 days
     flaggedSubmissions: number
@@ -36,8 +35,7 @@ export async function getUserReputation(userId: string): Promise<UserReputation>
                 select: {
                     id: true,
                     createdAt: true,
-                    emailVerified: true,
-                    powerScore: true
+                    emailVerified: true
                 }
             }),
             prisma.wikiRevision.findMany({
@@ -53,11 +51,9 @@ export async function getUserReputation(userId: string): Promise<UserReputation>
             return getDefaultReputation(userId)
         }
 
-        // Calculate reputation factors
         const factors: ReputationFactors = {
             accountAge: Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
             isVerified: user.emailVerified !== null,
-            powerScore: user.powerScore,
             approvalHistory: {
                 approved: revisions.filter(r => r.status === 'APPROVED').length,
                 rejected: revisions.filter(r => r.status === 'REJECTED').length
@@ -93,10 +89,6 @@ function calculateReputationScore(userId: string, factors: ReputationFactors): U
     if (factors.isVerified) {
         score += 10
     }
-
-    // Power score factor (up to 15 points)
-    const powerScoreFactor = Math.min(15, factors.powerScore / 20)
-    score += powerScoreFactor
 
     // Approval history factor (up to 30 points)
     const totalHistory = factors.approvalHistory.approved + factors.approvalHistory.rejected
