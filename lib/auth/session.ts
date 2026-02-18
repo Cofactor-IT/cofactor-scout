@@ -12,6 +12,18 @@ export async function getCurrentUser() {
 }
 
 /**
+ * Require authentication - redirects to signin if not authenticated
+ */
+export async function requireAuth() {
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+        const { redirect } = await import('next/navigation')
+        redirect('/auth/signin')
+    }
+    return session!.user
+}
+
+/**
  * Verify the current user has ADMIN role
  * Throws an error if not authorized
  */

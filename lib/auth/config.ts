@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/database/prisma"
 import { logger } from "@/lib/logger"
+import { Role } from "@prisma/client"
 
 // Account lockout configuration
 const MAX_LOGIN_ATTEMPTS = 5
@@ -85,7 +86,8 @@ export const authOptions: NextAuthOptions = {
                     id: user.id,
                     email: user.email,
                     name: user.fullName,
-                    role: user.role
+                    role: user.role,
+                    emailVerified: user.emailVerified
                 }
             }
         })
@@ -94,7 +96,7 @@ export const authOptions: NextAuthOptions = {
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string
-                session.user.role = token.role as string
+                session.user.role = token.role
                 const { setSentryUser } = await import('@/instrumentation/sentry')
                 setSentryUser(token.id as string, session.user.email || '', token.role as string)
             }
@@ -103,7 +105,7 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id
-                token.role = (user as { id: string; role?: string }).role
+                token.role = user.role
             }
             return token
         },
@@ -124,7 +126,7 @@ export const authOptions: NextAuthOptions = {
     },
     session: {
         strategy: "jwt",
-        maxAge: 7 * 24 * 60 * 60, // 7 days (reduced from 30 for better security)
+        maxAge: 60 * 60 * 24 * 7, // 7 days
     },
     secret: process.env.NEXTAUTH_SECRET
 }
