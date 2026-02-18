@@ -86,27 +86,7 @@ export function ActionButtons({ memberId, userName, userEmail, currentUserId }: 
     )
 }
 
-export function MemberReferrals({ referrals }: { referrals: Array<{ referee: { id: string; name: string | null; email: string } }> }) {
-    return (
-        <td className="px-4 py-3 text-center">
-            <div className="font-medium">{referrals.length}</div>
-            {referrals.length > 0 && (
-                <details className="text-xs">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        View names
-                    </summary>
-                    <div className="absolute z-10 bg-popover border rounded p-2 mt-1 shadow-lg max-w-48">
-                        {referrals.map(ref => (
-                            <div key={ref.referee.id} className="text-xs">
-                                {ref.referee.name} ({ref.referee.email})
-                            </div>
-                        ))}
-                    </div>
-                </details>
-            )}
-        </td>
-    )
-}
+
 
 export function MemberRevisions({ revisions, stats }: { revisions: Array<{ id: string; status: string; uniPage: { slug: string; name: string } }>, stats: { totalRevisions: number; approvedRevisions: number; pendingRevisions: number; rejectedRevisions: number } }) {
     return (

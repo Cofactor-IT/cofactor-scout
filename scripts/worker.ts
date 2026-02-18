@@ -43,7 +43,7 @@ async function sendWelcomeEmail(toEmail: string, name: string): Promise<void> {
         from: process.env.SMTP_FROM || '"Cofactor Club" <no-reply@cofactor.world>',
         to: toEmail,
         subject: 'Welcome to Cofactor Club',
-        text: `Hi ${name},\n\nWelcome to Cofactor Club! We're excited to have you join our student ambassador network.\n\nStart referring friends and contributing to the Wiki!\n\nBest,\nThe Cofactor Team`,
+        text: `Hi ${name},\n\nWelcome to Cofactor Club! We're excited to have you join our student ambassador network.\n\nContribute to the Wiki!\n\nBest,\nThe Cofactor Team`,
         html: `
             <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
                 <h1 style="color: #6366f1;">Welcome to Cofactor Club!</h1>
@@ -51,7 +51,7 @@ async function sendWelcomeEmail(toEmail: string, name: string): Promise<void> {
                 <p>We're excited to have you join our student ambassador network.</p>
                 <p><strong>Next Steps:</strong></p>
                 <ul>
-                    <li>Share your referral code to earn points.</li>
+
                     <li>Contribute to your university's wiki page.</li>
 
                 </ul>
@@ -253,7 +253,7 @@ async function exportUserData(userId: string): Promise<any[]> {
         where: { id: userId },
         include: {
             revisions: true,
-            referralsMade: true,
+
             notifications: { take: 100 },
             bookmarks: true,
         }
@@ -291,16 +291,14 @@ async function exportMembers(filters?: Record<string, any>): Promise<any[]> {
 
 async function exportAnalytics(userId: string): Promise<any[]> {
     // Simplified analytics export
-    const [revisionCount, referralCount, notificationCount] = await Promise.all([
+    const [revisionCount, notificationCount] = await Promise.all([
         prisma.wikiRevision.count({ where: { authorId: userId } }),
-        prisma.referral.count({ where: { referrerId: userId } }),
         prisma.notification.count({ where: { userId } })
     ])
 
     return [{
         userId,
         revisionCount,
-        referralCount,
         notificationCount,
         exportedAt: new Date().toISOString()
     }]

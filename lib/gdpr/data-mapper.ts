@@ -18,7 +18,7 @@ export interface UserDataMap {
     authentication: DataRelationship
     activity: DataRelationship
     preferences: DataRelationship
-    social: DataRelationship
+
     generatedContent: DataRelationship
     system: DataRelationship
 }
@@ -27,7 +27,7 @@ export const userDataMap: UserDataMap = {
     profile: {
         entity: 'User Profile',
         description: 'Basic profile information provided during registration',
-        fields: ['id', 'email', 'name', 'bio', 'referralCode', 'createdAt', 'updatedAt'],
+        fields: ['id', 'email', 'name', 'bio', 'createdAt', 'updatedAt'],
         sensitive: true,
         retention: 'Until account deletion',
         purpose: 'User identification and communication',
@@ -45,7 +45,7 @@ export const userDataMap: UserDataMap = {
     activity: {
         entity: 'User Activity',
         description: 'Records of user actions and engagement',
-        fields: ['role', 'socialStats'],
+        fields: ['role'],
         sensitive: false,
         retention: 'Until account deletion',
         purpose: 'Gamification and platform engagement',
@@ -54,19 +54,10 @@ export const userDataMap: UserDataMap = {
     preferences: {
         entity: 'User Preferences',
         description: 'Settings and notification preferences',
-        fields: ['notificationPreference', 'userPreference', 'isPublicProfile'],
+        fields: ['notificationPreference', 'userPreference'],
         sensitive: false,
         retention: 'Until account deletion',
         purpose: 'Personalizing user experience',
-        legalBasis: 'consent'
-    },
-    social: {
-        entity: 'Social Data',
-        description: 'Referrals and social connections',
-        fields: ['referralsMade', 'referredBy', 'publicPerson'],
-        sensitive: true,
-        retention: 'Until account deletion',
-        purpose: 'Referral program and public profiles',
         legalBasis: 'consent'
     },
     generatedContent: {
@@ -96,12 +87,7 @@ export const relatedEntities = [
         description: 'Wiki page edits and contributions',
         anonymizationStrategy: 'keep_content_anonymize_author'
     },
-    {
-        name: 'Referral',
-        relation: 'referrerId/refereeId -> User.id',
-        description: 'Referral relationships between users',
-        anonymizationStrategy: 'delete'
-    },
+
     {
         name: 'Notification',
         relation: 'userId -> User.id',
@@ -194,8 +180,8 @@ export function getUserDataCategories(): string[] {
 
 export function isSensitiveField(field: string): boolean {
     const sensitiveFields = [
-        'email', 'name', 'bio', 'password', 'socialStats',
-        'referralCode', 'verificationToken', 'publicPerson'
+        'email', 'name', 'bio', 'password',
+        'verificationToken'
     ]
     return sensitiveFields.includes(field)
 }

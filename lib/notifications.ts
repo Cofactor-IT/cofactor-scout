@@ -159,8 +159,7 @@ export async function shouldSendNotification(
             return preferences.staffStatus
         case 'STAFF_REJECTED':
             return preferences.staffStatus
-        case 'REFERRAL_USED':
-            return preferences.inAppEnabled
+
 
         case 'USER_FOLLOWED':
             return preferences.activityFeed

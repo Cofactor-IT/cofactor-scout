@@ -70,7 +70,7 @@ describe('signUpSchema', () => {
             email: 'test@example.com',
             password: 'Password123!',
             name: 'John Doe',
-            referralCode: 'REF123'
+
         }
         const result = signUpSchema.safeParse(validData)
         expect(result.success).toBe(true)
@@ -87,7 +87,7 @@ describe('signUpSchema', () => {
                 email: 'invalid-email',
                 password: 'Password123!',
                 name: 'John Doe',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -100,7 +100,7 @@ describe('signUpSchema', () => {
                 email: "admin' --@example.com",
                 password: 'Password123!',
                 name: 'John Doe',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -118,7 +118,7 @@ describe('signUpSchema', () => {
                 email: 'test@example.com',
                 password: 'Short1!',
                 name: 'John Doe',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -131,7 +131,7 @@ describe('signUpSchema', () => {
                 email: 'test@example.com',
                 password: 'password123!',
                 name: 'John Doe',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -144,7 +144,7 @@ describe('signUpSchema', () => {
                 email: 'test@example.com',
                 password: 'PASSWORD123!',
                 name: 'John Doe',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -157,7 +157,7 @@ describe('signUpSchema', () => {
                 email: 'test@example.com',
                 password: 'Password!',
                 name: 'John Doe',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -170,7 +170,7 @@ describe('signUpSchema', () => {
                 email: 'test@example.com',
                 password: 'Password123',
                 name: 'John Doe',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -186,7 +186,7 @@ describe('signUpSchema', () => {
                 email: 'test@example.com',
                 password: 'Password123!',
                 name: 'J',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -199,7 +199,7 @@ describe('signUpSchema', () => {
                 email: 'test@example.com',
                 password: 'Password123!',
                 name: 'John123', // Numbers not allowed in sanitizeName
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(false)
             if (!result.success) {
@@ -212,7 +212,7 @@ describe('signUpSchema', () => {
                 email: 'test@example.com',
                 password: 'Password123!',
                 name: '  John Doe  ',
-                referralCode: 'REF123'
+
             })
             expect(result.success).toBe(true)
             if (result.success) {
@@ -221,21 +221,7 @@ describe('signUpSchema', () => {
         })
     })
 
-    // Referral Code validation
-    describe('referralCode', () => {
-        it('should reject referral code with SQL injection', () => {
-            const result = signUpSchema.safeParse({
-                email: 'test@example.com',
-                password: 'Password123!',
-                name: 'John Doe',
-                referralCode: "REF' OR '1'='1"
-            })
-            expect(result.success).toBe(false)
-            if (!result.success) {
-                expect(result.error.flatten().fieldErrors.referralCode).toContain('Invalid referral code')
-            }
-        })
-    })
+
 })
 
 describe('socialConnectSchema', () => {

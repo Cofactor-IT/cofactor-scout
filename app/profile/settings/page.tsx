@@ -24,9 +24,6 @@ export default async function SettingsPage() {
         redirect('/auth/signin')
     }
 
-    // Fetch institutes for public profile selection
-    const institutes: any[] = []
-
     return (
         <div className="container mx-auto py-10 max-w-3xl">
             <div className="mb-8">

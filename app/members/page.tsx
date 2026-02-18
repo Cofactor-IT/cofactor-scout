@@ -46,31 +46,9 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                 name: true,
                 email: true,
                 role: true,
-                referralCode: true,
                 emailVerified: true,
                 isTrusted: true,
                 createdAt: true,
-                referredBy: {
-                    select: {
-                        referrer: {
-                            select: {
-                                name: true,
-                                referralCode: true
-                            }
-                        }
-                    }
-                },
-                referralsMade: {
-                    select: {
-                        referee: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true
-                            }
-                        }
-                    }
-                },
                 revisions: {
                     select: {
                         id: true,
@@ -151,8 +129,6 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                 <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">User</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Role</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Joined</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold font-sans text-navy">Referred By</th>
-                                <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Referrals</th>
                                 <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Wiki Edits</th>
 
                                 <th className="px-4 py-3 text-center text-sm font-semibold font-sans text-navy">Email Verified</th>
@@ -167,9 +143,6 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                         <div>
                                             <div className="font-medium">{member.name || 'Anonymous'}</div>
                                             <div className="text-sm text-cool-gray">{member.email}</div>
-                                            <div className="text-xs text-cool-gray mt-1">
-                                                Code: <code className="bg-off-white px-1 rounded-sharp">{member.referralCode}</code>
-                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
@@ -185,35 +158,6 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                                         <span className="text-xs text-cool-gray">
                                             {new Date(member.createdAt).toLocaleTimeString()}
                                         </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm">
-                                        {member.referredBy?.referrer ? (
-                                            <div>
-                                                <div>{member.referredBy.referrer.name}</div>
-                                                <div className="text-xs text-cool-gray">
-                                                    ({member.referredBy.referrer.referralCode})
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <span className="text-cool-gray">None</span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <div className="font-medium">{member.referralsMade.length}</div>
-                                        {member.referralsMade.length > 0 && (
-                                            <details className="text-xs">
-                                                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                                                    View names
-                                                </summary>
-                                                <div className="absolute z-10 bg-popover border rounded p-2 mt-1 shadow-lg max-w-48">
-                                                    {member.referralsMade.map(ref => (
-                                                        <div key={ref.referee.id} className="text-xs">
-                                                            {ref.referee.name} ({ref.referee.email})
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </details>
-                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
                                         <div className="text-sm">
