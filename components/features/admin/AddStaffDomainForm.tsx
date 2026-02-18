@@ -1,43 +1,26 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useActionState } from 'react'
-import { addStaffDomain } from '@/actions/admin-settings.actions'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { AlertCircle } from 'lucide-react'
 
-const initialState = {
-    error: '' as string | undefined,
-    success: '' as string | undefined
-}
-
+/**
+ * DEPRECATED: Staff domain system has been removed from the schema
+ */
 export function AddStaffDomainForm() {
-    // @ts-expect-error - Next.js 15/16 types are still catching up with React 19 actions
-    const [state, formAction, isPending] = useActionState(addStaffDomain, initialState)
-
     return (
-        <form action={formAction} className="flex gap-4 items-end">
-            <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="domain">Target Domain</Label>
-                <div className="flex flex-col gap-2">
-                    <Input
-                        type="text"
-                        id="domain"
-                        name="domain"
-                        placeholder="example.com"
-                        required
-                    />
-                    {state?.error && (
-                        <p className="text-sm text-destructive">{state.error}</p>
-                    )}
-                    {state?.success && (
-                        <p className="text-sm text-green-600">{state.success}</p>
-                    )}
+        <Card>
+            <CardHeader>
+                <CardTitle>Staff Domain Management</CardTitle>
+                <CardDescription>
+                    This feature has been removed.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    <p>The staff domain system has been removed in the new schema.</p>
                 </div>
-            </div>
-            <Button type="submit" disabled={isPending}>
-                {isPending ? 'Adding...' : 'Add Domain'}
-            </Button>
-        </form>
+            </CardContent>
+        </Card>
     )
 }

@@ -33,3 +33,17 @@ export async function updateNotificationSettings(data: {
         throw new Error('Failed to update settings')
     }
 }
+
+/**
+ * DEPRECATED: Trusted user system has been removed
+ */
+export async function updateTrustedUserSettings() {
+    throw new Error('Trusted user system has been removed')
+}
+
+/**
+ * DEPRECATED: Staff domain system has been removed
+ */
+export async function addStaffDomain() {
+    throw new Error('Staff domain system has been removed')
+}
