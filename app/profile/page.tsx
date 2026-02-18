@@ -50,23 +50,44 @@ export default async function ProfilePage() {
                                 <Label>University</Label>
                                 <p className="text-sm">{user.university || 'Not specified'}</p>
                             </div>
-                            <div>
-                                <Label>Department</Label>
-                                <p className="text-sm">{user.department || 'Not specified'}</p>
-                            </div>
-                            <div>
-                                <Label>Research Areas</Label>
-                                <p className="text-sm">{user.researchAreas || 'Not specified'}</p>
+                        ) : (
+                            <p className="text-muted-foreground">Not affiliated with a university</p>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Secondary University Card */}
+                <SecondaryUniversityCard
+                    universities={universities}
+                    primaryUniversityId={user.universityId}
+                    secondaryUniversity={user.secondaryUniversity}
+                    pendingRequest={pendingRequest}
+                />
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Referral Program</CardTitle>
+                        <CardDescription>Share your unique code.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Your Referral Code</Label>
+                            <div className="flex gap-2">
+                                <Input readOnly value={user.referralCode} className="font-mono text-lg bg-muted" />
+                                <Button variant="outline" className="shrink-0">Copy</Button>
                             </div>
                         </div>
+                        <p className="text-sm text-muted-foreground">
+                            Share your unique code to invite others to the platform.
+                        </p>
                     </CardContent>
                 </Card>
 
                 {/* Submission Stats Card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Submission Stats</CardTitle>
-                        <CardDescription>Your research lead contributions.</CardDescription>
+                        <CardTitle>Social Reach</CardTitle>
+                        <CardDescription>Connect your accounts to build your verified profile.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">

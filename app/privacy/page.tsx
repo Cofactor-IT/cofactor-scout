@@ -79,7 +79,6 @@ export default async function PrivacyPage() {
                                     <li>Wiki revisions and contributions</li>
                                     <li>Bookmarks and saved content</li>
                                     <li>Referral activity</li>
-                                    <li>Power score and achievements</li>
                                 </ul>
                             </div>
                             <div>
@@ -121,7 +120,7 @@ export default async function PrivacyPage() {
                                 <strong>Communication:</strong> To send you notifications about your account, content updates, and platform news (based on your preferences).
                             </li>
                             <li>
-                                <strong>Referral Program:</strong> To track referrals, calculate power scores, and manage the ambassador program.
+                                <strong>Referral Program:</strong> To track referrals and manage the ambassador program.
                             </li>
                             <li>
                                 <strong>Improvement:</strong> To analyze usage patterns and improve our platform (using anonymized data where possible).
@@ -187,7 +186,7 @@ export default async function PrivacyPage() {
                                 <div className="border-l-4 border-primary pl-4">
                                     <h3 className="font-semibold">Right to Access (Article 15)</h3>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        You can request a complete copy of all data we hold about you. 
+                                        You can request a complete copy of all data we hold about you.
                                         Use the &quot;Download My Data&quot; button above or contact us.
                                     </p>
                                 </div>
@@ -203,22 +202,22 @@ export default async function PrivacyPage() {
                                 <div className="border-l-4 border-primary pl-4">
                                     <h3 className="font-semibold">Right to Erasure (Article 17)</h3>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        You can request complete deletion of your account and data. 
-                                        Use the &quot;Delete My Account&quot; button above. We offer both soft 
+                                        You can request complete deletion of your account and data.
+                                        Use the &quot;Delete My Account&quot; button above. We offer both soft
                                         delete (anonymization) and hard delete (complete removal).
                                     </p>
                                 </div>
                                 <div className="border-l-4 border-primary pl-4">
                                     <h3 className="font-semibold">Right to Portability (Article 20)</h3>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Your data export is provided in both JSON and CSV formats, 
+                                        Your data export is provided in both JSON and CSV formats,
                                         making it easy to transfer to other services.
                                     </p>
                                 </div>
                                 <div className="border-l-4 border-primary pl-4">
                                     <h3 className="font-semibold">Right to Object (Article 21)</h3>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        You can opt out of non-essential communications and data processing 
+                                        You can opt out of non-essential communications and data processing
                                         in your notification preferences.
                                     </p>
                                 </div>
@@ -237,7 +236,7 @@ export default async function PrivacyPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground">
-                            If you have any questions about this privacy policy or your data rights, 
+                            If you have any questions about this privacy policy or your data rights,
                             please contact our Data Protection Officer at{' '}
                             <a href="mailto:privacy@cofactor.world" className="text-primary hover:underline">
                                 privacy@cofactor.world
