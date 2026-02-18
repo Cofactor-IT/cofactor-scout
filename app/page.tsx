@@ -8,13 +8,12 @@ export default function Home() {
         Join the Revolution.
       </h1>
       <p className="text-base font-serif text-cool-gray mb-8 max-w-2xl leading-[1.5]">
-        Cofactor Club is the exclusive network for student ambassadors.
-        Manage the knowledge base, and earn your place.
+        Cofactor Scout connects researchers with opportunities.
+        Submit research leads and help build the future.
       </p>
       <div className="flex gap-4">
-
-        <Link href="/wiki">
-          <Button size="lg" variant="secondary">Explore Wiki</Button>
+        <Link href="/profile">
+          <Button size="lg">Get Started</Button>
         </Link>
       </div>
     </div>

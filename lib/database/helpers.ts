@@ -12,48 +12,14 @@ import { NotFoundError, DatabaseError } from '@/lib/errors'
 export const userSelectFields = {
     id: true,
     email: true,
-    name: true,
-    role: true,
-    universityId: true,
-    referralCode: true,
-    isPublicProfile: true,
-    publicPersonId: true,
-    emailVerified: true,
+    fullName: true,
     firstName: true,
     lastName: true,
-    bio: true,
-    image: true
-} as const
-
-/**
- * Standard person select fields
- */
-export const personSelectFields = {
-    id: true,
-    name: true,
-    slug: true,
+    preferredName: true,
     role: true,
-    fieldOfStudy: true,
+    emailVerified: true,
     bio: true,
-    linkedin: true,
-    twitter: true,
-    website: true,
-    email: true,
-    instituteId: true,
-    labId: true,
-    createdAt: true
-} as const
-
-/**
- * Standard university select fields
- */
-export const universitySelectFields = {
-    id: true,
-    name: true,
-    // slug: true, // Field does not exist on University model
-    domains: true, // Correct field name
-    logo: true,
-    approved: true
+    profilePictureUrl: true
 } as const
 
 /**
@@ -105,108 +71,18 @@ export async function withTransactionCallback<T>(
 }
 
 /**
- * Get user with university info in a single query
+ * Get user with submissions stats
  */
-export async function getUserWithUniversity(userId: string) {
+export async function getUserWithStats(userId: string) {
     return prisma.user.findUnique({
         where: { id: userId },
         select: {
             ...userSelectFields,
-            university: {
-                select: universitySelectFields
-            },
-            secondaryUniversity: {
-                select: universitySelectFields
-            }
+            totalSubmissions: true,
+            pendingSubmissions: true,
+            approvedSubmissions: true
         }
     })
-}
-
-/**
- * Get institutes with labs for a university (solves N+1)
- */
-export async function getInstitutesWithLabs(universityId: string) {
-    return prisma.institute.findMany({
-        where: { universityId, approved: true },
-        orderBy: { name: 'asc' },
-        select: {
-            id: true,
-            name: true,
-            slug: true,
-            universityId: true,
-            labs: {
-                where: { approved: true },
-                orderBy: { name: 'asc' },
-                select: {
-                    id: true,
-                    name: true,
-                    slug: true,
-                    instituteId: true
-                }
-            }
-        }
-    })
-}
-
-/**
- * Get person with related institute and lab info
- */
-export async function getPersonWithRelations(personId: string) {
-    return prisma.person.findUnique({
-        where: { id: personId },
-        select: {
-            ...personSelectFields,
-            institute: {
-                select: {
-                    id: true,
-                    name: true,
-                    slug: true,
-                    universityId: true
-                }
-            },
-            lab: {
-                select: {
-                    id: true,
-                    name: true,
-                    slug: true,
-                    instituteId: true,
-                    institute: {
-                        select: {
-                            id: true,
-                            name: true,
-                            universityId: true
-                        }
-                    }
-                }
-            }
-        }
-    })
-}
-
-/**
- * Get university ID from institute or lab
- */
-export async function getUniversityIdFromContext(
-    instituteId?: string | null,
-    labId?: string | null
-): Promise<string | null> {
-    if (labId) {
-        const lab = await prisma.lab.findUnique({
-            where: { id: labId },
-            include: { institute: { select: { universityId: true } } }
-        })
-        return lab?.institute.universityId || null
-    }
-
-    if (instituteId) {
-        const institute = await prisma.institute.findUnique({
-            where: { id: instituteId },
-            select: { universityId: true }
-        })
-        return institute?.universityId || null
-    }
-
-    return null
 }
 
 /**

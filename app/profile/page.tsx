@@ -1,15 +1,13 @@
 import { prisma } from '@/lib/database/prisma'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Settings } from 'lucide-react'
-import { SocialStats } from '@/lib/types'
 import Link from 'next/link'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
 import { redirect } from 'next/navigation'
-import { SecondaryUniversityCard } from '@/components/features/profile/SecondaryUniversityCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,41 +19,12 @@ export default async function ProfilePage() {
     }
 
     const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        include: {
-            university: true,
-            secondaryUniversity: true
-        }
+        where: { id: session.user.id }
     })
 
     if (!user) {
         redirect('/auth/signin')
     }
-
-    // Fetch all approved universities for the dropdown
-    const universities = await prisma.university.findMany({
-        where: { approved: true },
-        orderBy: { name: 'asc' },
-        select: {
-            id: true,
-            name: true
-        }
-    })
-
-    // Fetch pending secondary university request
-    const pendingRequest = await prisma.secondaryUniversityRequest.findFirst({
-        where: {
-            userId: user.id,
-            status: 'PENDING'
-        },
-        include: {
-            university: {
-                select: { name: true }
-            }
-        }
-    })
-
-    const socialStats = (user.socialStats as SocialStats) || {}
 
     return (
         <div className="container mx-auto py-10">
@@ -69,79 +38,51 @@ export default async function ProfilePage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-                {/* Primary University Card */}
+                {/* Scout Profile Card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Primary University</CardTitle>
-                        <CardDescription>Your main academic affiliation.</CardDescription>
+                        <CardTitle>Scout Profile</CardTitle>
+                        <CardDescription>Your research scout information.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {user.university ? (
-                            <div className="space-y-2">
-                                <p className="text-lg font-medium">{user.university.name}</p>
-                                {!user.university.approved && (
-                                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                                        Pending admin approval
-                                    </p>
-                                )}
+                        <div className="space-y-4">
+                            <div>
+                                <Label>University</Label>
+                                <p className="text-sm">{user.university || 'Not specified'}</p>
                             </div>
-                        ) : (
-                            <p className="text-muted-foreground">Not affiliated with a university</p>
-                        )}
+                            <div>
+                                <Label>Department</Label>
+                                <p className="text-sm">{user.department || 'Not specified'}</p>
+                            </div>
+                            <div>
+                                <Label>Role</Label>
+                                <Badge>{user.role}</Badge>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
-                {/* Secondary University Card */}
-                <SecondaryUniversityCard
-                    universities={universities}
-                    primaryUniversityId={user.universityId}
-                    secondaryUniversity={user.secondaryUniversity}
-                    pendingRequest={pendingRequest}
-                />
-
+                {/* Submission Stats Card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Referral Program</CardTitle>
-                        <CardDescription>Share your unique code.</CardDescription>
+                        <CardTitle>Submission Stats</CardTitle>
+                        <CardDescription>Your research submission activity.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Your Referral Code</Label>
-                            <div className="flex gap-2">
-                                <Input readOnly value={user.referralCode} className="font-mono text-lg bg-muted" />
-                                <Button variant="outline" className="shrink-0">Copy</Button>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm">Total Submissions</span>
+                                <Badge variant="outline">{user.totalSubmissions}</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm">Pending Review</span>
+                                <Badge variant="secondary">{user.pendingSubmissions}</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm">Approved</span>
+                                <Badge variant="default">{user.approvedSubmissions}</Badge>
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            Share your unique code to invite others to the platform.
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Social Reach</CardTitle>
-                        <CardDescription>Connect your accounts to build your verified profile.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="p-2 border rounded">
-                                <div className="text-xs text-muted-foreground uppercase">Instagram</div>
-                                <div className="font-bold">{socialStats.instagram || 0}</div>
-                            </div>
-                            <div className="p-2 border rounded">
-                                <div className="text-xs text-muted-foreground uppercase">TikTok</div>
-                                <div className="font-bold">{socialStats.tiktok || 0}</div>
-                            </div>
-                            <div className="p-2 border rounded">
-                                <div className="text-xs text-muted-foreground uppercase">LinkedIn</div>
-                                <div className="font-bold">{socialStats.linkedin || 0}</div>
-                            </div>
-                        </div>
-
-                        <Link href="/profile/connect">
-                            <Button className="w-full">Connect Accounts</Button>
-                        </Link>
                     </CardContent>
                 </Card>
             </div>

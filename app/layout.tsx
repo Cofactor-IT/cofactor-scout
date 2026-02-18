@@ -7,8 +7,8 @@ import { AnalyticsProvider } from '@/components/shared/AnalyticsProvider'
 import { headers } from 'next/headers'
 
 export const metadata: Metadata = {
-  title: 'Cofactor Club',
-  description: 'The student ambassador network.',
+  title: 'Cofactor Scout',
+  description: 'The research scout network.',
 }
 
 export default async function RootLayout({
