@@ -121,6 +121,16 @@ model User {
   scoutApplicationStatus ScoutApplicationStatus @default(NOT_APPLIED)
   scoutApplicationDate   DateTime?
 
+  // Profile Settings
+  bio                    String?
+  personalWebsite        String?
+  additionalLinks        Json?
+  profilePictureUrl      String?
+
+  // Account Security
+  twoFactorEnabled       Boolean                @default(false)
+  twoFactorSecret        String?
+
   // Stats
   totalSubmissions    Int @default(0)
   pendingSubmissions  Int @default(0)
