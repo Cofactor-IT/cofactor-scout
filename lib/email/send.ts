@@ -40,27 +40,10 @@ async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<
     const { getSystemSettings } = await import('@/lib/settings')
     const settings = await getSystemSettings()
 
-    // If it's an admin alert, we check enableAdminEmails (handled in sendAdminAlertEmail wrapper usually, but good to have safety)
-    // However, sendEmail is generic. 
-    // Let's rely on the wrappers to check specific flags, OR check here based on metadata type?
-    // Implementation Plan said: "Update sendEmail (or the wrapper functions)"
-    // It's safer to update the wrappers or check here if we can distinguish.
-    // "sendAdminAlertEmail will check enableAdminEmails. Other user-facing emails will check enableStudentEmails."
-
-    // Let's implement the check in the wrappers (sendWelcomeEmail, sendVerificationEmail, etc) to be precise.
-    // But to save tokens/steps, I can modify `sendEmail` to default to checking `enableStudentEmails` UNLESS metadata.type === 'adminAlert'.
-
-    if (metadata?.type === 'adminAlert') {
-        if (!settings.enableAdminEmails) {
-            logger.info('Admin emails disabled by global settings', { to: maskEmail(to) })
-            return
-        }
-    } else {
-        // Default to student/user emails
-        if (!settings.enableStudentEmails) {
-            logger.info('Student emails disabled by global settings', { to: maskEmail(to) })
-            return
-        }
+    // Check if email notifications are enabled globally
+    if (!settings.enableEmailNotifications) {
+        logger.info('Email notifications disabled by global settings', { to: maskEmail(to) })
+        return
     }
 
     const mailOptions = {

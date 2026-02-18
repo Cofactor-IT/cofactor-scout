@@ -53,35 +53,35 @@ function generateSecureToken(): string {
  * Determine user role based on email domain
  */
 async function determineUserRole(email: string): Promise<{
-    role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF'
+    role: 'CONTRIBUTOR' | 'SCOUT' | 'ADMIN'
 }> {
-    // Check email domain for staff access
-    const emailDomain = email.split('@')[1]?.toLowerCase()
-    if (emailDomain) {
-        const staffDomain = await prisma.staffDomain.findUnique({
-            where: { domain: emailDomain },
-            select: { id: true }
-        })
-
-        if (staffDomain) {
-            logger.info('User assigned STAFF role via domain match', { email, domain: emailDomain })
-            return { role: 'STAFF' }
-        }
-    }
-
-    return { role: 'STUDENT' }
+    // Default role for all new users
+    return { role: 'CONTRIBUTOR' }
 }
 
 /**
- * Determine university ID based on email domain and form data
+ * Determine university based on email domain and form data
  */
 async function determineUniversity(
     email: string,
     formData: FormData
 ): Promise<string | null> {
-    // University field is now just a string in User model
+    // University field is just a string in User model
     const universityName = formData.get('universityName') as string | null
     return universityName?.trim() || null
+}
+
+/**
+ * Split full name into first and last name
+ */
+function splitName(fullName: string): { firstName: string; lastName: string } {
+    const parts = fullName.trim().split(/\s+/)
+    if (parts.length === 1) {
+        return { firstName: parts[0], lastName: '' }
+    }
+    const firstName = parts[0]
+    const lastName = parts.slice(1).join(' ')
+    return { firstName, lastName }
 }
 
 /**
@@ -90,25 +90,26 @@ async function determineUniversity(
 async function createUser(
     userData: SignUpInput,
     hashedPassword: string,
-    role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF',
-    universityId: string | null
+    role: 'CONTRIBUTOR' | 'SCOUT' | 'ADMIN',
+    university: string | null
 ): Promise<void> {
     const verificationToken = generateSecureToken()
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    const { firstName, lastName } = splitName(userData.name)
 
-    await prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({
-            data: {
-                email: userData.email,
-                name: userData.name,
-                password: hashedPassword,
-                role,
-                verificationToken,
-                verificationExpires,
-                universityId
-            },
-            select: { id: true }
-        })
+    await prisma.user.create({
+        data: {
+            email: userData.email,
+            fullName: userData.name,
+            firstName,
+            lastName,
+            password: hashedPassword,
+            role,
+            verificationToken,
+            verificationExpires,
+            university
+        },
+        select: { id: true }
     })
 
     // Send verification email asynchronously
@@ -119,7 +120,7 @@ async function createUser(
     logger.info('User registered successfully', {
         email: userData.email,
         role,
-        universityId
+        university
     })
 }
 
@@ -197,7 +198,7 @@ export async function signUp(
                 validationResult.data,
                 hashedPassword,
                 role,
-                universityId
+                university
             )
         }
 
@@ -385,7 +386,7 @@ export async function resendVerificationEmail(
     try {
         const user = await prisma.user.findUnique({
             where: { email },
-            select: { id: true, email: true, name: true, emailVerified: true }
+            select: { id: true, email: true, fullName: true, emailVerified: true }
         })
 
         if (user && !user.emailVerified) {
@@ -398,7 +399,7 @@ export async function resendVerificationEmail(
             })
 
             const { sendVerificationEmail } = await import('@/lib/email/send')
-            sendVerificationEmail(user.email, user.name || 'User', verificationToken).catch(err =>
+            sendVerificationEmail(user.email, user.fullName || 'User', verificationToken).catch(err =>
                 logger.error('Failed to send verification email', { email: user.email, error: err })
             )
 

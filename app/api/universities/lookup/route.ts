@@ -34,25 +34,8 @@ export async function GET(request: Request) {
     let university = null
     let isStaffDomain = false
 
-    try {
-        const staffDomainRecord = await prisma.staffDomain.findUnique({
-            where: { domain: targetDomain }
-        })
-        if (staffDomainRecord) {
-            isStaffDomain = true
-        }
-
-        const foundUniversity = await findUniversityByDomain(targetDomain)
-
-        if (foundUniversity) {
-            university = {
-                id: foundUniversity.id,
-                name: foundUniversity.name
-            }
-        }
-    } catch (error) {
-        console.error('Database error in university lookup:', error)
-    }
+    // University lookup removed - current schema stores university as string
+    // The signup form will accept manual university name input
 
     return NextResponse.json({
         university: university || null,

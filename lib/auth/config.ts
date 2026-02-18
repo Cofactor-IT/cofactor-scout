@@ -39,8 +39,10 @@ export const authOptions: NextAuthOptions = {
 
                 // Check email verification BEFORE password check to prevent timing attacks
                 // and account enumeration
+                // Allow admin email to bypass verification for initial setup
                 if (!user.emailVerified && user.email !== process.env.ADMIN_EMAIL) {
                     logger.warn('Login attempt with unverified email', { email: user.email })
+                    // Return null to show generic error message
                     return null
                 }
 

@@ -11,10 +11,8 @@ export const getSystemSettings = unstable_cache(
         if (!settings) {
             settings = await prisma.systemSettings.create({
                 data: {
-                    enableStudentEmails: true,
-                    enableAdminEmails: true,
-                    enableInAppNotifications: true,
-                    trustedUserDailyLimit: 5
+                    enableEmailNotifications: true,
+                    enableInAppNotifications: true
                 }
             })
         }
