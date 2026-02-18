@@ -47,3 +47,7 @@ export async function updateTrustedUserSettings() {
 export async function addStaffDomain() {
     throw new Error('Staff domain system has been removed')
 }
+
+export async function removeStaffDomain() {
+    throw new Error('Staff domain system has been removed')
+}

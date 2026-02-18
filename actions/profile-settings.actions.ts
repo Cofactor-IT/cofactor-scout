@@ -163,7 +163,7 @@ export async function updateUserProfile(
 
         // Validate and sanitize name
         const nameValidation = validateAndSanitizeName(fullName)
-        if (!nameValidation.valid) {
+        if (!nameValidation.valid || !nameValidation.sanitized) {
             return { success: false, error: nameValidation.error || 'Invalid name' }
         }
 

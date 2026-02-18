@@ -10,8 +10,7 @@ import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 
 interface NotificationSettingsFormProps {
     initialSettings: {
-        enableStudentEmails: boolean
-        enableAdminEmails: boolean
+        enableEmailNotifications: boolean
         enableInAppNotifications: boolean
     }
 }
@@ -55,28 +54,15 @@ export function NotificationSettingsForm({ initialSettings }: NotificationSettin
             <CardContent className="space-y-6">
                 <div className="flex items-center justify-between space-x-2">
                     <div className="space-y-0.5">
-                        <Label htmlFor="student-emails">Student Emails</Label>
+                        <Label htmlFor="email-notifications">Email Notifications</Label>
                         <p className="text-sm text-muted-foreground">
-                            Send emails to students (Welcome, Verification, Mentions, Updates)
+                            Send email notifications to users
                         </p>
                     </div>
                     <Switch
-                        id="student-emails"
-                        checked={settings.enableStudentEmails}
-                        onCheckedChange={() => handleToggle('enableStudentEmails')}
-                    />
-                </div>
-                <div className="flex items-center justify-between space-x-2">
-                    <div className="space-y-0.5">
-                        <Label htmlFor="admin-emails">Admin Emails</Label>
-                        <p className="text-sm text-muted-foreground">
-                            Send alerts to admins (New Revisions, etc.)
-                        </p>
-                    </div>
-                    <Switch
-                        id="admin-emails"
-                        checked={settings.enableAdminEmails}
-                        onCheckedChange={() => handleToggle('enableAdminEmails')}
+                        id="email-notifications"
+                        checked={settings.enableEmailNotifications}
+                        onCheckedChange={() => handleToggle('enableEmailNotifications')}
                     />
                 </div>
                 <div className="flex items-center justify-between space-x-2">

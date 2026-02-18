@@ -118,9 +118,8 @@ export default function SignUpPage() {
                             {universityLookup?.university && (
                                 <div className="p-3 bg-green/10 border-2 border-green rounded-sharp">
                                     <p className="text-sm text-green font-semibold">
-                                        ✓ University detected: {universityLookup.university.name}
+                                        ✓ University: {universityLookup.university.name}
                                     </p>
-                                    <input type="hidden" name="universityId" value={universityLookup.university.id} />
                                 </div>
                             )}
 
