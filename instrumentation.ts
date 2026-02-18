@@ -22,10 +22,10 @@ export async function register() {
                     data: {
                         email: adminEmail,
                         password: hashedPassword,
-                        name: 'System Admin',
-                        role: 'ADMIN',
-
-
+                        fullName: 'System Admin',
+                        firstName: 'System',
+                        lastName: 'Admin',
+                        role: 'ADMIN'
                     }
                 })
                 console.log('Admin user created successfully')

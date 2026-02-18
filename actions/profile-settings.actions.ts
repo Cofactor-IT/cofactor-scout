@@ -134,30 +134,10 @@ async function validatePasswordChange(
 }
 
 /**
- * Validate university affiliation changes
+ * DEPRECATED: University validation removed
  */
-async function validateUniversityChange(
-    universityId: string | null,
-    userId: string
-) {
-    if (!universityId) {
-        return true
-    }
-
-    const university = await prisma.university.findUnique({
-        where: { id: universityId },
-        select: { id: true, approved: true }
-    })
-
-    if (!university) {
-        throw new NotFoundError('University', universityId)
-    }
-
-    if (!university.approved) {
-        throw new ValidationError('Cannot join an unapproved university')
-    }
-
-    return true
+async function validateUniversityChange() {
+    throw new Error('University management has been removed')
 }
 
 /**
@@ -175,14 +155,14 @@ async function getAuthenticatedUserId() {
  * Update user's basic profile information
  */
 export async function updateUserProfile(
-    name: string,
+    fullName: string,
     bio: string
 ) {
     try {
         const userId = await getAuthenticatedUserId()
 
         // Validate and sanitize name
-        const nameValidation = validateAndSanitizeName(name)
+        const nameValidation = validateAndSanitizeName(fullName)
         if (!nameValidation.valid) {
             return { success: false, error: nameValidation.error || 'Invalid name' }
         }
@@ -193,11 +173,18 @@ export async function updateUserProfile(
             return { success: false, error: bioValidation.error || 'Invalid bio' }
         }
 
+        // Split name into first and last
+        const nameParts = nameValidation.sanitized.trim().split(/\s+/)
+        const firstName = nameParts[0] || ''
+        const lastName = nameParts.slice(1).join(' ') || ''
+
         // Update profile
         await prisma.user.update({
             where: { id: userId },
             data: {
-                name: nameValidation.sanitized,
+                fullName: nameValidation.sanitized,
+                firstName,
+                lastName,
                 bio: bioValidation.sanitized
             }
         })
@@ -253,7 +240,7 @@ export async function resendVerification() {
 
     const userRecord = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, emailVerified: true, email: true, name: true, verificationToken: true }
+        select: { id: true, emailVerified: true, email: true, fullName: true, verificationToken: true }
     })
 
     if (!userRecord) {
@@ -277,13 +264,13 @@ export async function resendVerification() {
         })
 
         const email = userRecord.email ?? ''
-        const name = userRecord.name ?? ''
-        sendVerificationEmail(email, name, verificationToken)
+        const fullName = userRecord.fullName ?? ''
+        sendVerificationEmail(email, fullName, verificationToken)
             .catch(err => logger.error('Failed to send verification email', { error: err }))
     } else {
         const email = userRecord.email ?? ''
-        const name = userRecord.name ?? ''
-        sendVerificationEmail(email, name, token)
+        const fullName = userRecord.fullName ?? ''
+        sendVerificationEmail(email, fullName, token)
             .catch(err => logger.error('Failed to send verification email', { error: err }))
     }
 
@@ -291,68 +278,19 @@ export async function resendVerification() {
 }
 
 /**
- * Set primary university
+ * DEPRECATED: University management has been removed
+ * University is now just a string field on User
  */
-export async function setPrimaryUniversity(universityId: string) {
-    const userId = await getAuthenticatedUserId()
-
-    await validateUniversityChange(universityId, userId)
-
-    await prisma.user.update({
-        where: { id: userId },
-        data: { universityId }
-    })
-
-    revalidatePath('/profile')
-
-    return { success: true }
+export async function setPrimaryUniversity() {
+    throw new Error('University management has been removed')
 }
 
-/**
- * Add secondary university
- */
-export async function addSecondaryUniversity(universityId: string) {
-    const userId = await getAuthenticatedUserId()
-
-    const userRecord = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, secondaryUniversityId: true }
-    })
-
-    if (!userRecord) {
-        throw new NotFoundError('User')
-    }
-
-    if (userRecord.secondaryUniversityId) {
-        throw new ValidationError('You already have a secondary university')
-    }
-
-    await validateUniversityChange(universityId, userId)
-
-    await prisma.user.update({
-        where: { id: userId },
-        data: { secondaryUniversityId: universityId }
-    })
-
-    revalidatePath('/profile')
-
-    return { success: true }
+export async function addSecondaryUniversity() {
+    throw new Error('Secondary university feature has been removed')
 }
 
-/**
- * Remove secondary university
- */
 export async function removeSecondaryUniversity() {
-    const userId = await getAuthenticatedUserId()
-
-    await prisma.user.update({
-        where: { id: userId },
-        data: { secondaryUniversityId: null }
-    })
-
-    revalidatePath('/profile')
-
-    return { success: true }
+    throw new Error('Secondary university feature has been removed')
 }
 
 /**
@@ -361,7 +299,7 @@ export async function removeSecondaryUniversity() {
 /**
  * Update user's linking info (LinkedIn, Website)
  */
-export async function updateProfileLinks(linkedinUrl: string, websiteUrl: string) {
+export async function updateProfileLinks(linkedinUrl: string, personalWebsite: string) {
     const userId = await getAuthenticatedUserId()
 
     // Basic validation
@@ -374,7 +312,7 @@ export async function updateProfileLinks(linkedinUrl: string, websiteUrl: string
             where: { id: userId },
             data: {
                 linkedinUrl: linkedinUrl || null,
-                websiteUrl: websiteUrl || null
+                personalWebsite: personalWebsite || null
             }
         })
         revalidatePath('/profile')
