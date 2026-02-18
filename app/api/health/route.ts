@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { getAllQueueStatus } from '@/lib/queues/status'
 import { prisma } from '@/lib/database/prisma'
 
 export async function GET() {
@@ -18,28 +17,8 @@ export async function GET() {
         overallStatus = 'unhealthy'
     }
 
-    // Check queue system
-    try {
-        const queueHealth = await getAllQueueStatus()
-        checks.queues = { 
-            status: queueHealth.overallStatus,
-            ...(queueHealth.overallStatus !== 'healthy' && {
-                error: `Redis connected: ${queueHealth.redisConnected}, Queues: ${queueHealth.queues.length}`
-            })
-        }
-        
-        if (queueHealth.overallStatus === 'unhealthy') {
-            overallStatus = 'unhealthy'
-        } else if (queueHealth.overallStatus === 'degraded' && overallStatus === 'healthy') {
-            overallStatus = 'degraded'
-        }
-    } catch (error) {
-        checks.queues = { 
-            status: 'error', 
-            error: error instanceof Error ? error.message : 'Queue health check failed' 
-        }
-        overallStatus = 'unhealthy'
-    }
+    // Queue system has been removed/disabled in the schema-aligned codebase.
+    checks.queues = { status: 'disabled' }
 
     const statusCode = overallStatus === 'healthy' ? 200 : overallStatus === 'degraded' ? 200 : 503
 

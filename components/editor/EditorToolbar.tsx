@@ -1,6 +1,7 @@
 'use client'
 
 import { Editor } from '@tiptap/react'
+import type { ReactNode } from 'react'
 import {
     Bold,
     Italic,
@@ -15,7 +16,6 @@ import {
     Heading2,
     Heading3,
     Strikethrough,
-    Type,
     Image,
     X
 } from 'lucide-react'
@@ -24,24 +24,22 @@ interface EditorToolbarProps {
     editor: Editor | null
 }
 
-export function EditorToolbar({ editor }: EditorToolbarProps) {
-    if (!editor) {
-        return null
-    }
+type ToolbarButtonProps = {
+    onClick: () => void
+    disabled?: boolean
+    active?: boolean
+    children: ReactNode
+    title: string
+}
 
-    const ToolbarButton = ({
-        onClick,
-        disabled,
-        active,
-        children,
-        title
-    }: {
-        onClick: () => void
-        disabled?: boolean
-        active?: boolean
-        children: React.ReactNode
-        title: string
-    }) => (
+function ToolbarButton({
+    onClick,
+    disabled,
+    active,
+    children,
+    title
+}: ToolbarButtonProps) {
+    return (
         <button
             type="button"
             onClick={onClick}
@@ -53,6 +51,12 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             {children}
         </button>
     )
+}
+
+export function EditorToolbar({ editor }: EditorToolbarProps) {
+    if (!editor) {
+        return null
+    }
 
     const addImage = () => {
         const url = window.prompt('Enter image URL:')

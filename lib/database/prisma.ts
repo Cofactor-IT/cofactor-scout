@@ -25,12 +25,13 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 // Only attach event listeners if we're in a context where they are supported
 // Prisma Client extensions or certain runtime environments might not support $on
 try {
-    // @ts-ignore - $on is valid but sometimes TS complains depending on Prisma version/config
-    prisma.$on('query', (e: any) => {
-        if (!e || !e.query) return
+    // @ts-expect-error Prisma $on isn't available in some runtimes/types
+    prisma.$on('query', (e: unknown) => {
+        const event = e as { query?: string; duration?: number } | null
+        if (!event?.query) return
 
-        const duration = e.duration || 0
-        const query = e.query
+        const duration = event.duration || 0
+        const query = event.query
         const operation = query.split(' ')[0]?.toUpperCase()
 
         // Simple regex to extract table name from common SQL patterns
@@ -43,13 +44,14 @@ try {
         }
     })
 
-    // @ts-ignore
-    prisma.$on('error', (e: any) => {
-        if (!e) return
+    // @ts-expect-error Prisma $on isn't available in some runtimes/types
+    prisma.$on('error', (e: unknown) => {
+        const event = e as { message?: string; target?: string } | null
+        if (!event) return
 
         trackEvent('db_error', {
-            message: e.message || 'Unknown database error',
-            target: e.target || 'unknown'
+            message: event.message || 'Unknown database error',
+            target: event.target || 'unknown'
         })
     })
 } catch (error) {

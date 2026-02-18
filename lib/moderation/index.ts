@@ -12,8 +12,7 @@ export type { SpamAnalysis } from './spam-detector'
 export { filterContent, maskPersonalInfo, getContentSummary } from './content-filter'
 export type { FilterResult, FilterViolation } from './content-filter'
 
-export { getUserReputation, shouldAutoApprove, shouldAutoFlag, recordSubmissionOutcome, getModerationPriority } from './reputation'
-export type { UserReputation, ReputationFactors } from './reputation'
+export { calculateReputation, updateReputationAfterModeration } from './reputation'
 
 export { moderateContent } from './moderator'
 export type { ModerationResult, ModerateContentOptions } from './moderator'

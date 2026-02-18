@@ -1,6 +1,6 @@
 import { detectSpam } from './spam-detector'
 import { filterContent } from './content-filter'
-import { getUserReputation, shouldAutoApprove, shouldAutoFlag } from './reputation'
+import { calculateReputation } from './reputation'
 import { getConfig } from './config'
 import { logger } from '@/lib/logger'
 
@@ -42,7 +42,7 @@ export async function moderateContent(
     const filterResult = filterContent(fullContent)
 
     // 3. Check User Reputation
-    const reputation = await getUserReputation(userId)
+    const reputation = await calculateReputation(userId)
 
     // Determine action
     let action: ModerationResult['action'] = 'monitor'
@@ -58,19 +58,15 @@ export async function moderateContent(
         reason = `Content violations: ${filterResult.violations.map(v => v.message).join(', ')}`
     }
     // FLAG conditions
-    else if (spamAnalysis.requiresManualReview || reputation.isSuspicious) {
+    else if (spamAnalysis.requiresManualReview || reputation.requiresExtraReview) {
         action = 'flag'
         needsReview = true
         reason = spamAnalysis.requiresManualReview
             ? `Potential spam (Score: ${spamAnalysis.score})`
             : 'Suspicious user reputation'
-    } else if (reputation.riskLevel === 'high') {
-        action = 'flag'
-        needsReview = true
-        reason = 'High risk user'
     }
     // APPROVE conditions
-    else if (reputation.isTrusted && spamAnalysis.shouldAutoApprove && filterResult.passed) {
+    else if (reputation.canAutoApprove && spamAnalysis.shouldAutoApprove && filterResult.passed) {
         action = 'approve'
     }
 
@@ -81,9 +77,9 @@ export async function moderateContent(
         filterViolations: filterResult.violations,
         reputation: {
             score: reputation.score,
-            level: reputation.riskLevel,
-            canAutoApprove: reputation.isTrusted,
-            requiresExtraReview: reputation.isSuspicious
+            level: reputation.level,
+            canAutoApprove: reputation.canAutoApprove,
+            requiresExtraReview: reputation.requiresExtraReview
         },
         needsReview
     }

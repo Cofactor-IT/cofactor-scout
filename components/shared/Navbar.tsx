@@ -3,18 +3,22 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useSession, signOut } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { SearchBar } from '@/components/features/search/SearchBar'
 import { Menu, X } from 'lucide-react'
 
+function useIsClient() {
+    return useSyncExternalStore(
+        () => () => { },
+        () => true,
+        () => false
+    )
+}
+
 export function Navbar() {
     const { data: session, status } = useSession()
-    const [mounted, setMounted] = useState(false)
+    const mounted = useIsClient()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
-    useEffect(() => {
-        setMounted(true)
-    }, [])
 
     if (!mounted) {
         return null
