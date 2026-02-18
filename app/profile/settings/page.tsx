@@ -6,8 +6,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import { redirect } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { ChangePasswordForm } from '@/components/features/profile/ChangePasswordForm'
-import { EditProfileForm } from '@/components/features/profile/EditProfileForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,31 +37,15 @@ export default async function SettingsPage() {
             </div>
 
             <div className="space-y-6">
-                {/* Edit Profile Card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Profile Information</CardTitle>
-                        <CardDescription>Update your display name and bio</CardDescription>
+                        <CardTitle>Profile Settings</CardTitle>
+                        <CardDescription>Manage your profile information</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <EditProfileForm
-                            initialName={user.name || ''}
-                            initialBio={user.bio}
-                        />
+                        <p className="text-sm text-muted-foreground">Profile settings coming soon.</p>
                     </CardContent>
                 </Card>
-
-                {/* Change Password Card */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Change Password</CardTitle>
-                        <CardDescription>Update your account password</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ChangePasswordForm />
-                    </CardContent>
-                </Card>
-
             </div>
         </div>
     )

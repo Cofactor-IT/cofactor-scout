@@ -79,59 +79,9 @@ async function determineUniversity(
     email: string,
     formData: FormData
 ): Promise<string | null> {
-    const universityIdFromForm = formData.get('universityId') as string | null
+    // University field is now just a string in User model
     const universityName = formData.get('universityName') as string | null
-
-    // Import university utilities
-    const { extractEmailDomain, isPersonalEmail, findUniversityByDomain, createPendingUniversity } =
-        await import('@/lib/utils/university')
-
-    const emailDomain = extractEmailDomain(email)
-
-    // Use pre-selected university if provided
-    if (universityIdFromForm) {
-        const existingUni = await prisma.university.findUnique({
-            where: { id: universityIdFromForm },
-            select: { id: true }
-        })
-        return existingUni?.id || null
-    }
-
-    // Try to match by email domain
-    if (!isPersonalEmail(email) && emailDomain) {
-        const foundUniversity = await findUniversityByDomain(emailDomain)
-        if (foundUniversity) {
-            return foundUniversity.id
-        }
-    }
-
-    // Create pending university if name provided
-    if (universityName?.trim()) {
-        const normalizedName = universityName.trim()
-
-        // Check existing by name
-        const existingByName = await prisma.university.findFirst({
-            where: {
-                name: { equals: normalizedName, mode: 'insensitive' }
-            },
-            select: { id: true }
-        })
-
-        if (existingByName) {
-            return existingByName.id
-        }
-
-        // Create new pending university
-        try {
-            const newUniversity = await createPendingUniversity(normalizedName, emailDomain || '')
-            return newUniversity.id
-        } catch (e) {
-            logger.warn('Failed to create pending university', { name: normalizedName, error: e })
-            return null
-        }
-    }
-
-    return null
+    return universityName?.trim() || null
 }
 
 /**
@@ -237,7 +187,7 @@ export async function signUp(
         const { role } = await determineUserRole(validatedEmail)
 
         // Determine university
-        const universityId = await determineUniversity(validatedEmail, formData)
+        const university = await determineUniversity(validatedEmail, formData)
 
         // Create user only if doesn't exist
         if (!existingUser) {
