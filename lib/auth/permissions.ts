@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth/config'
 import { AuthenticationError, AuthorizationError } from '@/lib/errors'
 import type { User } from 'next-auth'
 
-type UserRole = 'ADMIN' | 'STAFF' | 'STUDENT' | 'PENDING_STAFF'
+type UserRole = 'ADMIN' | 'SCOUT' | 'CONTRIBUTOR'
 
 interface SessionUser extends User {
     role: UserRole
@@ -47,13 +47,13 @@ export async function requireAdmin(): Promise<SessionUser> {
 }
 
 /**
- * Require staff or admin role
+ * Require scout or admin role
  */
-export async function requireStaffOrAdmin(): Promise<SessionUser> {
+export async function requireScoutOrAdmin(): Promise<SessionUser> {
     const user = await requireAuth()
 
-    if (user.role !== 'ADMIN' && user.role !== 'STAFF') {
-        throw new AuthorizationError('Staff or admin access required')
+    if (user.role !== 'ADMIN' && user.role !== 'SCOUT') {
+        throw new AuthorizationError('Scout or admin access required')
     }
 
     return user
@@ -68,11 +68,11 @@ export async function isAdmin(): Promise<boolean> {
 }
 
 /**
- * Check if user is staff or admin (non-throwing)
+ * Check if user is scout or admin (non-throwing)
  */
-export async function isStaffOrAdmin(): Promise<boolean> {
+export async function isScoutOrAdmin(): Promise<boolean> {
     const user = await getCurrentUser()
-    return user?.role === 'ADMIN' || user?.role === 'STAFF'
+    return user?.role === 'ADMIN' || user?.role === 'SCOUT'
 }
 
 /**
@@ -94,41 +94,4 @@ export async function requireRoles(...roles: UserRole[]): Promise<SessionUser> {
     }
 
     return user
-}
-
-/**
- * Check university ownership for students
- * Students can only access resources for their own university
- */
-export async function checkUniversityAccess(targetUniversityId: string | null): Promise<boolean> {
-    const user = await getCurrentUser()
-
-    if (!user) return false
-    if (user.role === 'ADMIN' || user.role === 'STAFF') return true
-
-    // Check both primary and secondary universities
-    // Note: This requires the user object to have universityId and secondaryUniversityId
-    // You may need to extend the SessionUser type based on your needs
-    return false // Override this in specific implementations
-}
-
-/**
- * Get user with university info for access control
- */
-export async function getUserWithUniversities() {
-    const { prisma } = await import('@/lib/database/prisma')
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) return null
-
-    return prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-            id: true,
-            email: true,
-            role: true,
-            universityId: true,
-            secondaryUniversityId: true
-        }
-    })
 }

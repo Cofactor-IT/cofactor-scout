@@ -6,7 +6,7 @@ import { Role } from '@prisma/client'
 import { validateCsrfToken } from '@/lib/security/csrf'
 
 // Valid roles from the enum
-const VALID_ROLES: Role[] = ['STUDENT', 'PENDING_STAFF', 'STAFF', 'ADMIN']
+const VALID_ROLES: Role[] = ['CONTRIBUTOR', 'SCOUT', 'ADMIN']
 
 export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)

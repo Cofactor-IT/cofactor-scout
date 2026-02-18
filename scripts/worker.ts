@@ -16,12 +16,8 @@
 import { Worker, Job } from 'bullmq'
 import { getQueueConnection, closeQueueConnection } from '../lib/queues/connection'
 import { EmailJobData, EmailJobType } from '../lib/queues/email.queue'
-import { ExportJobData, ExportType } from '../lib/queues/export.queue'
 import { info, error, debug } from '../lib/logger'
 import nodemailer from 'nodemailer'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
 
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -183,127 +179,6 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
     info('Email sent successfully', { jobId: job.id, type, toEmail })
 }
 
-// Export Worker processor
-async function processExportJob(job: Job<ExportJobData>): Promise<string> {
-    const { exportJobId, userId, type, filters } = job.data
-
-    debug('Processing export job', { jobId: job.id, exportJobId, type, userId })
-
-    // Update status to PROCESSING
-    await prisma.exportJob.update({
-        where: { id: exportJobId },
-        data: { status: 'PROCESSING' }
-    })
-
-    try {
-        let exportData: any[] = []
-
-        switch (type) {
-            case ExportType.USER_DATA:
-                exportData = await exportUserData(userId)
-                break
-            case ExportType.WIKI_PAGES:
-                exportData = await exportWikiPages(filters)
-                break
-            case ExportType.MEMBERS:
-                exportData = await exportMembers(filters)
-                break
-            case ExportType.ANALYTICS:
-                exportData = await exportAnalytics(userId)
-                break
-            default:
-                throw new Error(`Unknown export type: ${type}`)
-        }
-
-        // In a real implementation, you would:
-        // 1. Generate a CSV/JSON file
-        // 2. Upload to S3 or similar storage
-        // 3. Return the file URL
-        const mockFileUrl = `/exports/${exportJobId}.csv`
-
-        // Update status to COMPLETED
-        await prisma.exportJob.update({
-            where: { id: exportJobId },
-            data: {
-                status: 'COMPLETED',
-                fileUrl: mockFileUrl,
-                completedAt: new Date()
-            }
-        })
-
-        info('Export completed successfully', { jobId: job.id, exportJobId, type, recordCount: exportData.length })
-
-        return mockFileUrl
-    } catch (err) {
-        // Update status to FAILED
-        await prisma.exportJob.update({
-            where: { id: exportJobId },
-            data: {
-                status: 'FAILED',
-                completedAt: new Date()
-            }
-        })
-        throw err
-    }
-}
-
-// Export helper functions
-async function exportUserData(userId: string): Promise<any[]> {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-            revisions: true,
-
-            notifications: { take: 100 },
-            bookmarks: true,
-        }
-    })
-    return user ? [user] : []
-}
-
-async function exportWikiPages(filters?: Record<string, any>): Promise<any[]> {
-    const pages = await prisma.uniPage.findMany({
-        where: filters || {},
-        include: {
-            university: true,
-            institute: true,
-        },
-        take: 1000
-    })
-    return pages
-}
-
-async function exportMembers(filters?: Record<string, any>): Promise<any[]> {
-    const members = await prisma.user.findMany({
-        where: filters || {},
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            university: true,
-            createdAt: true,
-        },
-        take: 1000
-    })
-    return members
-}
-
-async function exportAnalytics(userId: string): Promise<any[]> {
-    // Simplified analytics export
-    const [revisionCount, notificationCount] = await Promise.all([
-        prisma.wikiRevision.count({ where: { authorId: userId } }),
-        prisma.notification.count({ where: { userId } })
-    ])
-
-    return [{
-        userId,
-        revisionCount,
-        notificationCount,
-        exportedAt: new Date().toISOString()
-    }]
-}
-
 // Create workers
 async function startWorkers() {
     const redis = getQueueConnection()
@@ -330,43 +205,20 @@ async function startWorkers() {
             error: err.message
         })
     })
-
-    // Export Worker
-    const exportWorker = new Worker<ExportJobData>('export', processExportJob, {
-        connection: redis,
-        concurrency: 2,
-    })
-
-    exportWorker.on('completed', (job, result) => {
-        info('Export job completed', { jobId: job.id, exportJobId: job.data.exportJobId, result })
-    })
-
-    exportWorker.on('failed', (job, err) => {
-        error('Export job failed permanently', {
-            jobId: job?.id,
-            exportJobId: job?.data.exportJobId,
-            error: err.message
-        })
-    })
-
-    info('Workers started successfully', { emailWorker: emailWorker.id, exportWorker: exportWorker.id })
+    info('Workers started successfully', { emailWorker: emailWorker.id })
 
     // Graceful shutdown
     process.on('SIGTERM', async () => {
         info('SIGTERM received, closing workers...')
         await emailWorker.close()
-        await exportWorker.close()
         await closeQueueConnection()
-        await prisma.$disconnect()
         process.exit(0)
     })
 
     process.on('SIGINT', async () => {
         info('SIGINT received, closing workers...')
         await emailWorker.close()
-        await exportWorker.close()
         await closeQueueConnection()
-        await prisma.$disconnect()
         process.exit(0)
     })
 }

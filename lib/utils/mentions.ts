@@ -36,37 +36,37 @@ export async function processMentions(
 
     logger.info('Processing mentions', { count: mentionedNames.length, names: mentionedNames })
 
-    // Find users matching these names
-    // This assumes users have a 'name' field that matches exactly, or a 'slug' equivalent.
-    // Since we don't have usernames, we'll search by name.
-    // This might be fuzzy, but it's a start.
     const users = await prisma.user.findMany({
         where: {
-            name: {
-                in: mentionedNames,
-                mode: 'insensitive' // Case insensitive match
-            }
+            OR: [
+                { preferredName: { in: mentionedNames, mode: 'insensitive' } },
+                { firstName: { in: mentionedNames, mode: 'insensitive' } },
+                { fullName: { in: mentionedNames, mode: 'insensitive' } },
+            ],
         },
         select: {
             id: true,
             email: true,
-            name: true
+            preferredName: true,
+            firstName: true,
+            fullName: true,
         }
     })
 
     // Send emails in parallel
     await Promise.all(users.map(async (user) => {
-        if (!user.email || !user.name) return
+        const displayName = user.preferredName || user.firstName || user.fullName
+        if (!user.email || !displayName) return
 
         try {
             await sendMentionEmail(
                 user.email,
-                user.name,
+                displayName,
                 actorName,
                 contextSummary,
                 link
             )
-            logger.info('Mention email sent', { userId: user.id, name: user.name })
+            logger.info('Mention email sent', { userId: user.id, name: displayName })
         } catch (error) {
             logger.error('Failed to send mention email', { userId: user.id }, error as Error)
         }

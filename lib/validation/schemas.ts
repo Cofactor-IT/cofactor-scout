@@ -2,7 +2,6 @@ import { z } from 'zod'
 import {
     validateAndSanitizeUrl,
     validateSocialUrl,
-    sanitizeSearchQuery,
     sanitizeName,
     sanitizeBio,
     sanitizeString,
@@ -94,43 +93,6 @@ export const signInSchema = z.object({
         .min(1, 'Password is required')
         .max(128, 'Password is too long')
 })
-
-// ============================================================================
-// WIKI SUBMISSION SCHEMA (Enhanced)
-// ============================================================================
-
-export const wikiSubmissionSchema = z.object({
-    title: z.string()
-        .min(1, 'Title is required')
-        .max(200, 'Title is too long')
-        .trim()
-        .transform((title, ctx) => {
-            const result = sanitizeString(title, {
-                maxLength: 200,
-                minLength: 1,
-                allowNewlines: false,
-                allowHtml: false
-            })
-            if (!result.isValid) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: result.error
-                })
-                return z.NEVER
-            }
-            return result.sanitized
-        }),
-    content: z.string()
-        .min(1, 'Content is required')
-        .max(100000, 'Content is too long')
-        .trim()
-})
-
-export const wikiSlugSchema = z.string()
-    .min(1, 'Slug is required')
-    .max(100, 'Slug is too long')
-    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens')
-    .transform((slug) => slug.toLowerCase().trim())
 
 // ============================================================================
 // SOCIAL MEDIA CONNECTION SCHEMAS (Enhanced)
@@ -332,42 +294,6 @@ export const avatarUploadSchema = fileUploadSchema.extend({
         .min(1, 'File cannot be empty')
 })
 
-/**
- * Wiki image upload schema
- */
-export const wikiImageUploadSchema = fileUploadSchema
-
-// ============================================================================
-// SEARCH QUERY SCHEMAS
-// ============================================================================
-
-/**
- * Search query validation schema
- */
-export const searchQuerySchema = z.string()
-    .max(100, 'Search query is too long')
-    .transform((query, ctx) => {
-        const result = sanitizeSearchQuery(query, 100)
-        if (!result.isValid) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: result.error
-            })
-            return z.NEVER
-        }
-        return result.sanitized
-    })
-
-/**
- * Search filters schema
- */
-export const searchFiltersSchema = z.object({
-    type: z.enum(['page', 'institute', 'lab', 'person']).optional(),
-    universityId: z.string().cuid().optional(),
-    page: z.number().int().min(1).default(1),
-    limit: z.number().int().min(1).max(50).default(20)
-})
-
 // ============================================================================
 // JSON DATA SCHEMAS
 // ============================================================================
@@ -520,33 +446,11 @@ export const profileUpdateSchema = z.object({
 
 
 // ============================================================================
-// PERSON SCHEMAS
-// ============================================================================
-
-/**
- * Person creation/update schema
- */
-export const personSchema = z.object({
-    name: nameFieldSchema,
-    role: roleFieldSchema,
-    fieldOfStudy: fieldOfStudySchema,
-    bio: bioFieldSchema,
-    linkedin: linkedinUrlSchema,
-    twitter: twitterUrlSchema,
-    website: websiteUrlSchema,
-    instituteId: z.string().cuid().nullable().optional(),
-    labId: z.string().cuid().nullable().optional()
-})
-
-// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
 export type SignUpInput = z.infer<typeof signUpSchema>
 export type SignInInput = z.infer<typeof signInSchema>
-export type WikiSubmissionInput = z.infer<typeof wikiSubmissionSchema>
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>
-export type PersonInput = z.infer<typeof personSchema>
-export type SearchFiltersInput = z.infer<typeof searchFiltersSchema>
 export type FileUploadInput = z.infer<typeof fileUploadSchema>
 export type CustomFieldValueInput = z.infer<typeof customFieldValueSchema>
