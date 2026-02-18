@@ -157,13 +157,7 @@ export default function SignUpPage() {
                             <Label htmlFor="password">Password</Label>
                             <Input id="password" name="password" type="password" required />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="referralCode">Referral Code (Optional)</Label>
-                            <Input id="referralCode" name="referralCode" placeholder="Enter code" />
-                            <p className="text-xs text-cool-gray">
-                                Use a friend&apos;s code or the staff secret code to join.
-                            </p>
-                        </div>
+
 
                         {state?.error && (
                             <p className="text-sm text-red">{state.error}</p>

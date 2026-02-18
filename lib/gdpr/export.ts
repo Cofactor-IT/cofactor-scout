@@ -22,10 +22,7 @@ export interface ExportData {
     }
     profile: Record<string, unknown>
     wikiRevisions: unknown[]
-    referrals: {
-        made: unknown[]
-        received: unknown | null
-    }
+
     notifications: unknown[]
     bookmarks: unknown[]
     calendarEvents: unknown[]
@@ -95,20 +92,7 @@ async function fetchCompleteUserData(userId: string): Promise<ExportData> {
                 },
                 orderBy: { createdAt: 'desc' }
             },
-            referralsMade: {
-                include: {
-                    referee: {
-                        select: { id: true, name: true, email: true }
-                    }
-                }
-            },
-            referredBy: {
-                include: {
-                    referrer: {
-                        select: { id: true, name: true, email: true }
-                    }
-                }
-            },
+
             notifications: {
                 orderBy: { createdAt: 'desc' }
             },
@@ -175,14 +159,13 @@ async function fetchCompleteUserData(userId: string): Promise<ExportData> {
             name: sanitizedUser.name,
             bio: sanitizedUser.bio,
             role: sanitizedUser.role,
-            referralCode: sanitizedUser.referralCode,
+
             emailVerified: sanitizedUser.emailVerified,
-            isPublicProfile: sanitizedUser.isPublicProfile,
+
             createdAt: sanitizedUser.createdAt,
             updatedAt: sanitizedUser.updatedAt,
             university: sanitizedUser.university,
-            secondaryUniversity: sanitizedUser.secondaryUniversity,
-            socialStats: sanitizedUser.socialStats
+            secondaryUniversity: sanitizedUser.secondaryUniversity
         },
         wikiRevisions: sanitizedUser.revisions.map(rev => ({
             id: rev.id,
@@ -192,22 +175,7 @@ async function fetchCompleteUserData(userId: string): Promise<ExportData> {
             status: rev.status,
             createdAt: rev.createdAt
         })),
-        referrals: {
-            made: sanitizedUser.referralsMade.map(ref => ({
-                id: ref.id,
-                refereeId: ref.refereeId,
-                refereeName: ref.referee?.name,
-                refereeEmail: ref.referee?.email,
-                createdAt: ref.createdAt
-            })),
-            received: sanitizedUser.referredBy ? {
-                id: sanitizedUser.referredBy.id,
-                referrerId: sanitizedUser.referredBy.referrerId,
-                referrerName: sanitizedUser.referredBy.referrer?.name,
-                referrerEmail: sanitizedUser.referredBy.referrer?.email,
-                createdAt: sanitizedUser.referredBy.createdAt
-            } : null
-        },
+
         notifications: sanitizedUser.notifications.map(notif => ({
             id: notif.id,
             type: notif.type,
@@ -326,14 +294,7 @@ async function generateCSVExport(data: ExportData, exportId: string): Promise<st
         })
     }
 
-    // Referrals Made
-    if (data.referrals.made.length > 0) {
-        csvSections.push('\nREFERRALS_MADE')
-        csvSections.push('ID,Referee ID,Referee Name,Referee Email,Created At')
-        data.referrals.made.forEach((ref: any) => {
-            csvSections.push(`"${ref.id}","${ref.refereeId}","${ref.refereeName || ''}","${ref.refereeEmail}","${ref.createdAt}"`)
-        })
-    }
+
 
     // Data mapping info
     csvSections.push('\n\nDATA_CATEGORIES')

@@ -8,8 +8,6 @@ import { redirect } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { ChangePasswordForm } from '@/components/features/profile/ChangePasswordForm'
 import { EditProfileForm } from '@/components/features/profile/EditProfileForm'
-import { PublicProfileSettings } from '@/components/features/profile/PublicProfileSettings'
-import { getInstitutesForUser } from '@/actions/profile-settings.actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,18 +19,12 @@ export default async function SettingsPage() {
     }
 
     const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        include: {
-            publicPerson: true
-        }
+        where: { id: session.user.id }
     })
 
     if (!user) {
         redirect('/auth/signin')
     }
-
-    // Fetch institutes for public profile selection
-    const institutes = await getInstitutesForUser()
 
     return (
         <div className="container mx-auto py-10 max-w-3xl">
@@ -72,22 +64,6 @@ export default async function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Public Profile Card */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Public Profile</CardTitle>
-                        <CardDescription>
-                            Control your visibility. When enabled, you can be tagged in wiki articles and others can see your profile.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <PublicProfileSettings
-                            isPublic={user.isPublicProfile}
-                            publicProfile={user.publicPerson}
-                            institutes={institutes}
-                        />
-                    </CardContent>
-                </Card>
             </div>
         </div>
     )

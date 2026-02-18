@@ -47,44 +47,14 @@ function generateSecureToken(): string {
     return randomBytes(32).toString('hex')
 }
 
-/**
- * Generate unique referral code
- */
-async function generateUniqueReferralCode(): Promise<string> {
-    const maxAttempts = 10
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const randomPart = randomBytes(16).toString('hex').toUpperCase()
-        const code = randomPart.substring(0, 16)
-
-        const existing = await prisma.user.findUnique({
-            where: { referralCode: code },
-            select: { id: true }
-        })
-
-        if (!existing) {
-            return code
-        }
-    }
-
-    // Fallback with timestamp
-    return `USER${Date.now().toString(36).toUpperCase()}${randomBytes(4).toString('hex').toUpperCase()}`
-}
 
 /**
- * Determine user role based on referral code and email domain
+ * Determine user role based on email domain
  */
-async function determineUserRole(email: string, referralCode?: string): Promise<{
+async function determineUserRole(email: string): Promise<{
     role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF'
-    referrerId: string | null
 }> {
-    const STAFF_SECRET = process.env.STAFF_SECRET_CODE
-
-    // Check for staff secret code
-    if (STAFF_SECRET && referralCode === STAFF_SECRET) {
-        return { role: 'PENDING_STAFF', referrerId: null }
-    }
-
     // Check email domain for staff access
     const emailDomain = email.split('@')[1]?.toLowerCase()
     if (emailDomain) {
@@ -95,26 +65,11 @@ async function determineUserRole(email: string, referralCode?: string): Promise<
 
         if (staffDomain) {
             logger.info('User assigned STAFF role via domain match', { email, domain: emailDomain })
-            return { role: 'STAFF', referrerId: null }
+            return { role: 'STAFF' }
         }
     }
 
-    // If no referral code provided, allow signup without referrer
-    if (!referralCode || referralCode.trim() === '') {
-        return { role: 'STUDENT', referrerId: null }
-    }
-
-    // Validate referral code for regular signup
-    const referrer = await prisma.user.findUnique({
-        where: { referralCode },
-        select: { id: true }
-    })
-
-    if (!referrer) {
-        throw new ValidationError('Invalid referral code')
-    }
-
-    return { role: 'STUDENT', referrerId: referrer.id }
+    return { role: 'STUDENT' }
 }
 
 /**
@@ -180,15 +135,13 @@ async function determineUniversity(
 }
 
 /**
- * Create user with referral relationship
+ * Create user
  */
-async function createUserWithReferral(
+async function createUser(
     userData: SignUpInput,
     hashedPassword: string,
-    referralCode: string,
     role: 'STUDENT' | 'PENDING_STAFF' | 'STAFF',
-    universityId: string | null,
-    referrerId: string | null
+    universityId: string | null
 ): Promise<void> {
     const verificationToken = generateSecureToken()
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -200,16 +153,12 @@ async function createUserWithReferral(
                 name: userData.name,
                 password: hashedPassword,
                 role,
-                referralCode,
                 verificationToken,
                 verificationExpires,
-                universityId,
-                referredBy: referrerId ? { create: { referrerId } } : undefined
+                universityId
             },
             select: { id: true }
         })
-
-
     })
 
     // Send verification email asynchronously
@@ -220,7 +169,6 @@ async function createUserWithReferral(
     logger.info('User registered successfully', {
         email: userData.email,
         role,
-        referralCode,
         universityId
     })
 }
@@ -263,7 +211,7 @@ export async function signUp(
             email: formData.get('email'),
             password: formData.get('password'),
             name: formData.get('name'),
-            referralCode: formData.get('referralCode')
+
         }
 
         const validationResult = signUpSchema.safeParse(rawData)
@@ -273,7 +221,7 @@ export async function signUp(
             return { error: errors }
         }
 
-        const { email: validatedEmail, password, name, referralCode } = validationResult.data
+        const { email: validatedEmail, password, name } = validationResult.data
 
         // Check for existing user
         const existingUser = await prisma.user.findUnique({
@@ -285,8 +233,8 @@ export async function signUp(
             logger.warn('Signup attempt with existing email', { email: validatedEmail })
         }
 
-        // Determine role and referrer
-        const { role, referrerId } = await determineUserRole(validatedEmail, referralCode)
+        // Determine role
+        const { role } = await determineUserRole(validatedEmail)
 
         // Determine university
         const universityId = await determineUniversity(validatedEmail, formData)
@@ -294,15 +242,12 @@ export async function signUp(
         // Create user only if doesn't exist
         if (!existingUser) {
             const hashedPassword = await bcrypt.hash(password, 10)
-            const newReferralCode = await generateUniqueReferralCode()
 
-            await createUserWithReferral(
+            await createUser(
                 validationResult.data,
                 hashedPassword,
-                newReferralCode,
                 role,
-                universityId,
-                referrerId
+                universityId
             )
         }
 

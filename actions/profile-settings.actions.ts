@@ -7,7 +7,6 @@ import { authOptions } from '@/lib/auth/config'
 import bcrypt from 'bcryptjs'
 import {
     profileUpdateSchema,
-    publicProfileUpdateSchema,
     nameFieldSchema,
     bioFieldSchema
 } from '@/lib/validation/schemas'
@@ -359,231 +358,30 @@ export async function removeSecondaryUniversity() {
 /**
  * Toggle public profile visibility
  */
-export async function togglePublicProfile() {
+/**
+ * Update user's linking info (LinkedIn, Website)
+ */
+export async function updateProfileLinks(linkedinUrl: string, websiteUrl: string) {
     const userId = await getAuthenticatedUserId()
 
-    const userRecord = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            isPublicProfile: true,
-            publicPersonId: true
-        }
-    })
-
-    if (!userRecord) {
-        throw new NotFoundError('User')
+    // Basic validation
+    if (linkedinUrl && !linkedinUrl.includes('linkedin.com')) {
+        return { error: 'Invalid LinkedIn URL' }
     }
 
-    if (userRecord.isPublicProfile) {
-        // Make private - unlink person record
-        if (userRecord.publicPersonId) {
-            await prisma.person.update({
-                where: { id: userRecord.publicPersonId },
-                data: { linkedUser: { disconnect: true } }
-            })
-        }
-
+    try {
         await prisma.user.update({
             where: { id: userId },
             data: {
-                isPublicProfile: false,
-                publicPersonId: null
+                linkedinUrl: linkedinUrl || null,
+                websiteUrl: websiteUrl || null
             }
         })
-    } else {
-        // Make public - need a person record or create one
-        const userProfile = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true, name: true, bio: true }
-        })
-
-        if (!userProfile) {
-            throw new NotFoundError('User')
-        }
-
-        if (!userRecord.publicPersonId) {
-            const person = await prisma.person.create({
-                data: {
-                    name: userProfile.name || '',
-                    bio: userProfile.bio || ''
-                }
-            })
-
-            await prisma.user.update({
-                where: { id: userId },
-                data: {
-                    isPublicProfile: true,
-                    publicPersonId: person.id
-                }
-            })
-        } else {
-            await prisma.user.update({
-                where: { id: userId },
-                data: { isPublicProfile: true }
-            })
-        }
-    }
-
-    revalidatePath('/profile')
-
-    return { success: true }
-}
-
-/**
- * Update public profile settings
- */
-export async function updatePublicProfileSettings(formData: FormData) {
-    const userId = await getAuthenticatedUserId()
-
-    const userRecord = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, publicPersonId: true }
-    })
-
-    if (!userRecord || !userRecord.publicPersonId) {
-        throw new ValidationError('No public profile found')
-    }
-
-    // Extract and validate form data
-    const name = formData.get('name') as string
-    const role = formData.get('role') as string
-    const fieldOfStudy = formData.get('fieldOfStudy') as string
-    const bio = formData.get('bio') as string
-    const linkedin = formData.get('linkedin') as string
-    const twitter = formData.get('twitter') as string
-    const website = formData.get('website') as string
-
-    const validation = publicProfileUpdateSchema.safeParse({
-        name, role, fieldOfStudy, bio, linkedin, twitter, website
-    })
-
-    if (!validation.success) {
-        throw new ValidationError(validation.error.issues.map(i => i.message).join(', '))
-    }
-
-    await prisma.person.update({
-        where: { id: userRecord.publicPersonId },
-        data: validation.data
-    })
-
-    revalidatePath('/profile')
-
-    return { success: true }
-}
-
-/**
- * Get all approved institutes
- */
-export async function getInstitutesForUser() {
-    const institutes = await prisma.institute.findMany({
-        where: { approved: true },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' }
-    })
-    return institutes
-}
-
-/**
- * Get labs for a specific institute
- */
-export async function getLabsForInstitute(instituteId: string) {
-    if (!instituteId) return []
-
-    const labs = await prisma.lab.findMany({
-        where: { instituteId, approved: true },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' }
-    })
-    return labs
-}
-
-interface PublicProfileData {
-    role?: string | null
-    fieldOfStudy?: string | null
-    bio?: string | null
-    linkedin?: string | null
-    twitter?: string | null
-    website?: string | null
-    instituteId?: string | null
-    labId?: string | null
-}
-
-/**
- * Update public profile (visibility and data)
- */
-export async function updatePublicProfile(isPublic: boolean, data?: PublicProfileData) {
-    const userId = await getAuthenticatedUserId()
-
-    try {
-        if (!isPublic) {
-            // Disable public profile
-            await prisma.user.update({
-                where: { id: userId },
-                data: { isPublicProfile: false }
-            })
-            revalidatePath('/profile/settings')
-            return { success: true }
-        }
-
-        // Enable and update public profile
-        // 1. Ensure Person record exists
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true, name: true, bio: true, publicPersonId: true }
-        })
-
-        if (!user) throw new NotFoundError('User')
-
-        let personId = user.publicPersonId
-
-        if (!personId) {
-            // Create new person record
-            const person = await prisma.person.create({
-                data: {
-                    name: user.name || 'Anonymous',
-                    bio: user.bio || '',
-                    slug: generateSlug(user.name || 'anonymous') + '-' + Math.random().toString(36).substring(2, 6)
-                }
-            })
-            personId = person.id
-
-            await prisma.user.update({
-                where: { id: userId },
-                data: { publicPersonId: person.id }
-            })
-        }
-
-        // 2. Update Person record with provided data if any
-        if (data) {
-            // Validate stats? Relying on partial updates for now as per UI
-            await prisma.person.update({
-                where: { id: personId },
-                data: {
-                    role: data.role,
-                    fieldOfStudy: data.fieldOfStudy,
-                    bio: data.bio,
-                    linkedin: data.linkedin,
-                    twitter: data.twitter,
-                    website: data.website,
-                    instituteId: data.instituteId,
-                    labId: data.labId
-                }
-            })
-        }
-
-        // 3. Set isPublicProfile to true
-        await prisma.user.update({
-            where: { id: userId },
-            data: { isPublicProfile: true }
-        })
-
-        revalidatePath('/profile/settings')
+        revalidatePath('/profile')
         return { success: true }
-
     } catch (error) {
-        logger.error('Failed to update public profile', { userId, error })
-        return { error: 'Failed to update public profile' }
+        logger.error('Failed to update profile links', { userId, error })
+        return { error: 'Failed to update links' }
     }
 }
 

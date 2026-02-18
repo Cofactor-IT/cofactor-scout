@@ -128,7 +128,7 @@ export default async function LabPage({ params }: { params: Promise<{ slug: stri
                                     )}
                                     <div className="mt-4 flex gap-2">
                                         {person.linkedin && <a href={ensureAbsoluteUrl(person.linkedin)} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">LinkedIn</a>}
-                                        {person.twitter && <a href={ensureAbsoluteUrl(person.twitter)} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">Twitter</a>}
+
                                         {person.website && <a href={ensureAbsoluteUrl(person.website)} target="_blank" rel="noreferrer" className="text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">Website</a>}
                                     </div>
                                 </CardContent>

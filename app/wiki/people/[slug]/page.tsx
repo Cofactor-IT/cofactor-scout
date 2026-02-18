@@ -172,7 +172,7 @@ export default async function PersonPage({ params }: { params: Promise<{ slug: s
                     </Card>
 
                     {/* Social Links Card */}
-                    {(person.linkedin || person.twitter || person.website) && (
+                    {(person.linkedin || person.website) && (
                         <Card>
                             <CardHeader>
                                 <CardTitle>Links</CardTitle>
@@ -189,17 +189,7 @@ export default async function PersonPage({ params }: { params: Promise<{ slug: s
                                         LinkedIn
                                     </a>
                                 )}
-                                {person.twitter && (
-                                    <a
-                                        href={ensureAbsoluteUrl(person.twitter)}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted transition-colors"
-                                    >
-                                        <ExternalLink className="h-4 w-4" />
-                                        Twitter/X
-                                    </a>
-                                )}
+
                                 {person.website && (
                                     <a
                                         href={ensureAbsoluteUrl(person.website)}

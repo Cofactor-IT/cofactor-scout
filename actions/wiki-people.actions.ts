@@ -27,7 +27,7 @@ export async function addPerson(formData: FormData) {
     const rawFieldOfStudy = formData.get('fieldOfStudy') as string
     const rawBio = formData.get('bio') as string
     const rawLinkedin = formData.get('linkedin') as string
-    const rawTwitter = formData.get('twitter') as string
+
     const rawWebsite = formData.get('website') as string
 
     const instituteId = formData.get('instituteId') as string
@@ -121,11 +121,11 @@ export async function addPerson(formData: FormData) {
     // Validate URL fields using person schema (extract just URL fields)
     const urlFields = {
         linkedin: rawLinkedin || undefined,
-        twitter: rawTwitter || undefined,
+
         website: rawWebsite || undefined
     }
 
-    const urlSchema = personSchema.pick({ linkedin: true, twitter: true, website: true })
+    const urlSchema = personSchema.pick({ linkedin: true, website: true })
     const urlValidation = urlSchema.safeParse(urlFields)
     if (!urlValidation.success) {
         throw new Error("Invalid URL format")
@@ -163,7 +163,7 @@ export async function addPerson(formData: FormData) {
             fieldOfStudy: fieldValidation.sanitized,
             bio: bioValidation.sanitized,
             linkedin: urlValidation.data.linkedin,
-            twitter: urlValidation.data.twitter,
+
             website: urlValidation.data.website,
             instituteId: instituteId || null,
             labId: labId || null,
@@ -185,7 +185,7 @@ export async function updatePerson(formData: FormData) {
     const rawFieldOfStudy = formData.get('fieldOfStudy') as string
     const rawBio = formData.get('bio') as string
     const rawLinkedin = formData.get('linkedin') as string
-    const rawTwitter = formData.get('twitter') as string
+
     const rawWebsite = formData.get('website') as string
 
     // Validate ID format
@@ -235,7 +235,7 @@ export async function updatePerson(formData: FormData) {
         fieldOfStudy: rawFieldOfStudy || undefined,
         bio: rawBio || undefined,
         linkedin: rawLinkedin || undefined,
-        twitter: rawTwitter || undefined,
+
         website: rawWebsite || undefined
     }
 
@@ -281,7 +281,7 @@ export async function updatePerson(formData: FormData) {
             fieldOfStudy: validatedData.fieldOfStudy,
             bio: validatedData.bio,
             linkedin: validatedData.linkedin,
-            twitter: validatedData.twitter,
+
             website: validatedData.website
         }
     })
@@ -333,33 +333,10 @@ export async function deletePerson(id: string) {
         throw new Error("Unauthorized access")
     }
 
-    // Check if person is linked to a user (Public Profile)
-    const personWithUser = await prisma.person.findUnique({
-        where: { id },
-        include: { linkedUser: true }
+    // Hard delete
+    await prisma.person.delete({
+        where: { id }
     })
-
-    if (personWithUser?.linkedUser) {
-        // Soft delete: Make profile private and remove from directory (unlink from institute/lab)
-        await prisma.$transaction([
-            prisma.user.update({
-                where: { id: personWithUser.linkedUser.id },
-                data: { isPublicProfile: false }
-            }),
-            prisma.person.update({
-                where: { id },
-                data: {
-                    instituteId: null,
-                    labId: null
-                }
-            })
-        ])
-    } else {
-        // Hard delete for manual entries
-        await prisma.person.delete({
-            where: { id }
-        })
-    }
 
     return { success: true }
 }

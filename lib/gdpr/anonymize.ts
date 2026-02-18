@@ -37,9 +37,9 @@ export async function anonymizeUser(
     mode: DeletionMode = 'soft'
 ): Promise<AnonymizationResult> {
     const startTime = Date.now()
-    
+
     logger.info('Starting user anonymization', { userId, mode })
-    
+
     const context: AnonymizationContext = {
         userId,
         mode,
@@ -49,21 +49,21 @@ export async function anonymizeUser(
         deletedCounts: {},
         preservedContent: []
     }
-    
+
     try {
         if (mode === 'hard') {
             await performHardDelete(context)
         } else {
             await performSoftDelete(context)
         }
-        
+
         logger.info('User anonymization completed', {
             userId,
             mode,
             duration: Date.now() - startTime,
             deletedRecords: context.deletedCounts
         })
-        
+
         return {
             success: true,
             userId,
@@ -79,14 +79,14 @@ export async function anonymizeUser(
             mode,
             error: error instanceof Error ? error.message : String(error)
         })
-        
+
         throw error
     }
 }
 
 async function performSoftDelete(context: AnonymizationContext): Promise<void> {
     const { userId, anonymizedEmail, anonymizedName } = context
-    
+
     // 1. Anonymize the user record
     await prisma.user.update({
         where: { id: userId },
@@ -94,11 +94,10 @@ async function performSoftDelete(context: AnonymizationContext): Promise<void> {
             email: anonymizedEmail,
             name: anonymizedName,
             bio: null,
+
             password: null,
-            socialStats: Prisma.JsonNull,
-            referralCode: generateAnonymizedReferralCode(userId),
-            isPublicProfile: false,
-            publicPersonId: null,
+
+
             verificationToken: null,
             verificationExpires: null,
             failedLoginAttempts: 0,
@@ -106,7 +105,7 @@ async function performSoftDelete(context: AnonymizationContext): Promise<void> {
             emailVerified: null
         }
     })
-    
+
     // 2. Delete sensitive related records
     await deleteNotifications(context)
     await deletePasswordResetTokens(context)
@@ -119,14 +118,13 @@ async function performSoftDelete(context: AnonymizationContext): Promise<void> {
     await deleteSecondaryUniversityRequests(context)
     await deleteImportJobs(context)
     await deleteExportJobs(context)
-    
-    // 3. Handle referrals - anonymize instead of delete to maintain referral chain integrity
-    await anonymizeReferrals(context)
-    
+
+
+
     // 4. Preserve but anonymize wiki content
     await anonymizeWikiRevisions(context)
     await anonymizePageVersions(context)
-    
+
     context.preservedContent.push(
         'Wiki revisions (anonymized author)',
         'Page versions (anonymized author)'
@@ -135,17 +133,17 @@ async function performSoftDelete(context: AnonymizationContext): Promise<void> {
 
 async function performHardDelete(context: AnonymizationContext): Promise<void> {
     const { userId } = context
-    
+
     // Note: Hard delete may fail if there are referential integrity constraints
     // that aren't set to CASCADE. We handle this by catching errors and
     // potentially falling back to soft delete.
-    
+
     try {
         // Delete user - this will cascade to all relations with onDelete: Cascade
         await prisma.user.delete({
             where: { id: userId }
         })
-        
+
         context.deletedCounts['User'] = 1
     } catch (error) {
         // If hard delete fails (e.g., due to referential integrity),
@@ -154,9 +152,9 @@ async function performHardDelete(context: AnonymizationContext): Promise<void> {
             userId,
             error: error instanceof Error ? error.message : String(error)
         })
-        
+
         context.errors.push('Hard delete failed due to data dependencies. Soft delete was performed instead.')
-        
+
         // Fall back to soft delete
         await performSoftDelete(context)
     }
@@ -239,34 +237,7 @@ async function deleteExportJobs(context: AnonymizationContext): Promise<void> {
     context.deletedCounts['ExportJobs'] = result.count
 }
 
-async function anonymizeReferrals(context: AnonymizationContext): Promise<void> {
-    // Anonymize referrals made by this user
-    await prisma.referral.updateMany({
-        where: { referrerId: context.userId },
-        data: {
-            // We keep the referral record but the user reference becomes anonymous
-        }
-    })
-    
-    // Anonymize referral received by this user
-    await prisma.referral.updateMany({
-        where: { refereeId: context.userId },
-        data: {
-            // We keep the referral record but the user reference becomes anonymous
-        }
-    })
-    
-    // Delete referrals instead of anonymizing for privacy
-    const madeResult = await prisma.referral.deleteMany({
-        where: { referrerId: context.userId }
-    })
-    const receivedResult = await prisma.referral.deleteMany({
-        where: { refereeId: context.userId }
-    })
-    
-    context.deletedCounts['ReferralsMade'] = madeResult.count
-    context.deletedCounts['ReferralsReceived'] = receivedResult.count
-}
+
 
 async function anonymizeWikiRevisions(context: AnonymizationContext): Promise<void> {
     // Keep the revisions but change author to anonymous
@@ -278,7 +249,7 @@ async function anonymizeWikiRevisions(context: AnonymizationContext): Promise<vo
             // This maintains content integrity while protecting user identity
         }
     })
-    
+
     context.deletedCounts['WikiRevisionsAnonymized'] = result.count
 }
 
@@ -290,7 +261,7 @@ async function anonymizePageVersions(context: AnonymizationContext): Promise<voi
             // Content preserved, authorship anonymized via user record update
         }
     })
-    
+
     context.deletedCounts['PageVersionsAnonymized'] = result.count
 }
 
@@ -299,18 +270,11 @@ function generateAnonymizedEmail(userId: string): string {
         .update(`${userId}-${Date.now()}-${randomBytes(16).toString('hex')}`)
         .digest('hex')
         .substring(0, 16)
-    
+
     return `anon_${hash}@${ANONYMIZED_EMAIL_DOMAIN}`
 }
 
-function generateAnonymizedReferralCode(userId: string): string {
-    const hash = createHash('sha256')
-        .update(`${userId}-${Date.now()}`)
-        .digest('hex')
-        .substring(0, 8)
-    
-    return `ANON${hash.toUpperCase()}`
-}
+
 
 export function generateDeletionToken(): string {
     return randomBytes(32).toString('hex')
@@ -323,7 +287,7 @@ export function getDeletionWarnings(mode: DeletionMode): string[] {
         'Your contributions to the wiki will remain but be attributed to an anonymous user.',
         'Any pending requests or approvals will be cancelled.'
     ]
-    
+
     if (mode === 'hard') {
         return [
             ...commonWarnings,
@@ -333,7 +297,7 @@ export function getDeletionWarnings(mode: DeletionMode): string[] {
             'If there are dependencies on your data, a soft delete may be performed instead.'
         ]
     }
-    
+
     return [
         ...commonWarnings,
         'SOFT DELETE MODE: Your personal information will be anonymized.',
@@ -363,7 +327,7 @@ export async function validateUserCanBeDeleted(userId: string): Promise<{
             }
         }
     })
-    
+
     if (!user) {
         return {
             canDelete: false,
@@ -371,21 +335,21 @@ export async function validateUserCanBeDeleted(userId: string): Promise<{
             contentCount: { wikiRevisions: 0, pageVersions: 0, bookmarks: 0 }
         }
     }
-    
+
     const warnings: string[] = []
-    
+
     if (user.role === 'ADMIN') {
         warnings.push('You are an admin. Deleting your account may affect platform management.')
     }
-    
+
     if (user._count.revisions > 0) {
         warnings.push(`You have ${user._count.revisions} wiki revisions that will be anonymized.`)
     }
-    
+
     if (user._count.pageVersions > 0) {
         warnings.push(`You have ${user._count.pageVersions} page versions that will be anonymized.`)
     }
-    
+
     return {
         canDelete: true,
         warnings,

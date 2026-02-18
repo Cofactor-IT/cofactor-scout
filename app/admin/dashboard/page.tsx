@@ -11,7 +11,7 @@ import {
     approveLab, rejectLab,
     approveSecondaryUniversityRequest, rejectSecondaryUniversityRequest
 } from '@/actions/admin.actions'
-import { SocialStats } from '@/lib/types'
+
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -22,10 +22,8 @@ export default async function AdminDashboard() {
             pendingRevisions,
             pendingStaff,
             totalUsers,
-            totalReferrals,
             topPerformers,
             recentSignups,
-            allUsersSocials,
             topWikiPages,
             totalUniversities,
             pendingUniversities,
@@ -43,7 +41,6 @@ export default async function AdminDashboard() {
                 orderBy: { createdAt: 'desc' }
             }),
             prisma.user.count(),
-            prisma.referral.count(),
             prisma.user.findMany({
                 orderBy: { createdAt: 'desc' },
                 take: 10,
@@ -51,7 +48,6 @@ export default async function AdminDashboard() {
                     university: true,
                     _count: {
                         select: {
-                            referralsMade: true,
                             revisions: { where: { status: 'APPROVED' } }
                         }
                     }
@@ -61,9 +57,6 @@ export default async function AdminDashboard() {
                 orderBy: { createdAt: 'desc' },
                 take: 5,
                 include: { university: true }
-            }),
-            prisma.user.findMany({
-                select: { socialStats: true }
             }),
             prisma.uniPage.findMany({
                 orderBy: { revisions: { _count: 'desc' } },
@@ -107,13 +100,7 @@ export default async function AdminDashboard() {
         // Check imports in file... 'approveRevision' etc are imported.
         // Let's assume we do the calculation inline to be safe and avoid import mess in replace tool.
 
-        let totalSocialReach = 0
-        allUsersSocials.forEach(u => {
-            const stats = u.socialStats as SocialStats | null
-            if (stats) {
-                totalSocialReach += (stats.instagram || 0) + (stats.tiktok || 0) + (stats.linkedin || 0)
-            }
-        })
+
 
         return (
             <div className="container mx-auto py-10 space-y-8">
@@ -153,26 +140,7 @@ export default async function AdminDashboard() {
                             <p className="text-xs text-muted-foreground">Members in network</p>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Referrals</CardTitle>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{totalReferrals}</div>
-                            <p className="text-xs text-muted-foreground">Successful invites</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Social Reach</CardTitle>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-muted-foreground"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{(totalSocialReach / 1000000).toFixed(1)}M</div>
-                            <p className="text-xs text-muted-foreground">Aggregate followers</p>
-                        </CardContent>
-                    </Card>
+
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Universities</CardTitle>
@@ -266,7 +234,6 @@ export default async function AdminDashboard() {
                                         <TableHead className="w-[100px]">Rank</TableHead>
                                         <TableHead>User</TableHead>
                                         <TableHead>University</TableHead>
-                                        <TableHead>Referrals</TableHead>
                                         <TableHead className="text-right">Edits</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -288,7 +255,6 @@ export default async function AdminDashboard() {
                                                 )}
                                             </TableCell>
 
-                                            <TableCell>{user._count.referralsMade}</TableCell>
                                             <TableCell className="text-right">{user._count.revisions}</TableCell>
                                         </TableRow>
                                     ))}

@@ -15,17 +15,15 @@ model User {
   bio                 String?     // Personal description/bio
   password            String?
   role                Role        @default(STUDENT)
-  referralCode        String      @unique
-  socialStats         Json?
+  telegramHandle      String?
+  linkedinUrl         String?
+  websiteUrl          String?
   emailVerified       DateTime?
   verificationToken   String?     @unique
   verificationExpires DateTime?
   failedLoginAttempts Int         @default(0)
   lockedUntil         DateTime?
-  isPublicProfile     Boolean     @default(false)
   isTrusted           Boolean     @default(false)
-  publicPersonId      String?     @unique  // Link to Person record when public
-  publicPerson        Person?     @relation("UserPublicPerson", fields: [publicPersonId], references: [id])
   universityId          String?
   university            University? @relation("PrimaryUniversity", fields: [universityId], references: [id])
   secondaryUniversityId String?
@@ -34,8 +32,6 @@ model User {
   updatedAt             DateTime    @updatedAt
 
   revisions                    WikiRevision[]
-  referralsMade                Referral[]                   @relation("Referrer")
-  referredBy                   Referral?                    @relation("Referee")
   passwordResetTokens          PasswordReset[]
   secondaryUniversityRequests  SecondaryUniversityRequest[]
   notifications                Notification[]
@@ -57,7 +53,6 @@ model User {
   peopleProposed               Person[]             @relation("PersonAuthor")
 
   @@index([email])
-  @@index([referralCode])
   @@index([createdAt(sort: Desc)])
   @@index([role])
   @@index([universityId])
@@ -180,7 +175,6 @@ model Person {
   image        String?
   bio          String?
   linkedin     String?
-  twitter      String?
   website      String?
   email        String?
   searchVector String?
@@ -191,8 +185,6 @@ model Person {
 
   labId       String?
   lab         Lab?       @relation(fields: [labId], references: [id])
-
-  linkedUser  User?      @relation("UserPublicPerson")  // Link to user if this is their public profile
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -254,17 +246,7 @@ enum RevisionStatus {
 
 
 
-model Referral {
-  id         String   @id @default(cuid())
-  referrerId String
-  referrer   User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
-  refereeId  String   @unique
-  referee    User     @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
 
-  @@unique([referrerId, refereeId])
-  @@index([referrerId])
-}
 
 model PasswordReset {
   id        String   @id @default(cuid())
@@ -328,7 +310,7 @@ enum NotificationType {
     WIKI_PUBLISHED
     STAFF_APPROVED
     STAFF_REJECTED
-    REFERRAL_USED
+
     USER_FOLLOWED
     MENTION
     COMMENT

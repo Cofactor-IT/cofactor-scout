@@ -36,7 +36,7 @@ interface Person {
     fieldOfStudy: string | null
     bio: string | null
     linkedin: string | null
-    twitter: string | null
+
     website: string | null
 }
 
@@ -115,10 +115,7 @@ export function EditPersonModal({ person, contextId, contextType }: EditPersonMo
                                     <Label htmlFor="linkedin" className="text-right text-xs">LinkedIn</Label>
                                     <Input id="linkedin" name="linkedin" className="col-span-3 h-8" defaultValue={person.linkedin || ''} placeholder="Profile URL" />
                                 </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="twitter" className="text-right text-xs">Twitter/X</Label>
-                                    <Input id="twitter" name="twitter" className="col-span-3 h-8" defaultValue={person.twitter || ''} placeholder="Profile URL" />
-                                </div>
+
                                 <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="website" className="text-right text-xs">Website</Label>
                                     <Input id="website" name="website" className="col-span-3 h-8" defaultValue={person.website || ''} placeholder="Personal site or portfolio" />

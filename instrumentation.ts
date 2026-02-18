@@ -24,7 +24,7 @@ export async function register() {
                         password: hashedPassword,
                         name: 'System Admin',
                         role: 'ADMIN',
-                        referralCode: 'ADMIN_MASTER',
+
 
                     }
                 })

@@ -86,9 +86,4 @@ export function trackWikiEdit(userId: string, pageId: string) {
     })
 }
 
-export function trackReferral(referrerId: string, refereeId: string) {
-    track('referral_complete', {
-        referrer_id: referrerId,
-        referee_id: refereeId
-    })
-}
+

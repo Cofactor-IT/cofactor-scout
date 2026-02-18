@@ -81,15 +81,8 @@ export const signUpSchema = z.object({
             }
             return result.sanitized
         }),
-    referralCode: z.string()
-        .max(50, 'Referral code is too long')
-        .trim()
-        .refine(
-            (code) => !code || !containsSqlInjection(code),
-            'Invalid referral code'
-        )
-        .optional()
 })
+
 
 export const signInSchema = z.object({
     email: z.string()
@@ -399,13 +392,7 @@ export const safeJsonStringSchema = z.string()
 /**
  * Social stats JSON schema
  */
-export const socialStatsSchema = z.record(
-    z.enum(['instagram', 'tiktok', 'linkedin', 'twitter']),
-    z.number().int().min(0).max(1000000000)
-).refine(
-    (stats) => validateSocialStats(stats).isValid,
-    'Invalid social stats format'
-)
+
 
 /**
  * Custom field values schema
@@ -530,16 +517,7 @@ export const profileUpdateSchema = z.object({
 /**
  * Public profile update schema
  */
-export const publicProfileUpdateSchema = z.object({
-    role: roleFieldSchema,
-    fieldOfStudy: fieldOfStudySchema,
-    bio: bioFieldSchema,
-    linkedin: linkedinUrlSchema,
-    twitter: twitterUrlSchema,
-    website: websiteUrlSchema,
-    instituteId: z.string().cuid().nullable().optional(),
-    labId: z.string().cuid().nullable().optional()
-})
+
 
 // ============================================================================
 // PERSON SCHEMAS
@@ -567,11 +545,8 @@ export const personSchema = z.object({
 export type SignUpInput = z.infer<typeof signUpSchema>
 export type SignInInput = z.infer<typeof signInSchema>
 export type WikiSubmissionInput = z.infer<typeof wikiSubmissionSchema>
-export type SocialConnectInput = z.infer<typeof socialConnectSchema>
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>
-export type PublicProfileUpdateInput = z.infer<typeof publicProfileUpdateSchema>
 export type PersonInput = z.infer<typeof personSchema>
 export type SearchFiltersInput = z.infer<typeof searchFiltersSchema>
 export type FileUploadInput = z.infer<typeof fileUploadSchema>
-export type SocialStatsInput = z.infer<typeof socialStatsSchema>
 export type CustomFieldValueInput = z.infer<typeof customFieldValueSchema>
