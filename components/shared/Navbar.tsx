@@ -1,130 +1,115 @@
-'use client'
+"use client"
 
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { useSession, signOut } from 'next-auth/react'
-import { useState, useSyncExternalStore } from 'react'
-import { SearchBar } from '@/components/features/search/SearchBar'
-import { Menu, X } from 'lucide-react'
+import * as React from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils/formatting"
+import { Button } from "@/components/ui/button"
+import { Avatar } from "@/components/ui/avatar"
+import { ProfileDropdown } from "./ProfileDropdown"
 
-function useIsClient() {
-    return useSyncExternalStore(
-        () => () => { },
-        () => true,
-        () => false
-    )
+interface User {
+    fullName: string
+    role: "SCOUT" | "CONTRIBUTOR" | "ADMIN"
+    profilePictureUrl?: string | null
+    firstName: string
+    lastName: string
+    preferredName?: string | null
+    email?: string
 }
 
-export function Navbar() {
-    const { data: session, status } = useSession()
-    const mounted = useIsClient()
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+interface NavbarProps {
+    user?: User | null
+}
 
-    if (!mounted) {
-        return null
+export function Navbar({ user }: NavbarProps) {
+    const pathname = usePathname()
+    const [isProfileOpen, setIsProfileOpen] = React.useState(false)
+
+    // Helper to get initials
+    const getInitials = (u: User) => {
+        if (u.preferredName) {
+            return u.preferredName.substring(0, 2).toUpperCase()
+        }
+        const first = u.firstName.charAt(0)
+        const last = u.lastName.charAt(0) || ''
+        return (first + last).toUpperCase()
     }
 
-    const user = session?.user
-    const isAdmin = user?.role === 'ADMIN'
-
     return (
-        <nav className="border-b border-light-gray bg-white h-20">
-            <div className="container flex h-full items-center px-[120px]">
-                {/* Mobile Menu Toggle */}
-                <div className="md:hidden mr-2">
-                    <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-                        {isMobileMenuOpen ? <X /> : <Menu />}
-                    </Button>
-                </div>
+        <nav className="h-[80px] w-full px-[120px] bg-white border-b border-light-gray flex items-center justify-between sticky top-0 z-50">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-0">
+                <span className="font-heading font-bold text-[24px] text-navy">Cofactor</span>
+                <span className="font-heading font-bold text-[24px] text-teal">Scout</span>
+            </Link>
 
-                {/* Logo and Desktop Nav */}
-                <div className="mr-4 flex items-center">
-                    <Link href="/" className="mr-6 flex items-center space-x-2 font-bold font-sans text-xl text-navy">
-                        Cofactor <span className="text-teal">Scout</span>
+            {/* Authenticated Nav Links */}
+            {user && (
+                <div className="absolute left-[400px]">
+                    <Link
+                        href="/dashboard"
+                        className={cn(
+                            "font-heading font-medium text-[16px] transition-colors",
+                            pathname === '/dashboard' || pathname?.startsWith('/dashboard')
+                                ? "text-navy underline decoration-2 underline-offset-4 decoration-teal"
+                                : "text-navy hover:text-teal"
+                        )}
+                    >
+                        My Submissions
                     </Link>
-                    <nav className="hidden md:flex items-center space-x-6 text-base font-medium font-sans">
-                        <Link href="/search" className="transition-colors hover:text-teal text-navy">Search</Link>
-                    </nav>
                 </div>
-                <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-                    <nav className="flex items-center space-x-2">
-                        <SearchBar />
-                        {status === 'loading' ? (
-                            <div className="h-8 w-20 animate-pulse bg-light-gray rounded-pill" />
-                        ) : !user ? (
-                            <>
-                                <Link href="/auth/signin">
-                                    <Button variant="ghost" size="sm">Sign In</Button>
-                                </Link>
-                                <Link href="/auth/signup">
-                                    <Button size="sm">Sign Up</Button>
-                                </Link>
-                            </>
-                        ) : (
-                            <>
+            )}
 
-                                {isAdmin && (
-                                    <>
-                                        <Link href="/members">
-                                            <Button variant="ghost" size="sm">Members</Button>
-                                        </Link>
-                                        <Link href="/admin/dashboard">
-                                            <Button variant="ghost" size="sm">Admin</Button>
-                                        </Link>
-                                    </>
-                                )}
-                                <div className="flex items-center space-x-2 border-l border-light-gray pl-2 ml-2">
-                                    <Link href="/profile" className="text-sm font-medium font-sans text-navy hidden sm:inline hover:text-teal">
-                                        {user.name || user.email}
-                                    </Link>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => signOut({ callbackUrl: '/' })}
-                                    >
-                                        Sign Out
-                                    </Button>
-                                </div>
-                            </>
-                        )}
-                    </nav>
-                </div>
-            </div>
+            {/* Right Section */}
+            <div className="flex items-center">
+                {user ? (
+                    <div className="flex items-center gap-4 relative">
+                        {/* Name + Badge */}
+                        <div className="flex flex-col items-end">
+                            <span className="font-heading font-medium text-[14px] text-navy">
+                                {user.fullName}
+                            </span>
+                            <span className="font-heading font-normal text-[12px] text-cool-gray">
+                                {user.role === 'SCOUT' ? 'Verified Scout' :
+                                    user.role === 'ADMIN' ? 'Administrator' : 'Community Contributor'}
+                            </span>
+                        </div>
 
-
-            {/* Mobile Menu Overlay */}
-            {
-                isMobileMenuOpen && (
-                    <div className="md:hidden absolute top-20 left-0 w-full bg-white border-b border-light-gray shadow-md p-4 flex flex-col space-y-4 z-50 animate-in slide-in-from-top-2">
-                        <Link
-                            href="/search"
-                            className="text-base font-medium font-sans transition-colors hover:text-teal text-navy"
-                            onClick={() => setIsMobileMenuOpen(false)}
+                        {/* Avatar */}
+                        <div
+                            className="relative cursor-pointer"
+                            onClick={() => setIsProfileOpen(!isProfileOpen)}
                         >
-                            Search
-                        </Link>
-                        {isAdmin && (
-                            <>
-                                <Link
-                                    href="/members"
-                                    className="text-base font-medium font-sans transition-colors hover:text-teal text-navy"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                >
-                                    Members
-                                </Link>
-                                <Link
-                                    href="/admin/dashboard"
-                                    className="text-base font-medium font-sans transition-colors hover:text-teal text-navy"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                >
-                                    Admin Dashboard
-                                </Link>
-                            </>
-                        )}
+                            <Avatar
+                                src={user.profilePictureUrl}
+                                initials={getInitials(user)}
+                                size="md"
+                            />
+                        </div>
+
+                        {/* Dropdown */}
+                        <ProfileDropdown
+                            user={user}
+                            isOpen={isProfileOpen}
+                            onClose={() => setIsProfileOpen(false)}
+                        />
                     </div>
-                )
-            }
-        </nav >
+                ) : (
+                    <div className="flex items-center gap-4">
+                        <Link href="/auth/signup">
+                            <Button variant="secondary" className="w-[120px] h-[40px]">
+                                Sign Up
+                            </Button>
+                        </Link>
+                        <Link href="/auth/signin">
+                            <Button variant="primary" className="w-[120px] h-[40px]">
+                                Sign In
+                            </Button>
+                        </Link>
+                    </div>
+                )}
+            </div>
+        </nav>
     )
 }
-

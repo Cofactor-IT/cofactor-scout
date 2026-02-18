@@ -1,116 +1,66 @@
 import * as React from "react"
 import { cn } from "@/lib/utils/formatting"
 
-const Table = React.forwardRef<
-    HTMLTableElement,
-    React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-        <table
-            ref={ref}
-            className={cn("w-full caption-bottom text-sm", className)}
-            {...props}
-        />
-    </div>
-))
-Table.displayName = "Table"
+export interface Column<T> {
+    key: string
+    header: string
+    width?: string
+    render?: (item: T) => React.ReactNode
+}
 
-const TableHeader = React.forwardRef<
-    HTMLTableSectionElement,
-    React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn("bg-off-white [&_tr]:border-b-2 [&_tr]:border-light-gray", className)} {...props} />
-))
-TableHeader.displayName = "TableHeader"
+export interface TableProps<T> {
+    columns: Column<T>[]
+    data: T[]
+    onRowClick?: (item: T) => void
+    className?: string
+}
 
-const TableBody = React.forwardRef<
-    HTMLTableSectionElement,
-    React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-    <tbody
-        ref={ref}
-        className={cn("[&_tr:last-child]:border-0", className)}
-        {...props}
-    />
-))
-TableBody.displayName = "TableBody"
-
-const TableFooter = React.forwardRef<
-    HTMLTableSectionElement,
-    React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-    <tfoot
-        ref={ref}
-        className={cn(
-            "border-t-2 border-light-gray bg-off-white font-semibold [&>tr]:last:border-b-0",
+export function Table<T extends { id?: string | number }>({ columns, data, onRowClick, className }: TableProps<T>) {
+    return (
+        <div className={cn(
+            "w-full max-w-[1200px] bg-white border border-light-gray rounded-sharp shadow-sm overflow-hidden",
             className
-        )}
-        {...props}
-    />
-))
-TableFooter.displayName = "TableFooter"
-
-const TableRow = React.forwardRef<
-    HTMLTableRowElement,
-    React.HTMLAttributes<HTMLTableRowElement>
->(({ className, ...props }, ref) => (
-    <tr
-        ref={ref}
-        className={cn(
-            "border-b border-light-gray transition-colors hover:bg-off-white",
-            className
-        )}
-        {...props}
-    />
-))
-TableRow.displayName = "TableRow"
-
-const TableHead = React.forwardRef<
-    HTMLTableCellElement,
-    React.ThHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
-    <th
-        ref={ref}
-        className={cn(
-            "px-4 py-4 text-left align-middle font-medium font-sans text-navy text-xs uppercase tracking-[0.005em] [&:has([role=checkbox])]:pr-0",
-            className
-        )}
-        {...props}
-    />
-))
-TableHead.displayName = "TableHead"
-
-const TableCell = React.forwardRef<
-    HTMLTableCellElement,
-    React.TdHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
-    <td
-        ref={ref}
-        className={cn("px-4 py-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
-        {...props}
-    />
-))
-TableCell.displayName = "TableCell"
-
-const TableCaption = React.forwardRef<
-    HTMLTableCaptionElement,
-    React.HTMLAttributes<HTMLTableCaptionElement>
->(({ className, ...props }, ref) => (
-    <caption
-        ref={ref}
-        className={cn("mt-4 text-sm text-cool-gray", className)}
-        {...props}
-    />
-))
-TableCaption.displayName = "TableCaption"
-
-export {
-    Table,
-    TableHeader,
-    TableBody,
-    TableFooter,
-    TableHead,
-    TableRow,
-    TableCell,
-    TableCaption,
+        )}>
+            <table className="w-full border-collapse">
+                <thead>
+                    <tr className="h-[52px] bg-off-white border-b border-light-gray">
+                        {columns.map((col) => (
+                            <th
+                                key={col.key}
+                                className="px-6 text-left font-heading font-medium text-[12px] text-cool-gray uppercase tracking-wider"
+                                style={{ width: col.width }}
+                            >
+                                {col.header}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((item, idx) => (
+                        <tr
+                            key={item.id || idx}
+                            className={cn(
+                                "h-[72px] border-b border-light-gray last:border-b-0 transition-colors",
+                                onRowClick ? "cursor-pointer hover:bg-[#F9FAFB]" : "bg-white"
+                            )}
+                            onClick={() => onRowClick?.(item)}
+                        >
+                            {columns.map((col) => (
+                                <td key={col.key} className="px-6 font-body font-normal text-[14px] text-navy align-middle">
+                                    {col.render ? col.render(item) : (item as any)[col.key]}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                    {data.length === 0 && (
+                        <tr>
+                            <td colSpan={columns.length} className="h-[72px] px-6 text-center font-body text-cool-gray">
+                                No data available
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    )
 }
