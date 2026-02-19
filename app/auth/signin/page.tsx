@@ -1,216 +1,247 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import Link from "next/link"
-import { useSearchParams, useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Eye, EyeOff, AlertCircle, AlertTriangle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { AlertBanner } from "@/components/ui/alert-banner"
+import { signIn } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { Eye, EyeOff, Mail } from 'lucide-react'
+import { useState, FormEvent, Suspense } from 'react'
+import { AuthNavbar } from '@/components/ui/auth-navbar'
+import { resendVerificationEmail } from '@/actions/auth.actions'
 
-// Validation Schema
-const signinSchema = z.object({
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(1, "Password is required"),
-})
+function SignInForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState('')
+  const [resendCooldown, setResendCooldown] = useState(0)
 
-type SigninFormValues = z.infer<typeof signinSchema>
+  const message = searchParams.get('message')
 
-export default function SigninPage() {
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const message = searchParams.get("message")
-    const errorParam = searchParams.get("error")
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError('')
+    setResendSuccess('')
+    setLoading(true)
 
-    const [loginError, setLoginError] = React.useState<string | null>(null)
-    const [isLoading, setIsLoading] = React.useState(false)
-    const [showPassword, setShowPassword] = React.useState(false)
+    const formData = new FormData(e.currentTarget)
+    const emailValue = formData.get('email') as string
+    const password = formData.get('password') as string
+    setEmail(emailValue)
 
-    // Check if verification message is present
-    const isVerificationMessage = message === "verify-email" || message?.includes("verify your account")
+    try {
+      const result = await signIn('credentials', {
+        email: emailValue,
+        password,
+        redirect: false,
+      })
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        setValue
-    } = useForm<SigninFormValues>({
-        resolver: zodResolver(signinSchema),
-        defaultValues: {
-            email: "",
-            password: "",
+      if (result?.error) {
+        if (result.error === 'CredentialsSignin') {
+          setError('Invalid email or password. If you just signed up, please verify your email first.')
+        } else {
+          setError('Invalid email or password')
         }
-    })
-
-    const onSubmit = async (data: SigninFormValues) => {
-        setIsLoading(true)
-        setLoginError(null)
-
-        try {
-            const result = await signIn("credentials", {
-                redirect: false,
-                email: data.email,
-                password: data.password,
-            })
-
-            if (result?.error) {
-                // Clear password on failure
-                setValue("password", "")
-                
-                if (result.error === "CredentialsSignin") {
-                    setLoginError("Invalid email or password. Please try again.")
-                } else if (result.error.includes("locked")) {
-                     setLoginError("Too many failed login attempts. Your account has been locked for 15 minutes.")
-                } else {
-                    setLoginError("An error occurred during sign in. Please try again.")
-                }
-            } else {
-                router.push("/dashboard")
-            }
-        } catch (err) {
-             setLoginError("An unexpected error occurred. Please try again.")
-        } finally {
-            setIsLoading(false)
-        }
+        setLoading(false)
+      } else {
+        router.push('/dashboard')
+        router.refresh()
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.')
+      setLoading(false)
     }
+  }
 
-    return (
-        <div className="min-h-screen bg-[#FAFBFC] font-heading">
-            {/* Navbar Override/Placement */}
-            <div className="h-[80px] bg-white border-b border-light-gray px-[120px] flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-0">
-                     <span className="font-heading font-bold text-[24px] text-navy">Cofactor</span>
-                     <span className="font-heading font-bold text-[24px] text-teal">Scout</span>
+  async function handleResendVerification() {
+    if (!email || resendCooldown > 0) return
+    
+    setResendLoading(true)
+    setResendSuccess('')
+    setError('')
+    
+    const formData = new FormData()
+    formData.append('email', email)
+    
+    const result = await resendVerificationEmail(undefined, formData)
+    
+    if (result.success) {
+      setResendSuccess(result.success)
+      setResendCooldown(60)
+      const interval = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } else if (result.error) {
+      setError(result.error)
+    }
+    
+    setResendLoading(false)
+  }
+
+  return (
+    <div className="flex items-center justify-center min-h-[calc(100vh-158px)]">
+      <div className="w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-[48px]">
+        {/* Header */}
+        <h1 className="text-[36px] font-bold text-[#1B2A4A] mb-[12px]" style={{ fontFamily: 'var(--font-rethink-sans)', letterSpacing: '-0.18px' }}>
+          Welcome Back
+        </h1>
+        <p className="text-[16px] text-[#6B7280] mb-[32px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+          Sign in to continue to Cofactor Scout
+        </p>
+
+        {/* Success Message */}
+        {message && (
+          <div className="mb-[24px] p-[12px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[14px]">
+            {message}
+          </div>
+        )}
+
+        {/* Resend Success Message */}
+        {resendSuccess && (
+          <div className="mb-[24px] p-[12px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[14px]">
+            {resendSuccess}
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-[24px] p-[12px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px]">
+            <p className="text-[#EF4444] text-[14px] mb-[8px]">{error}</p>
+            {error.includes('verify your email') && email && (
+              <button
+                onClick={handleResendVerification}
+                disabled={resendLoading || resendCooldown > 0}
+                className="mt-[8px] flex items-center gap-[6px] text-[14px] text-[#0D7377] hover:text-[#0a5a5d] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: 'var(--font-rethink-sans)' }}
+              >
+                <Mail size={14} />
+                {resendLoading ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email'}
+              </button>
+            )}
+            {error === 'Invalid email or password' && (
+              <p className="text-[14px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                Don't have an account?{' '}
+                <Link href="/auth/signup" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
+                  Sign up here
                 </Link>
-                <Link href="/auth/signup">
-                    <Button variant="primary" className="w-[120px]">Sign Up</Button>
-                </Link>
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-[16px]">
+          {/* Email */}
+          <div>
+            <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@university.edu"
+              required
+              className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+              style={{ fontFamily: 'var(--font-merriweather)' }}
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="Enter your password"
+                required
+                className="w-full h-[48px] px-[16px] pr-[48px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                style={{ fontFamily: 'var(--font-merriweather)' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
+          </div>
 
-            <div className="flex justify-center pt-[160px] pb-20">
-                <main className="w-[560px] bg-white border border-[#E5E7EB] rounded-sharp shadow-card p-12">
-                    
-                    {/* Verification Banner */}
-                    {isVerificationMessage && (
-                        <div className="bg-[#DBEAFE] border-2 border-[#1E40AF] rounded-sharp p-4 flex gap-3 items-start mb-6">
-                             <AlertCircle className="text-[#1E40AF] shrink-0" size={20} />
-                             <div className="flex flex-col gap-1">
-                                <p className="text-[#1E40AF] text-[14px] font-medium leading-tight">
-                                    Please verify your email address before signing in. Check your inbox for a verification link.
-                                </p>
-                                {/* Placeholder for resend - strictly styled link for now */}
-                                <button className="text-teal text-[14px] font-medium underline decoration-teal hover:text-teal-dark text-left w-fit">
-                                    Resend verification email
-                                </button>
-                             </div>
-                        </div>
-                    )}
+          {/* Options Row */}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-[8px] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-[20px] h-[20px] border-2 border-[#E5E7EB] rounded-[4px] cursor-pointer"
+              />
+              <span className="text-[14px] text-[#1B2A4A]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                Remember me
+              </span>
+            </label>
+            <Link href="/auth/forgot-password" className="text-[14px] text-[#0D7377] underline hover:text-[#0a5a5d]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              Forgot password?
+            </Link>
+          </div>
 
-                    {/* Error Banner */}
-                    {(loginError || errorParam) && (
-                        <div className={`rounded-sharp p-4 flex gap-3 items-start mb-6 border-2 ${
-                            loginError?.includes("locked") 
-                            ? "bg-[#FEF3C7] border-[#F59E0B]" 
-                            : "bg-[#FEE2E2] border-[#EF4444]"
-                        }`}>
-                            {loginError?.includes("locked") ? (
-                                <AlertTriangle className="text-[#F59E0B] shrink-0" size={20} />
-                            ) : (
-                                <AlertCircle className="text-[#EF4444] shrink-0" size={20} />
-                            )}
-                            <p className={`${
-                                loginError?.includes("locked") ? "text-[#F59E0B]" : "text-[#EF4444]"
-                            } text-[14px] font-medium leading-tight`}>
-                                {loginError || "An error occurred during authentication."}
-                            </p>
-                        </div>
-                    )}
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-[56px] bg-[#0D7377] text-white rounded-full flex items-center justify-center text-[18px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ fontFamily: 'var(--font-rethink-sans)', boxShadow: '0px 2px 4px rgba(13,115,119,0.2)' }}
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
 
-                    <div className="mb-8 text-center">
-                        <h1 className="font-heading font-bold text-[36px] text-navy mb-2">
-                            Welcome Back
-                        </h1>
-                        <p className="font-body font-normal text-[16px] text-cool-gray">
-                           Sign in to access your dashboard
-                        </p>
-                    </div>
+export default function SignInPage() {
+  return (
+    <div className="min-h-screen bg-[#FAFBFC]">
+      <AuthNavbar />
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-                        {/* Email */}
-                        <Input
-                            label="Email Address"
-                            type="email"
-                            placeholder="you@university.edu"
-                            error={!!errors.email}
-                            helperText={errors.email?.message}
-                            {...register("email")}
-                        />
-
-                        {/* Password */}
-                        <div className="relative">
-                            <div className="flex justify-between items-baseline mb-1.5">
-                                <label className="font-heading font-medium text-[14px] text-navy">
-                                    Password
-                                </label>
-                                <Link 
-                                    href="/auth/forgot-password"
-                                    className="font-heading text-[12px] text-teal font-medium hover:underline decoration-teal"
-                                >
-                                    Forgot Password?
-                                </Link>
-                            </div>
-                            
-                            <div className="relative">
-                                <Input
-                                    type={showPassword ? "text" : "password"}
-                                    error={!!errors.password}
-                                    {...register("password")}
-                                    className="pr-10" // Space for eye icon
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-cool-gray hover:text-navy transition-colors transform"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                >
-                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-                             {errors.password && (
-                                <p className="font-heading text-[12px] mt-1 text-red">
-                                    {errors.password.message}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Submit Button */}
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            className="w-full mt-2"
-                            isLoading={isLoading}
-                        >
-                            {isLoading ? "Signing In..." : "Sign In"}
-                        </Button>
-
-                        {/* Register Link */}
-                        <div className="text-center mt-2">
-                             <p className="font-heading text-[14px] text-cool-gray">
-                                Don&apos;t have an account?{" "}
-                                <Link
-                                    href="/auth/signup"
-                                    className="text-teal font-medium hover:underline decoration-teal underline-offset-2"
-                                >
-                                    Sign Up
-                                </Link>
-                            </p>
-                        </div>
-                    </form>
-                </main>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[calc(100vh-158px)]">
+          <div className="w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-[48px]">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-[#E5E7EB] rounded w-3/4"></div>
+              <div className="h-4 bg-[#E5E7EB] rounded w-1/2"></div>
             </div>
+          </div>
         </div>
-    )
+      }>
+        <SignInForm />
+      </Suspense>
+
+      {/* Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10">
+        <p className="text-[16px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+          Don't have an account?{' '}
+          <Link href="/auth/signup" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
+            Sign up
+          </Link>
+        </p>
+      </footer>
+    </div>
+  )
 }

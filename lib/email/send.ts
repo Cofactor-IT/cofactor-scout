@@ -29,20 +29,24 @@ interface SendEmailOptions {
  * Handles SMTP configuration check and error handling
  */
 async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<void> {
+    logger.info('sendEmail called', { to: maskEmail(to), type: metadata?.type })
+    
     if (!isEmailConfigured()) {
-        logger.info('SMTP not configured, skipping email', { to: maskEmail(to), ...metadata })
+        logger.warn('SMTP not configured, skipping email', { to: maskEmail(to), ...metadata })
         return
     }
+    
+    logger.info('SMTP configured, proceeding with email', { to: maskEmail(to) })
 
-    // CHECK GLOBAL SETTINGS
-    const { getSystemSettings } = await import('@/lib/settings')
-    const settings = await getSystemSettings()
+    // CHECK GLOBAL SETTINGS - TEMPORARILY DISABLED
+    // const { getSystemSettings } = await import('@/lib/settings')
+    // const settings = await getSystemSettings()
 
-    // Check if email notifications are enabled globally
-    if (!settings.enableEmailNotifications) {
-        logger.info('Email notifications disabled by global settings', { to: maskEmail(to) })
-        return
-    }
+    // // Check if email notifications are enabled globally
+    // if (!settings.enableEmailNotifications) {
+    //     logger.info('Email notifications disabled by global settings', { to: maskEmail(to) })
+    //     return
+    // }
 
     const mailOptions = {
         from: getFromAddress(),
@@ -193,6 +197,36 @@ export async function sendArticleDeleteEmail(
         to: toEmail,
         template,
         metadata: { type: 'articleDelete', articleTitle }
+    })
+}
+
+/**
+ * Send scout application confirmation
+ */
+export async function sendScoutApplicationConfirmationEmail(
+    toEmail: string,
+    name: string
+): Promise<void> {
+    const template = emailTemplates.scoutApplicationConfirmation({ name })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'scoutApplicationConfirmation' }
+    })
+}
+
+/**
+ * Send scout approval notification
+ */
+export async function sendScoutApprovalEmail(
+    toEmail: string,
+    name: string
+): Promise<void> {
+    const template = emailTemplates.scoutApproval({ name })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'scoutApproval' }
     })
 }
 

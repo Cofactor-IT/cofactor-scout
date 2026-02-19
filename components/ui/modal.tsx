@@ -1,64 +1,54 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { cn } from "@/lib/utils/formatting"
-import { X } from "lucide-react"
+import { X } from 'lucide-react'
+import { useEffect } from 'react'
 
-export interface ModalProps {
-    isOpen: boolean
-    onClose: () => void
-    title: string
-    children: React.ReactNode
-    footer?: React.ReactNode
-    size?: 'sm' | 'md' | 'lg'
+interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: React.ReactNode
+  footer?: React.ReactNode
+  size?: 'sm' | 'md' | 'lg'
 }
 
 export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
-    if (!isOpen) return null
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
-    const sizeClasses = {
-        sm: 'w-[480px]',
-        md: 'w-[640px]',
-        lg: 'w-[800px]',
-    }[size]
+  if (!isOpen) return null
 
-    return (
-        <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-            onClick={onClose}
-        >
-            <div
-                className={cn(
-                    "bg-white rounded-sharp shadow-popup p-12 relative max-h-[90vh] overflow-y-auto flex flex-col",
-                    sizeClasses
-                )}
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Close Button */}
-                <button
-                    className="absolute top-6 right-6 p-2 text-cool-gray hover:text-navy transition-colors"
-                    onClick={onClose}
-                >
-                    <X size={20} />
-                </button>
+  const sizeClasses = {
+    sm: 'w-[27.78vw]',
+    md: 'w-[41.67vw]',
+    lg: 'w-[55.56vw]',
+  }
 
-                {/* Title */}
-                <h2 className="font-heading font-bold text-[24px] text-navy mb-4">
-                    {title}
-                </h2>
-
-                {/* Content */}
-                <div className={cn("flex-1", footer && "mb-8")}>
-                    {children}
-                </div>
-
-                {/* Footer */}
-                {footer && (
-                    <div className="flex justify-end gap-4 pt-6 border-t border-light-gray mt-auto">
-                        {footer}
-                    </div>
-                )}
-            </div>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className={`relative bg-white rounded-[4px] shadow-lg ${sizeClasses[size]}`}>
+        <div className="flex items-center justify-between px-[1.67vw] py-[1.11vw] border-b border-[#E5E7EB]">
+          <h3>{title}</h3>
+          <button onClick={onClose} className="text-[#6B7280] hover:text-[#1B2A4A]">
+            <X className="w-[1.67vw] h-[1.67vw]" />
+          </button>
         </div>
-    )
+        <div className="px-[1.67vw] py-[1.67vw]">{children}</div>
+        {footer && (
+          <div className="flex items-center justify-end gap-[0.83vw] px-[1.67vw] py-[1.11vw] border-t border-[#E5E7EB]">
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }

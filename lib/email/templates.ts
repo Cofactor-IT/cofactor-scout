@@ -20,20 +20,17 @@ interface WelcomeEmailData {
 }
 
 export const welcomeEmailTemplate: TemplateFn<WelcomeEmailData> = ({ name }) => ({
-    subject: 'Welcome to Cofactor Club',
-    text: `Hi ${name},\n\nWelcome to Cofactor Club! We're excited to have you join our student ambassador network.\n\nContribute to the Wiki!\n\nBest,\nThe Cofactor Team`,
+    subject: 'Welcome to Cofactor Scout',
+    text: `Hi ${name},\n\nWelcome to Cofactor Scout! We're excited to have you join our network.\n\nContribute research leads and help us connect groundbreaking research with venture capital.\n\nBest,\nThe Cofactor Team`,
     html: `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #6366f1;">Welcome to Cofactor Club! 🚀</h1>
-            <p>Hi ${name},</p>
-            <p>We're excited to have you join our student ambassador network.</p>
-            <p><strong>Next Steps:</strong></p>
-            <ul>
-
-                <li>Contribute to your university's wiki page.</li>
-
-            </ul>
-            <p>Best,<br>The Cofactor Team</p>
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Welcome to Cofactor Scout! 🚀</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">We're excited to have you join our network. Contribute research leads and help us connect groundbreaking research with venture capital.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
         </div>
     `
 })
@@ -50,18 +47,19 @@ export const verificationEmailTemplate: TemplateFn<VerificationEmailData> = ({ n
         subject: 'Verify your email address',
         text: `Hi ${name},\n\nPlease verify your email address by clicking the link below:\n\n${verifyUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create an account, please ignore this email.\n\nBest,\nThe Cofactor Team`,
         html: `
-            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #6366f1;">Verify your email address</h1>
-                <p>Hi ${name},</p>
-                <p>Please click the button below to verify your email address:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${verifyUrl}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">Verify Email</a>
+            <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+                <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                    <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                    <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Verify your email address</h1>
+                    <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
+                    <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Please click the button below to verify your email address:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${verifyUrl}" style="background-color: #0D7377; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">Verify Email</a>
+                    </div>
+                    <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">Or copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; color: #0D7377; font-size: 14px; margin-bottom: 24px;">${verifyUrl}</p>
+                    <p style="color: #6B7280; font-size: 14px; line-height: 1.6;">This link will expire in 24 hours. If you didn't create an account, please ignore this email.</p>
                 </div>
-                <p>Or copy and paste this link into your browser:</p>
-                <p style="word-break: break-all; color: #6366f1;">${verifyUrl}</p>
-                <p style="color: #666; font-size: 14px;">This link will expire in 24 hours.</p>
-                <p style="color: #666; font-size: 14px;">If you didn't create an account, please ignore this email.</p>
-                <p>Best,<br>The Cofactor Team</p>
             </div>
         `
     }
@@ -72,24 +70,24 @@ interface PasswordResetEmailData {
 }
 
 export const passwordResetEmailTemplate: TemplateFn<PasswordResetEmailData> = ({ resetCode }) => {
-    const resetUrl = `${getAppUrl()}/auth/reset-password`
+    const resetUrl = `${getAppUrl()}/auth/reset-password?token=${resetCode}`
 
     return {
         subject: 'Reset your password',
-        text: `Hi,\n\nYou requested to reset your password. Use the code below to set a new password:\n\nReset Code: ${resetCode}\n\nGo to: ${resetUrl}\n\nThis code will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nBest,\nThe Cofactor Team`,
+        text: `Hi,\n\nYou requested to reset your password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nBest,\nThe Cofactor Team`,
         html: `
-            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #6366f1;">Reset your password</h1>
-                <p>You requested to reset your password. Use the code below to set a new password:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; display: inline-block;">
-                        <span style="font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #6366f1;">${resetCode}</span>
+            <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+                <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                    <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                    <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Reset your password</h1>
+                    <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">You requested to reset your password. Click the button below to set a new password:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetUrl}" style="background-color: #0D7377; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">Reset Password</a>
                     </div>
+                    <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">Or copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; color: #0D7377; font-size: 14px; margin-bottom: 24px;">${resetUrl}</p>
+                    <p style="color: #6B7280; font-size: 14px; line-height: 1.6;">This link will expire in 1 hour. If you didn't request this, please ignore this email.</p>
                 </div>
-                <p>Go to <a href="${resetUrl}" style="color: #6366f1;">this page</a> and enter the code.</p>
-                <p style="color: #666; font-size: 14px;">This code will expire in 1 hour.</p>
-                <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
-                <p>Best,<br>The Cofactor Team</p>
             </div>
         `
     }
@@ -216,6 +214,52 @@ export const articleDeleteNotificationTemplate: TemplateFn<ArticleDeleteEmailDat
     `
 })
 
+interface ScoutApplicationConfirmationData {
+    name: string
+}
+
+export const scoutApplicationConfirmationTemplate: TemplateFn<ScoutApplicationConfirmationData> = ({ name }) => ({
+    subject: 'Scout Application Received',
+    text: `Hi ${name},\n\nThank you for applying to become a Cofactor Scout!\n\nWe've received your application and our team will review it shortly. We'll get back to you within 3-5 business days.\n\nIn the meantime, feel free to continue submitting research leads as a contributor.\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Application Received! 🎯</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Thank you for applying to become a <strong>Cofactor Scout</strong>!</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">We've received your application and our team will review it shortly. We'll get back to you within <strong>3-5 business days</strong>.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">In the meantime, feel free to continue submitting research leads as a contributor.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
+        </div>
+    `
+})
+
+interface ScoutApprovalData {
+    name: string
+}
+
+export const scoutApprovalTemplate: TemplateFn<ScoutApprovalData> = ({ name }) => ({
+    subject: 'Welcome to the Scout Network!',
+    text: `Hi ${name},\n\nCongratulations! Your application to become a Cofactor Scout has been approved.\n\nYou now have access to scout features and can start earning rewards for quality research leads.\n\nSign in to your dashboard to get started: ${getAppUrl()}/dashboard\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                <h1 style="color: #2D7D46; font-size: 28px; margin-bottom: 16px;">Welcome to the Scout Network! 🚀</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;"><strong>Congratulations!</strong> Your application to become a Cofactor Scout has been approved.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">You now have access to scout features and can start earning rewards for quality research leads.</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${getAppUrl()}/dashboard" style="background-color: #0D7377; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">Go to Dashboard</a>
+                </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
+        </div>
+    `
+})
+
 // Template registry for type-safe template access
 export const emailTemplates = {
     welcome: welcomeEmailTemplate,
@@ -225,7 +269,9 @@ export const emailTemplates = {
     adminAction: adminActionRequiredTemplate,
     mention: mentionNotificationTemplate,
     articleUpdate: articleUpdateNotificationTemplate,
-    articleDelete: articleDeleteNotificationTemplate
+    articleDelete: articleDeleteNotificationTemplate,
+    scoutApplicationConfirmation: scoutApplicationConfirmationTemplate,
+    scoutApproval: scoutApprovalTemplate
 } as const
 
 

@@ -4,41 +4,43 @@ import { prisma } from '@/lib/database/prisma'
 import { redirect } from 'next/navigation'
 import bcrypt from 'bcryptjs'
 import { signUpSchema, type SignUpInput } from '@/lib/validation/schemas'
-import { RateLimits } from '@/lib/security/rate-limit'
+// import { RateLimits } from '@/lib/security/rate-limit'
 import { logger } from '@/lib/logger'
 import { randomBytes } from 'crypto'
-import { RateLimitError, ValidationError } from '@/lib/errors'
+// import { RateLimitError, ValidationError } from '@/lib/errors'
+import { ValidationError } from '@/lib/errors'
 
 // Account enumeration prevention delay
 const ACCOUNT_ENUMERATION_DELAY = 1000
 
+// RATE LIMITING - DISABLED FOR NOW
 // Simple in-memory rate limiting stores
-const rateLimitStores = {
-    signup: new Map<string, { count: number; resetTime: number }>(),
-    passwordReset: new Map<string, { count: number; resetTime: number }>(),
-    resetVerify: new Map<string, { count: number; resetTime: number }>(),
-    resendVerification: new Map<string, { count: number; resetTime: number }>()
-}
+// const rateLimitStores = {
+//     signup: new Map<string, { count: number; resetTime: number }>(),
+//     passwordReset: new Map<string, { count: number; resetTime: number }>(),
+//     resetVerify: new Map<string, { count: number; resetTime: number }>(),
+//     resendVerification: new Map<string, { count: number; resetTime: number }>()
+// }
 
-/**
- * Rate limiting check with cleanup
- */
-function checkRateLimit(
-    store: Map<string, { count: number; resetTime: number }>,
-    identifier: string,
-    config: { limit: number; window: number }
-): boolean {
-    const now = Date.now()
-    const attempt = store.get(identifier)
+// /**
+//  * Rate limiting check with cleanup
+//  */
+// function checkRateLimit(
+//     store: Map<string, { count: number; resetTime: number }>,
+//     identifier: string,
+//     config: { limit: number; window: number }
+// ): boolean {
+//     const now = Date.now()
+//     const attempt = store.get(identifier)
 
-    if (!attempt || now > attempt.resetTime) {
-        store.set(identifier, { count: 1, resetTime: now + config.window })
-        return true
-    }
+//     if (!attempt || now > attempt.resetTime) {
+//         store.set(identifier, { count: 1, resetTime: now + config.window })
+//         return true
+//     }
 
-    attempt.count++
-    return attempt.count <= config.limit
-}
+//     attempt.count++
+//     return attempt.count <= config.limit
+// }
 
 /**
  * Generate secure random token
@@ -112,10 +114,15 @@ async function createUser(
         select: { id: true }
     })
 
-    // Send verification email asynchronously
+    // Send verification email synchronously
     const { sendVerificationEmail } = await import('@/lib/email/send')
-    sendVerificationEmail(userData.email, userData.name, verificationToken)
-        .catch(err => logger.error('Failed to send verification email', { email: userData.email, error: err }))
+    logger.info('Attempting to send verification email', { email: userData.email })
+    try {
+        await sendVerificationEmail(userData.email, userData.name, verificationToken)
+        logger.info('Verification email sent successfully', { email: userData.email })
+    } catch (err) {
+        logger.error('Failed to send verification email', { email: userData.email, error: err })
+    }
 
     logger.info('User registered successfully', {
         email: userData.email,
@@ -151,11 +158,11 @@ export async function signUp(
             return { error: 'Email is required' }
         }
 
-        // Rate limiting
-        if (!checkRateLimit(rateLimitStores.signup, email, RateLimits.SIGNUP)) {
-            logger.warn('Rate limit exceeded for signup', { email })
-            throw new RateLimitError()
-        }
+        // RATE LIMITING - DISABLED FOR NOW
+        // if (!checkRateLimit(rateLimitStores.signup, email, RateLimits.SIGNUP)) {
+        //     logger.warn('Rate limit exceeded for signup', { email })
+        //     throw new RateLimitError()
+        // }
 
         // Validate form data
         const rawData = {
@@ -209,14 +216,15 @@ export async function signUp(
             return { success: 'If an account exists with this email, a verification link has been sent.' }
         }
 
-        redirect('/auth/signin?message=Please check your email to verify your account')
+        return { success: 'Account created! Please check your email to verify your account before signing in.' }
 
     } catch (error) {
         await enforceTimingDelay(startTime)
 
-        if (error instanceof RateLimitError) {
-            return { error: 'Too many signup attempts. Please try again later.' }
-        }
+        // RATE LIMITING - DISABLED FOR NOW
+        // if (error instanceof RateLimitError) {
+        //     return { error: 'Too many signup attempts. Please try again later.' }
+        // }
 
         if (error instanceof ValidationError) {
             return { error: error.message }
@@ -241,11 +249,11 @@ export async function requestPasswordReset(
         return { error: 'Email is required' }
     }
 
-    // Rate limiting
-    if (!checkRateLimit(rateLimitStores.passwordReset, email, RateLimits.PASSWORD_RESET)) {
-        logger.warn('Rate limit exceeded for password reset', { email })
-        return { error: 'Too many password reset attempts. Please try again later.' }
-    }
+    // RATE LIMITING - DISABLED FOR NOW
+    // if (!checkRateLimit(rateLimitStores.passwordReset, email, RateLimits.PASSWORD_RESET)) {
+    //     logger.warn('Rate limit exceeded for password reset', { email })
+    //     return { error: 'Too many password reset attempts. Please try again later.' }
+    // }
 
     try {
         const user = await prisma.user.findUnique({
@@ -263,9 +271,12 @@ export async function requestPasswordReset(
             })
 
             const { sendPasswordResetEmail } = await import('@/lib/email/send')
-            sendPasswordResetEmail(user.email, resetToken).catch(err =>
+            try {
+                await sendPasswordResetEmail(user.email, resetToken)
+                logger.info('Password reset email sent', { email: user.email })
+            } catch (err) {
                 logger.error('Failed to send password reset email', { email: user.email, error: err })
-            )
+            }
 
             logger.info('Password reset requested', { email: user.email })
         }
@@ -295,11 +306,11 @@ export async function resetPassword(
         return { error: 'Invalid request' }
     }
 
-    // Rate limiting
-    if (!checkRateLimit(rateLimitStores.resetVerify, token, { limit: 5, window: 15 * 60 * 1000 })) {
-        logger.warn('Rate limit exceeded for password reset verification', { token: token.substring(0, 4) + '...' })
-        return { error: 'Too many attempts. Please request a new reset code.' }
-    }
+    // RATE LIMITING - DISABLED FOR NOW
+    // if (!checkRateLimit(rateLimitStores.resetVerify, token, { limit: 5, window: 15 * 60 * 1000 })) {
+    //     logger.warn('Rate limit exceeded for password reset verification', { token: token.substring(0, 4) + '...' })
+    //     return { error: 'Too many attempts. Please request a new reset code.' }
+    // }
 
     // Validate password
     const passwordValidation = validatePasswordComplexity(password)
@@ -377,11 +388,11 @@ export async function resendVerificationEmail(
         return { error: 'Email is required' }
     }
 
-    // Rate limiting
-    if (!checkRateLimit(rateLimitStores.resendVerification, email, RateLimits.SIGNUP)) {
-        logger.warn('Rate limit exceeded for verification resend', { email })
-        return { error: 'Too many attempts. Please try again later.' }
-    }
+    // RATE LIMITING - DISABLED FOR NOW
+    // if (!checkRateLimit(rateLimitStores.resendVerification, email, RateLimits.SIGNUP)) {
+    //     logger.warn('Rate limit exceeded for verification resend', { email })
+    //     return { error: 'Too many attempts. Please try again later.' }
+    // }
 
     try {
         const user = await prisma.user.findUnique({
@@ -399,9 +410,12 @@ export async function resendVerificationEmail(
             })
 
             const { sendVerificationEmail } = await import('@/lib/email/send')
-            sendVerificationEmail(user.email, user.fullName || 'User', verificationToken).catch(err =>
+            try {
+                await sendVerificationEmail(user.email, user.fullName || 'User', verificationToken)
+                logger.info('Verification email resent successfully', { email: user.email })
+            } catch (err) {
                 logger.error('Failed to send verification email', { email: user.email, error: err })
-            )
+            }
 
             logger.info('Verification email resent', { email: user.email })
         }

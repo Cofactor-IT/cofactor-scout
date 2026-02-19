@@ -1,111 +1,202 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState, FormEvent, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useActionState, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Eye, EyeOff, Check, X } from 'lucide-react'
+import { AuthNavbar } from '@/components/ui/auth-navbar'
 import { resetPassword } from '@/actions/auth.actions'
 
-const initialState = { error: '', success: '' } as { error?: string; success?: string }
+function ResetPasswordForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token')
+
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+
+  const requirements = [
+    { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
+    { label: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
+    { label: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
+    { label: 'One number', test: (p: string) => /[0-9]/.test(p) },
+    { label: 'One special character', test: (p: string) => /[^A-Za-z0-9]/.test(p) }
+  ]
+
+  const passwordsMatch = password && confirmPassword && password === confirmPassword
+
+  useEffect(() => {
+    if (!token) {
+      router.push('/auth/forgot-password')
+    }
+  }, [token, router])
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError('')
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    setLoading(true)
+
+    const formData = new FormData()
+    formData.append('token', token || '')
+    formData.append('password', password)
+
+    const result = await resetPassword(undefined, formData)
+
+    if (result.success) {
+      router.push('/auth/signin?message=' + encodeURIComponent('Password reset successful! You can now sign in.'))
+    } else if (result.error) {
+      setError(result.error)
+      setLoading(false)
+    }
+  }
+
+  if (!token) return null
+
+  return (
+    <div className="flex items-center justify-center min-h-[calc(100vh-158px)]">
+      <div className="w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-[48px]">
+        <h1 className="text-[36px] font-bold text-[#1B2A4A] mb-[12px]" style={{ fontFamily: 'var(--font-rethink-sans)', letterSpacing: '-0.18px' }}>
+          Set New Password
+        </h1>
+        <p className="text-[16px] text-[#6B7280] mb-[32px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+          Enter your new password below
+        </p>
+
+        {error && (
+          <div className="mb-[24px] p-[12px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px] text-[#EF4444] text-[14px]">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-[16px]">
+          <div>
+            <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              New Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter new password"
+                required
+                className="w-full h-[48px] px-[16px] pr-[48px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                style={{ fontFamily: 'var(--font-merriweather)' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            {password && (
+              <div className="mt-[12px] space-y-[6px]">
+                {requirements.map((req, i) => (
+                  <div key={i} className="flex items-center gap-[8px] text-[14px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                    {req.test(password) ? (
+                      <Check size={16} className="text-[#2D7D46]" />
+                    ) : (
+                      <X size={16} className="text-[#EF4444]" />
+                    )}
+                    <span className={req.test(password) ? 'text-[#2D7D46]' : 'text-[#6B7280]'}>
+                      {req.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                required
+                className="w-full h-[48px] px-[16px] pr-[48px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                style={{ fontFamily: 'var(--font-merriweather)' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            {confirmPassword && (
+              <div className="mt-[8px] flex items-center gap-[8px] text-[14px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                {passwordsMatch ? (
+                  <>
+                    <Check size={16} className="text-[#2D7D46]" />
+                    <span className="text-[#2D7D46]">Passwords match</span>
+                  </>
+                ) : (
+                  <>
+                    <X size={16} className="text-[#EF4444]" />
+                    <span className="text-[#EF4444]">Passwords do not match</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-[56px] bg-[#0D7377] text-white rounded-full flex items-center justify-center text-[18px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ fontFamily: 'var(--font-rethink-sans)', boxShadow: '0px 2px 4px rgba(13,115,119,0.2)' }}
+          >
+            {loading ? 'Resetting...' : 'Reset Password'}
+          </button>
+        </form>
+
+        <div className="mt-[24px] text-center">
+          <Link href="/auth/signin" className="text-[14px] text-[#0D7377] underline hover:text-[#0a5a5d]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+            Back to Sign In
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function ResetPasswordPage() {
-    const [state, formAction, isPending] = useActionState(resetPassword, initialState)
-    const [isSuccess, setIsSuccess] = useState(false)
-    const [code, setCode] = useState('')
+  return (
+    <div className="min-h-screen bg-[#FAFBFC]">
+      <AuthNavbar />
 
-    // Check if success state changed
-    if (state?.success && !isSuccess) {
-        setIsSuccess(true)
-    }
-
-    if (isSuccess) {
-        return (
-            <div className="container mx-auto flex items-center justify-center min-h-screen py-10">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <CardTitle className="text-2xl text-green-600">Password Reset Successful</CardTitle>
-                        <CardDescription>
-                            Your password has been reset. You can now sign in with your new password.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Link href="/auth/signin">
-                            <Button className="w-full">Go to Sign In</Button>
-                        </Link>
-                    </CardContent>
-                </Card>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[calc(100vh-158px)]">
+          <div className="w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-[48px]">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-[#E5E7EB] rounded w-3/4"></div>
+              <div className="h-4 bg-[#E5E7EB] rounded w-1/2"></div>
             </div>
-        )
-    }
-
-    return (
-        <div className="container mx-auto flex items-center justify-center min-h-screen py-10">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Reset Password</CardTitle>
-                    <CardDescription>
-                        Enter the 6-digit code from your email and your new password.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form action={formAction} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="code">Reset Code</Label>
-                            <Input
-                                id="code"
-                                name="token"
-                                type="text"
-                                placeholder="123456"
-                                required
-                                maxLength={6}
-                                pattern="\d{6}"
-                                value={code}
-                                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                className="text-center text-2xl tracking-widest font-mono"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Enter the 6-digit code sent to your email
-                            </p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="password">New Password</Label>
-                            <Input
-                                id="password"
-                                name="password"
-                                type="password"
-                                placeholder="Enter new password"
-                                required
-                                minLength={8}
-                            />
-                        </div>
-
-                        {state?.error && (
-                            <p className="text-sm text-destructive">{state.error}</p>
-                        )}
-
-                        {state?.success && (
-                            <p className="text-sm text-green-600">{state.success}</p>
-                        )}
-
-                        <Button type="submit" className="w-full" disabled={isPending}>
-                            {isPending ? 'Resetting...' : 'Reset Password'}
-                        </Button>
-
-                        <div className="text-center text-sm">
-                            <Link href="/auth/forgot-password" className="underline">
-                                Request a new code
-                            </Link>
-                            {' · '}
-                            <Link href="/auth/signin" className="underline">
-                                Back to Sign In
-                            </Link>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+          </div>
         </div>
-    )
+      }>
+        <ResetPasswordForm />
+      </Suspense>
+    </div>
+  )
 }

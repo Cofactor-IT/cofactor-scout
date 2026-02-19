@@ -59,7 +59,7 @@ export async function withTransaction<T>(
  * Execute transaction with callback for more complex operations
  */
 export async function withTransactionCallback<T>(
-    callback: (tx: Prisma.TransactionClient) => Promise<T>,
+    callback: (tx: any) => Promise<T>,
     errorMessage: string = 'Transaction failed'
 ): Promise<T> {
     try {

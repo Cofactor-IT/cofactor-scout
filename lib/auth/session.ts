@@ -11,16 +11,13 @@ export async function getCurrentUser() {
     return session?.user
 }
 
-/**
- * Require authentication - redirects to signin if not authenticated
- */
 export async function requireAuth() {
-    const session = await getServerSession(authOptions)
-    if (!session || !session.user) {
-        const { redirect } = await import('next/navigation')
-        redirect('/auth/signin')
-    }
-    return session!.user
+  const session = await getServerSession(authOptions)
+  if (!session?.user) {
+    const { redirect } = await import('next/navigation')
+    redirect('/auth/signin')
+  }
+  return session!.user
 }
 
 /**

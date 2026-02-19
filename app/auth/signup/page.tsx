@@ -1,197 +1,228 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import Link from "next/link"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Eye, EyeOff, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { signUp } from "@/actions/auth.actions"
-import { Navbar } from "@/components/shared/Navbar" // Assuming Navbar is shared/exportable
+import { useActionState } from 'react'
+import { signUp } from '@/actions/auth.actions'
+import Link from 'next/link'
+import { Eye, EyeOff, Plus, Check, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { AuthNavbar } from '@/components/ui/auth-navbar'
+import { useRouter } from 'next/navigation'
 
-// Validation Schema
-const signupSchema = z.object({
-    name: z.string().min(2, "Full name is required").refine((val) => val.trim().includes(' '), {
-        message: "Please enter your first and last name"
-    }),
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string()
-        .min(8, "Password must be at least 8 characters")
-        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Password must contain at least one number")
-        .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-    confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords must match",
-    path: ["confirmPassword"],
-})
+export default function SignUpPage() {
+  const router = useRouter()
+  const [state, formAction] = useActionState(signUp, undefined)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
-type SignupFormValues = z.infer<typeof signupSchema>
-
-export default function SignupPage() {
-    const [serverError, setServerError] = React.useState<string | null>(null)
-    const [isLoading, setIsLoading] = React.useState(false)
-    const [showPassword, setShowPassword] = React.useState(false)
-    const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
-
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        setError
-    } = useForm<SignupFormValues>({
-        resolver: zodResolver(signupSchema),
-        defaultValues: {
-            name: "",
-            email: "",
-            password: "",
-            confirmPassword: ""
-        }
-    })
-
-    const onSubmit = async (data: SignupFormValues) => {
-        setIsLoading(true)
-        setServerError(null)
-
-        const formData = new FormData()
-        formData.append("name", data.name)
-        formData.append("email", data.email)
-        formData.append("password", data.password)
-
-        try {
-            // Call server action
-            const result = await signUp(undefined, formData)
-
-            if (result?.error) {
-                setServerError(result.error)
-                // Optional: Map specific server errors to fields if possible
-            } 
-            // If success, the action handles redirect
-        } catch (err) {
-            setServerError("An unexpected error occurred. Please try again.")
-        } finally {
-            setIsLoading(false)
-        }
+  useEffect(() => {
+    if (state?.success) {
+      router.push('/auth/signin?message=' + encodeURIComponent(state.success))
     }
+  }, [state, router])
 
-    return (
-        <div className="min-h-screen bg-[#FAFBFC] font-heading">
-            {/* Navbar Override/Placement */}
-            <div className="h-[80px] bg-white border-b border-light-gray px-[120px] flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-0">
-                    <span className="font-heading font-bold text-[24px] text-navy">Cofactor</span>
-                    <span className="font-heading font-bold text-[24px] text-teal">Scout</span>
-                </Link>
-                <Link href="/auth/signin">
-                    <Button variant="primary" className="w-[120px]">Sign In</Button>
-                </Link>
+  const requirements = [
+    { label: 'At least 8 characters', met: password.length >= 8 },
+    { label: 'Contains uppercase letter', met: /[A-Z]/.test(password) },
+    { label: 'Contains lowercase letter', met: /[a-z]/.test(password) },
+    { label: 'Contains number', met: /[0-9]/.test(password) },
+    { label: 'Contains special character', met: /[^A-Za-z0-9]/.test(password) },
+  ]
+
+  return (
+    <div className="min-h-screen bg-[#FAFBFC]">
+      <AuthNavbar />
+
+      <div className="flex items-center justify-center min-h-[calc(100vh-158px)]">
+        <div className="w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-[48px]">
+          {/* Header */}
+          <h1 className="text-[36px] font-bold text-[#1B2A4A] mb-[12px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+            Create Your Account
+          </h1>
+          <p className="text-[16px] text-[#6B7280] mb-[32px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+            Join Cofactor Scout to start submitting research leads
+          </p>
+
+          {/* Error/Success Messages */}
+          {state?.error && (
+            <div className="mb-[24px] p-[12px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px] text-[#EF4444] text-[14px]">
+              {state.error}
+            </div>
+          )}
+          {state?.success && (
+            <div className="mb-[24px] p-[12px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[14px]">
+              {state.success}
+            </div>
+          )}
+
+          {/* Form */}
+          <form action={formAction} className="space-y-[24px]">
+            {/* Name */}
+            <div>
+              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                placeholder="Enter your full name"
+                required
+                className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                style={{ fontFamily: 'var(--font-merriweather)' }}
+              />
             </div>
 
-            <div className="flex justify-center pt-[80px] pb-20">
-                <main className="w-[560px] bg-white border border-[#E5E7EB] rounded-sharp shadow-card p-12">
-                    {/* Error Banner */}
-                    {serverError && (
-                        <div className="bg-[#FEE2E2] border-2 border-[#EF4444] rounded-sharp p-4 flex gap-3 items-start mb-6">
-                            <AlertCircle className="text-[#EF4444] shrink-0" size={20} />
-                            <p className="text-[#EF4444] text-[14px] font-medium leading-tight">
-                                {serverError}
-                            </p>
-                        </div>
+            {/* Email */}
+            <div>
+              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                placeholder="you@university.edu"
+                required
+                className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                style={{ fontFamily: 'var(--font-merriweather)' }}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  required
+                  className="w-full h-[48px] px-[16px] pr-[48px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                  style={{ fontFamily: 'var(--font-merriweather)' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              <div className="mt-[8px] space-y-[4px]">
+                {requirements.map((req, index) => (
+                  <div key={index} className="flex items-center gap-[6px]">
+                    {req.met ? (
+                      <Check size={14} className="text-[#2D7D46]" />
+                    ) : (
+                      <X size={14} className="text-[#EF4444]" />
                     )}
-
-                    <div className="mb-8 text-center">
-                        <h1 className="font-heading font-bold text-[36px] text-navy mb-2">
-                            Create Account
-                        </h1>
-                        <p className="font-body font-normal text-[16px] text-cool-gray">
-                            Join the community of research scouts
-                        </p>
-                    </div>
-
-                    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-                        {/* Full Name */}
-                        <Input
-                            label="Full Name"
-                            placeholder="John Doe"
-                            helperText={errors.name?.message || "We'll use this to create your profile"}
-                            error={!!errors.name}
-                            {...register("name")}
-                        />
-
-                        {/* Email */}
-                        <Input
-                            label="Email Address"
-                            type="email"
-                            placeholder="you@university.edu"
-                            helperText={errors.email?.message || "Use your university email if possible"}
-                            error={!!errors.email}
-                            {...register("email")}
-                        />
-
-                        {/* Password */}
-                        <div className="relative">
-                            <Input
-                                label="Password"
-                                type={showPassword ? "text" : "password"}
-                                helperText={errors.password?.message || "At least 8 characters with uppercase, lowercase, number, and special character"}
-                                error={!!errors.password}
-                                {...register("password")}
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-4 top-[40px] text-cool-gray hover:text-navy transition-colors"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                            </button>
-                        </div>
-
-                        {/* Confirm Password */}
-                        <div className="relative">
-                            <Input
-                                label="Confirm Password"
-                                type={showConfirmPassword ? "text" : "password"}
-                                helperText={errors.confirmPassword?.message}
-                                error={!!errors.confirmPassword}
-                                {...register("confirmPassword")}
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-4 top-[40px] text-cool-gray hover:text-navy transition-colors"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            >
-                                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                            </button>
-                        </div>
-
-                        {/* Submit Button */}
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            className="w-full mt-2"
-                            isLoading={isLoading}
-                        >
-                            {isLoading ? "Creating Account..." : "Create Account"}
-                        </Button>
-
-                        {/* Login Link */}
-                        <div className="text-center mt-2">
-                            <p className="font-heading text-[14px] text-cool-gray">
-                                Already have an account?{" "}
-                                <Link
-                                    href="/auth/signin"
-                                    className="text-teal font-medium hover:underline decoration-teal underline-offset-2"
-                                >
-                                    Sign In
-                                </Link>
-                            </p>
-                        </div>
-                    </form>
-                </main>
+                    <span 
+                      className="text-[12px] italic transition-colors"
+                      style={{ 
+                        fontFamily: 'var(--font-merriweather)',
+                        color: req.met ? '#2D7D46' : '#EF4444'
+                      }}
+                    >
+                      {req.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your password"
+                  required
+                  className="w-full h-[48px] px-[16px] pr-[48px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                  style={{ fontFamily: 'var(--font-merriweather)' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
+                >
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              {confirmPassword && (
+                <div className="mt-[8px] flex items-center gap-[6px]">
+                  {password === confirmPassword ? (
+                    <>
+                      <Check size={14} className="text-[#2D7D46]" />
+                      <span className="text-[12px] italic text-[#2D7D46]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                        Passwords match
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <X size={14} className="text-[#EF4444]" />
+                      <span className="text-[12px] italic text-[#EF4444]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                        Passwords do not match
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* University (Optional) */}
+            <div>
+              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                University/Institute <span className="text-[#6B7280] font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                name="universityName"
+                placeholder="e.g., Stanford University"
+                className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                style={{ fontFamily: 'var(--font-merriweather)' }}
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full h-[56px] bg-[#0D7377] text-white rounded-full flex items-center justify-center gap-[8px] text-[16px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors"
+              style={{ fontFamily: 'var(--font-rethink-sans)' }}
+            >
+              <Plus size={20} />
+              Create Account
+            </button>
+
+            {/* Scout Link */}
+            <p className="text-center text-[14px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+              Ready to join our talent network?{' '}
+              <Link href="/auth/signup?path=apply" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
+                Sign up as a scout
+              </Link>
+            </p>
+          </form>
         </div>
-    )
+      </div>
+
+      {/* Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10">
+        <p className="text-[16px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+          Already have an account?{' '}
+          <Link href="/auth/signin" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
+            Sign in
+          </Link>
+        </p>
+      </footer>
+    </div>
+  )
 }

@@ -1,35 +1,36 @@
-import type { Metadata } from 'next'
+import { Merriweather, Rethink_Sans } from 'next/font/google'
 import './globals.css'
-import { Navbar } from '@/components/shared/Navbar'
-import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-import { Providers } from './providers'
-import { AnalyticsProvider } from '@/components/shared/AnalyticsProvider'
-import { headers } from 'next/headers'
+import type { Metadata } from 'next'
+
+const merriweather = Merriweather({
+  subsets: ['latin'],
+  weight: ['300', '400', '700', '900'],
+  style: ['normal', 'italic'],
+  variable: '--font-merriweather',
+  display: 'swap',
+})
+
+const rethinkSans = Rethink_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'], // Adjust weights as needed based on usage
+  style: ['normal', 'italic'],
+  variable: '--font-rethink-sans',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Cofactor Scout',
-  description: 'The research scout network.',
+  description: 'Discover Research. Connect Investor. Earn Commission',
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const nonce = (await headers()).get('x-nonce') || ''
-
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-off-white font-serif antialiased" suppressHydrationWarning>
-        <AnalyticsProvider>
-          <Providers nonce={nonce}>
-            <ErrorBoundary>
-              <Navbar />
-              <main>{children}</main>
-            </ErrorBoundary>
-          </Providers>
-        </AnalyticsProvider>
-      </body>
+    <html lang="en">
+      <body className={`${merriweather.variable} ${rethinkSans.variable} antialiased`}>{children}</body>
     </html>
   )
 }

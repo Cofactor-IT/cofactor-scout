@@ -1,8 +1,7 @@
-import DOMPurify from 'isomorphic-dompurify'
-
 /**
  * Comprehensive input sanitization utilities
  * Provides security-focused input validation and sanitization
+ * Note: DOMPurify removed for MVP to avoid jsdom dependency in serverless
  */
 
 // ============================================================================
@@ -422,7 +421,7 @@ interface StringSanitizationOptions {
 }
 
 /**
- * Comprehensive string sanitization for user input
+ * Comprehensive string sanitization for user input (without DOMPurify for MVP)
  */
 export function sanitizeString(
     input: string,
@@ -469,9 +468,9 @@ export function sanitizeString(
         sanitized = sanitized.replace(/\n/g, ' ').replace(/\r/g, '')
     }
 
-    // Sanitize HTML if not allowed
+    // Remove HTML if not allowed (simple approach without DOMPurify)
     if (!allowHtml) {
-        sanitized = DOMPurify.sanitize(sanitized, { ALLOWED_TAGS: [] })
+        sanitized = sanitized.replace(/[<>]/g, '')
     }
 
     // Check minimum length
@@ -496,7 +495,7 @@ export function sanitizeString(
 }
 
 /**
- * Sanitize name fields with specific rules
+ * Sanitize name fields with specific rules (without DOMPurify)
  */
 export function sanitizeName(name: string, maxLength: number = 100): {
     sanitized: string
@@ -663,25 +662,11 @@ export function comprehensiveSanitize(input: string, options: StringSanitization
 }
 
 /**
- * Sanitize HTML content with DOMPurify
+ * Sanitize HTML content (simple version without DOMPurify for MVP)
  * Use for rich text/WYSIWYG content
+ * TODO: Implement proper DOMPurify after demo
  */
 export function sanitizeHtmlContent(html: string): string {
-    return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: [
-            'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
-            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-            'ul', 'ol', 'li',
-            'a', 'img',
-            'blockquote', 'code', 'pre',
-            'table', 'thead', 'tbody', 'tr', 'td', 'th'
-        ],
-        ALLOWED_ATTR: [
-            'href', 'title', 'alt', 'src', 'target',
-            'class', 'id', 'width', 'height'
-        ],
-        ALLOW_DATA_ATTR: false,
-        FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick'],
-        FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'input', 'textarea']
-    })
+    // Simple HTML stripping for MVP
+    return html.replace(/<[^>]*>/g, '')
 }

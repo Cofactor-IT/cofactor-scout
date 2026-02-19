@@ -33,10 +33,14 @@ const config = {
                 green: "var(--green)",
                 red: "var(--red)",
                 amber: "var(--amber)",
+                "amber-light": "#FEF3C7",
+                "light-green": "#D1FAE5",
             },
             fontFamily: {
-                sans: ["'Rethink Sans'", "sans-serif"],
-                serif: ["'Merriweather'", "serif"],
+                sans: ["var(--font-rethink-sans)", "sans-serif"],
+                serif: ["var(--font-merriweather)", "serif"],
+                heading: ["var(--font-rethink-sans)", "sans-serif"],
+                body: ["var(--font-merriweather)", "serif"],
             },
             borderRadius: {
                 sharp: "var(--radius-sharp)",
@@ -46,6 +50,11 @@ const config = {
                 sm: "var(--shadow-sm)",
                 md: "var(--shadow-md)",
                 lg: "var(--shadow-lg)",
+                button: "var(--shadow-button)",
+                footer: "var(--shadow-footer)",
+                card: "var(--shadow-sm)",
+                popup: "var(--shadow-lg)",
+                hover: "var(--shadow-md)",
             },
             keyframes: {
                 "accordion-down": {

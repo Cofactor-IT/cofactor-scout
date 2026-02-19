@@ -1,12 +1,13 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
-import { checkRateLimitEdge, getClientIp } from '@/lib/security/rate-limit-edge'
+// import { checkRateLimitEdge, getClientIp } from '@/lib/security/rate-limit-edge'
 
+// RATE LIMITING - DISABLED FOR NOW
 // Define simple rate limits for edge
-const RateLimits = {
-    AUTH: { limit: 5, window: 15 * 60 * 1000 },
-    API_GLOBAL: { limit: 100, window: 60 * 1000 }
-}
+// const RateLimits = {
+//     AUTH: { limit: 5, window: 15 * 60 * 1000 },
+//     API_GLOBAL: { limit: 100, window: 60 * 1000 }
+// }
 
 export default withAuth(
     async function middleware(req) {
@@ -20,58 +21,70 @@ export default withAuth(
             return NextResponse.rewrite(new URL("/auth/signin?error=AccessDenied", req.url))
         }
 
-        const ip = getClientIp(req)
-
-        // Global Throughput Limit (DoS protection / Load Shedding)
-        // Limit to 200 requests per second globally across the entire instance
-        const globalResult = await checkRateLimitEdge('global_throughput', { limit: 200, window: 1000 })
-
-        if (!globalResult.success) {
-            return new NextResponse('System Busy - Too Many Requests', {
-                status: 429,
-                headers: {
-                    'Retry-After': '1',
-                    'X-RateLimit-Limit': '200',
-                    'X-RateLimit-Remaining': '0',
-                    'X-RateLimit-Reset': Math.ceil(globalResult.resetTime / 1000).toString()
-                }
-            })
+        // Redirect authenticated users away from auth pages
+        if (token && isAuthRoute) {
+            const callbackUrl = req.nextUrl.searchParams.get('callbackUrl')
+            return NextResponse.redirect(
+                new URL(callbackUrl || '/dashboard', req.url)
+            )
         }
 
-        // Strict rate limiting for auth routes
-        if (isAuthRoute) {
-            const result = await checkRateLimitEdge(ip, RateLimits.AUTH)
-
-            if (!result.success) {
-                return new NextResponse('Too many requests', {
-                    status: 429,
-                    headers: {
-                        'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString()
-                    }
-                })
-            }
+        // Redirect authenticated users from landing page to dashboard
+        if (token && req.nextUrl.pathname === '/') {
+            return NextResponse.redirect(new URL('/dashboard', req.url))
         }
 
-        // Global API rate limiting (except auth which is handled above)
-        if (isApiRoute && !isAuthRoute) {
-            const result = await checkRateLimitEdge(ip, RateLimits.API_GLOBAL)
+        // RATE LIMITING - DISABLED FOR NOW
+        // const ip = getClientIp(req)
 
-            if (!result.success) {
-                return new NextResponse('Too many requests', {
-                    status: 429,
-                    headers: {
-                        'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString()
-                    }
-                })
-            }
-        }
+        // // Global Throughput Limit (DoS protection / Load Shedding)
+        // // Limit to 200 requests per second globally across the entire instance
+        // const globalResult = await checkRateLimitEdge('global_throughput', { limit: 200, window: 1000 })
 
-        const nonce = btoa(crypto.randomUUID())
+        // if (!globalResult.success) {
+        //     return new NextResponse('System Busy - Too Many Requests', {
+        //         status: 429,
+        //         headers: {
+        //             'Retry-After': '1',
+        //             'X-RateLimit-Limit': '200',
+        //             'X-RateLimit-Remaining': '0',
+        //             'X-RateLimit-Reset': Math.ceil(globalResult.resetTime / 1000).toString()
+        //         }
+        //     })
+        // }
+
+        // // Strict rate limiting for auth routes
+        // if (isAuthRoute) {
+        //     const result = await checkRateLimitEdge(ip, RateLimits.AUTH)
+
+        //     if (!result.success) {
+        //         return new NextResponse('Too many requests', {
+        //             status: 429,
+        //             headers: {
+        //                 'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString()
+        //             }
+        //         })
+        //     }
+        // }
+
+        // // Global API rate limiting (except auth which is handled above)
+        // if (isApiRoute && !isAuthRoute) {
+        //     const result = await checkRateLimitEdge(ip, RateLimits.API_GLOBAL)
+
+        //     if (!result.success) {
+        //         return new NextResponse('Too many requests', {
+        //             status: 429,
+        //             headers: {
+        //                 'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString()
+        //             }
+        //         })
+        //     }
+        // }
 
         const cspHeader = `
             default-src 'self';
-            script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
-            style-src 'self' 'unsafe-inline' 'nonce-${nonce}';
+            script-src 'self' 'unsafe-inline';
+            style-src 'self' 'unsafe-inline';
             img-src 'self' blob: data:;
             font-src 'self';
             object-src 'none';
@@ -82,7 +95,6 @@ export default withAuth(
         `.replace(/\s{2,}/g, ' ').trim()
 
         const requestHeaders = new Headers(req.headers)
-        requestHeaders.set('x-nonce', nonce)
         requestHeaders.set('Content-Security-Policy', cspHeader)
 
         const response = NextResponse.next({
@@ -99,15 +111,6 @@ export default withAuth(
         response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
         response.headers.set('Content-Security-Policy', cspHeader)
 
-        // Cache Control for rapid client-side navigation
-        const shouldCache = ['/wiki', '/members'].some(path =>
-            req.nextUrl.pathname.startsWith(path)
-        )
-
-        if (shouldCache) {
-            response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60')
-        }
-
         return response
     },
     {
@@ -115,8 +118,8 @@ export default withAuth(
             authorized: ({ token, req }) => {
                 const path = req.nextUrl.pathname
 
-                // Allow access to home page for everyone
-                if (path === '/') {
+                // Allow access to home page, auth pages, scout application, and submitted page for everyone
+                if (path === '/' || path.startsWith('/auth') || path.startsWith('/scout/apply')) {
                     return true
                 }
 
@@ -133,6 +136,6 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        "/((?!_next/static|_next/image|favicon.ico|uploads|api/auth|api/health|api/universities|auth).*)",
+        "/((?!_next/static|_next/image|favicon.ico|public|api/auth|api/health).*)" ,
     ]
 }
