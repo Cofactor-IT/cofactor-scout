@@ -29,7 +29,8 @@ export function ProgressStepper({ currentStep, steps, draftId }: ProgressStepper
   }
 
   return (
-    <div className="flex items-center justify-center gap-[16px] md:gap-[32px] w-full max-w-[600px] mx-auto mb-[32px] md:mb-[48px] overflow-x-auto">
+    <div className="w-full mb-[32px] md:mb-[48px] px-4 md:px-0">
+      <div className="flex items-center justify-center gap-[8px] md:gap-[16px] lg:gap-[32px] max-w-[600px] mx-auto">
       {steps.map((step, index) => (
         <div key={step.number} className="flex items-center flex-shrink-0">
           <Link 
@@ -56,7 +57,7 @@ export function ProgressStepper({ currentStep, steps, draftId }: ProgressStepper
             </span>
           </Link>
           {index < steps.length - 1 && (
-            <div className="w-[80px] md:w-[192px] h-[2px] -mt-[16px] md:-mt-[24px] mx-[8px] md:mx-[16px]">
+            <div className="w-[40px] md:w-[80px] lg:w-[192px] h-[2px] -mt-[16px] md:-mt-[24px] mx-[4px] md:mx-[8px] lg:mx-[16px]">
               <div
                 className={`h-full transition-all ${
                   step.number < currentStep ? 'bg-[#0D7377]' : 'bg-[#E5E7EB]'
@@ -66,6 +67,7 @@ export function ProgressStepper({ currentStep, steps, draftId }: ProgressStepper
           )}
         </div>
       ))}
+      </div>
     </div>
   )
 }

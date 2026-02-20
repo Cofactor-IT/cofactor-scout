@@ -15,7 +15,6 @@ interface ScoutApplicationPageProps {
     applicationStatus: {
         status: 'PENDING'
         applicationDate: Date
-        lastReminderSent: Date | null
     } | null
 }
 
@@ -25,6 +24,7 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
     const router = useRouter()
     const [state, formAction] = useActionState(submitScoutApplication, undefined)
     const [linkedinUrl, setLinkedinUrl] = useState('')
+    const [userRole, setUserRole] = useState('')
     const [reminderState, setReminderState] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false })
 
     useEffect(() => {
@@ -48,15 +48,7 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
     }
 
     const canSendReminder = () => {
-        if (!applicationStatus?.lastReminderSent) return true
-        const timeSinceLastReminder = Date.now() - new Date(applicationStatus.lastReminderSent).getTime()
-        return timeSinceLastReminder >= ONE_WEEK_MS
-    }
-
-    const getDaysUntilNextReminder = () => {
-        if (!applicationStatus?.lastReminderSent) return 0
-        const timeSinceLastReminder = Date.now() - new Date(applicationStatus.lastReminderSent).getTime()
-        return Math.ceil((ONE_WEEK_MS - timeSinceLastReminder) / (24 * 60 * 60 * 1000))
+        return true // Always allow sending reminder
     }
 
     const getDaysSinceApplication = () => {
@@ -99,11 +91,6 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     <p className="text-[14px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
                                         <strong>Submitted:</strong> {new Date(applicationStatus.applicationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} ({getDaysSinceApplication()} days ago)
                                     </p>
-                                    {applicationStatus.lastReminderSent && (
-                                        <p className="text-[14px] text-[#6B7280] mt-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                                            <strong>Last reminder sent:</strong> {new Date(applicationStatus.lastReminderSent).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                        </p>
-                                    )}
                                 </div>
 
                                 {reminderState.message && (
@@ -127,12 +114,12 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     </p>
                                     <button
                                         onClick={handleSendReminder}
-                                        disabled={!canSendReminder() || reminderState.loading}
+                                        disabled={reminderState.loading}
                                         className="h-[48px] px-[32px] bg-[#0D7377] text-white rounded-full flex items-center gap-2 text-[16px] font-medium hover:bg-[#0a5a5d] disabled:bg-[#E5E7EB] disabled:text-[#6B7280] disabled:cursor-not-allowed transition-colors"
                                         style={{ fontFamily: 'var(--font-rethink-sans)' }}
                                     >
                                         <Send size={18} />
-                                        {reminderState.loading ? 'Sending...' : canSendReminder() ? 'Send Reminder' : `Available in ${getDaysUntilNextReminder()} day${getDaysUntilNextReminder() > 1 ? 's' : ''}`}
+                                        {reminderState.loading ? 'Sending...' : 'Send Reminder'}
                                     </button>
                                 </div>
                             </div>
@@ -307,6 +294,8 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                 <div className="relative">
                                     <select
                                         name="userRole"
+                                        value={userRole}
+                                        onChange={(e) => setUserRole(e.target.value)}
                                         required
                                         className="w-full h-[48px] px-[16px] pr-[40px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] focus:outline-none focus:border-[#0D7377] appearance-none"
                                         style={{ fontFamily: 'var(--font-merriweather)' }}
@@ -321,6 +310,16 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     </select>
                                     <ChevronDown size={20} className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
                                 </div>
+                                {userRole === 'OTHER' && (
+                                    <input
+                                        type="text"
+                                        name="userRoleOther"
+                                        placeholder="Please specify your role"
+                                        required
+                                        className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377] mt-[8px]"
+                                        style={{ fontFamily: 'var(--font-merriweather)' }}
+                                    />
+                                )}
                             </div>
 
                             {/* Research Areas */}

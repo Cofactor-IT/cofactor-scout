@@ -38,7 +38,7 @@ export function PromotionBanner() {
           <p className="body text-[#6B7280] text-[14px] md:text-[16px]">Get priority review, higher commission rates, and join our official talent network</p>
         </div>
         
-        <Link href="/scout/apply" className="w-full md:w-auto">
+        <Link href="/scout/apply" className="w-full md:w-auto flex-shrink-0">
           <Button className="w-full md:w-[200px] lg:w-[13.89vw] h-[48px] md:h-[56px] lg:h-[3.33vw]">Apply to Be a Scout</Button>
         </Link>
         

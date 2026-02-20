@@ -117,12 +117,12 @@ model User {
   department             String?
   linkedinUrl            String?
   userRole               UserRole?
+  userRoleOther          String?
   researchAreas          String?
   whyScout               String?
   howSourceLeads         String?
   scoutApplicationStatus ScoutApplicationStatus @default(NOT_APPLIED)
   scoutApplicationDate   DateTime?
-  lastReminderSent       DateTime?
 
   // Profile Settings
   bio                String?
@@ -171,8 +171,9 @@ model ResearchSubmission {
   researcherDepartment  String?
 
   // Step 2 - Additional Details
-  researcherCareerStage    CareerStage?
-  researcherLinkedin       String?
+  researcherCareerStage      CareerStage?
+  researcherCareerStageOther String?
+  researcherLinkedin         String?
   researchStage            ResearchStage?
   fundingStatus            FundingStatus?
   keyPublications          String?

@@ -23,7 +23,6 @@ export default async function ScoutApplicationPage() {
             university: true,
             scoutApplicationStatus: true,
             scoutApplicationDate: true,
-            lastReminderSent: true,
             role: true
         }
     })
@@ -46,22 +45,20 @@ export default async function ScoutApplicationPage() {
                 where: { id: session.user.id },
                 data: {
                     scoutApplicationStatus: 'NOT_APPLIED',
-                    scoutApplicationDate: null,
-                    lastReminderSent: null
+                    scoutApplicationDate: null
                 }
             })
             return <ScoutApplicationForm user={user} applicationStatus={null} />
         }
     }
 
-    // If application pending, show status with reminder option
+    // If application pending, show status
     if (user.scoutApplicationStatus === 'PENDING') {
         return <ScoutApplicationForm 
             user={user} 
             applicationStatus={{
                 status: 'PENDING',
-                applicationDate: user.scoutApplicationDate!,
-                lastReminderSent: user.lastReminderSent
+                applicationDate: user.scoutApplicationDate!
             }} 
         />
     }

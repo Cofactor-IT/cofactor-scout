@@ -42,6 +42,7 @@ export async function saveDraft(data: any) {
     const cleanData = {
       ...restData,
       researcherCareerStage: restData.researcherCareerStage && restData.researcherCareerStage !== '' ? restData.researcherCareerStage : null,
+      researcherCareerStageOther: restData.researcherCareerStage === 'OTHER' ? restData.researcherCareerStageOther : null,
       fundingStatus: restData.fundingStatus && restData.fundingStatus !== '' ? restData.fundingStatus : null,
       researchStage: restData.researchStage && restData.researchStage !== '' ? restData.researchStage : null,
       submissionSource: restData.submissionSource && restData.submissionSource !== '' ? restData.submissionSource : null,

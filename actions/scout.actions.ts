@@ -36,7 +36,6 @@ export async function sendScoutApplicationReminder(): Promise<{ error?: string; 
             select: {
                 scoutApplicationStatus: true,
                 scoutApplicationDate: true,
-                lastReminderSent: true,
                 fullName: true,
                 email: true,
                 university: true
@@ -59,20 +58,8 @@ export async function sendScoutApplicationReminder(): Promise<{ error?: string; 
             return { error: 'APPLICATION_EXPIRED' }
         }
 
-        // Check if reminder was sent in the last week
-        if (user.lastReminderSent) {
-            const timeSinceLastReminder = now - user.lastReminderSent.getTime()
-            if (timeSinceLastReminder < ONE_WEEK_MS) {
-                const daysUntilNextReminder = Math.ceil((ONE_WEEK_MS - timeSinceLastReminder) / (24 * 60 * 60 * 1000))
-                return { error: `You can send another reminder in ${daysUntilNextReminder} day${daysUntilNextReminder > 1 ? 's' : ''}` }
-            }
-        }
-
-        // Update last reminder sent
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { lastReminderSent: new Date() }
-        })
+        // Check if reminder was sent in the last week - removed for now
+        // Always allow sending reminder
 
         // Send reminder to team
         const { sendScoutApplicationReminderEmail, sendReminderConfirmationEmail } = await import('@/lib/email/send')
@@ -112,6 +99,7 @@ export async function submitScoutApplication(
         const department = formData.get('department') as string
         const linkedinUrl = formData.get('linkedinUrl') as string | null
         const userRole = formData.get('userRole') as string
+        const userRoleOther = formData.get('userRoleOther') as string | null
         const researchAreas = formData.get('researchAreas') as string
         const whyScout = formData.get('whyScout') as string
         const howSourceLeads = formData.get('howSourceLeads') as string
@@ -194,6 +182,7 @@ export async function submitScoutApplication(
                 department,
                 linkedinUrl: linkedinUrl || null,
                 userRole: userRole as any,
+                userRoleOther: userRole === 'OTHER' ? userRoleOther : null,
                 researchAreas,
                 whyScout,
                 howSourceLeads,

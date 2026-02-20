@@ -18,6 +18,7 @@ export default function DetailsPage() {
 
   const [formData, setFormData] = useState({
     researcherCareerStage: '',
+    researcherCareerStageOther: '',
     fundingStatus: '',
     researchStage: '',
     researcherLinkedin: '',
@@ -44,6 +45,7 @@ export default function DetailsPage() {
           setStep1Data(result.draft)
           setFormData({
             researcherCareerStage: result.draft.researcherCareerStage || '',
+            researcherCareerStageOther: result.draft.researcherCareerStageOther || '',
             fundingStatus: result.draft.fundingStatus || '',
             researchStage: result.draft.researchStage || '',
             researcherLinkedin: result.draft.researcherLinkedin || '',
@@ -123,22 +125,33 @@ export default function DetailsPage() {
 
             <div className="flex flex-col gap-[24px]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] md:gap-[32px]">
-                <FormSelect
-                  label="Researcher Career Stage"
-                  name="researcherCareerStage"
-                  value={formData.researcherCareerStage}
-                  onChange={(value) => setFormData({ ...formData, researcherCareerStage: value })}
-                  options={[
-                    { value: 'UNDERGRAD_STUDENT', label: 'Undergraduate Student' },
-                    { value: 'PHD_STUDENT', label: 'PhD Student' },
-                    { value: 'POSTDOC', label: 'Postdoc' },
-                    { value: 'PROFESSOR', label: 'Professor' },
-                    { value: 'INDUSTRY_RESEARCHER', label: 'Industry Researcher' },
-                    { value: 'INDEPENDENT_RESEARCHER', label: 'Independent Researcher' },
-                    { value: 'OTHER', label: 'Other' }
-                  ]}
-                  placeholder="Select career stage"
-                />
+                <div>
+                  <FormSelect
+                    label="Researcher Career Stage"
+                    name="researcherCareerStage"
+                    value={formData.researcherCareerStage}
+                    onChange={(value) => setFormData({ ...formData, researcherCareerStage: value, researcherCareerStageOther: value === 'OTHER' ? formData.researcherCareerStageOther : '' })}
+                    options={[
+                      { value: 'UNDERGRAD_STUDENT', label: 'Undergraduate Student' },
+                      { value: 'PHD_STUDENT', label: 'PhD Student' },
+                      { value: 'POSTDOC', label: 'Postdoc' },
+                      { value: 'PROFESSOR', label: 'Professor' },
+                      { value: 'INDUSTRY_RESEARCHER', label: 'Industry Researcher' },
+                      { value: 'INDEPENDENT_RESEARCHER', label: 'Independent Researcher' },
+                      { value: 'OTHER', label: 'Other' }
+                    ]}
+                    placeholder="Select career stage"
+                  />
+                  {formData.researcherCareerStage === 'OTHER' && (
+                    <FormInput
+                      label=""
+                      name="researcherCareerStageOther"
+                      value={formData.researcherCareerStageOther}
+                      onChange={(value) => setFormData({ ...formData, researcherCareerStageOther: value })}
+                      placeholder="Please specify career stage"
+                    />
+                  )}
+                </div>
 
                 <FormSelect
                   label="Funding Status"
