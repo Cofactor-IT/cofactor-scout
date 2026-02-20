@@ -25,7 +25,7 @@ export const welcomeEmailTemplate: TemplateFn<WelcomeEmailData> = ({ name }) => 
     html: `
         <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
             <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
-                <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
                 <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Welcome to Cofactor Scout! 🚀</h1>
                 <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
                 <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">We're excited to have you join our network. Contribute research leads and help us connect groundbreaking research with venture capital.</p>
@@ -49,7 +49,7 @@ export const verificationEmailTemplate: TemplateFn<VerificationEmailData> = ({ n
         html: `
             <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
                 <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
-                    <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                    <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
                     <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Verify your email address</h1>
                     <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
                     <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Please click the button below to verify your email address:</p>
@@ -78,7 +78,7 @@ export const passwordResetEmailTemplate: TemplateFn<PasswordResetEmailData> = ({
         html: `
             <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
                 <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
-                    <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                    <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
                     <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Reset your password</h1>
                     <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">You requested to reset your password. Click the button below to set a new password:</p>
                     <div style="text-align: center; margin: 30px 0;">
@@ -111,17 +111,20 @@ export const adminActionRequiredTemplate: TemplateFn<AdminActionEmailData> = ({ 
     subject: `Action Required: ${actionType}`,
     text: `Hi ${adminName},\n\nA new action requires your attention: ${actionType}\n\nDetails: ${details}\n\nView Request: ${getAppUrl()}${link}\n\nBest,\nThe Cofactor System`,
     html: `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #6366f1;">Action Required: ${actionType}</h1>
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #6366f1; font-size: 28px; margin-bottom: 16px;">Action Required: ${actionType}</h1>
             <p>Hi ${adminName},</p>
             <p>A new action requires your attention.</p>
             <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
                 <p style="margin: 0; font-weight: bold;">${details}</p>
             </div>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">View Request</a>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">View Request</a>
+                </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor System</p>
             </div>
-            <p>Best,<br>The Cofactor System</p>
         </div>
     `
 })
@@ -131,16 +134,19 @@ export const notificationEmailTemplate: TemplateFn<NotificationEmailData> = ({ n
     subject: title,
     text: `Hi ${name},\n\n${message}\n\n${link ? `View details: ${getAppUrl()}${link}` : ''}\n\nBest,\nThe Cofactor Team`,
     html: `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #6366f1;">${title}</h1>
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #6366f1; font-size: 28px; margin-bottom: 16px;">${title}</h1>
             <p>Hi ${name},</p>
             <p>${message}</p>
-            ${link ? `
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">View Details</a>
+                ${link ? `
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">View Details</a>
+                </div>
+                ` : ''}
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
             </div>
-            ` : ''}
-            <p>Best,<br>The Cofactor Team</p>
         </div>
     `
 })
@@ -156,17 +162,20 @@ export const mentionNotificationTemplate: TemplateFn<MentionEmailData> = ({ name
     subject: `You were mentioned in a Wiki article`,
     text: `Hi ${name},\n\n${actorName} mentioned you in an article:\n\n"${context}..."\n\nView here: ${getAppUrl()}${link}\n\nBest,\nThe Cofactor Team`,
     html: `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #6366f1;">New Mention</h1>
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #6366f1; font-size: 28px; margin-bottom: 16px;">New Mention</h1>
             <p>Hi ${name},</p>
             <p><strong>${actorName}</strong> mentioned you in a Wiki article:</p>
             <blockquote style="border-left: 4px solid #e5e7eb; padding-left: 15px; font-style: italic; color: #4b5563;">
                 "${context}..."
             </blockquote>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">View Mention</a>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">View Mention</a>
+                </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
             </div>
-            <p>Best,<br>The Cofactor Team</p>
         </div>
     `
 })
@@ -182,15 +191,18 @@ export const articleUpdateNotificationTemplate: TemplateFn<ArticleUpdateEmailDat
     subject: `Your article "${articleTitle}" was updated`,
     text: `Hi ${name},\n\n${actorName} just edited an article you created: "${articleTitle}".\n\nView changes: ${getAppUrl()}${link}\n\nBest,\nThe Cofactor Team`,
     html: `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #6366f1;">Article Updated</h1>
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #6366f1; font-size: 28px; margin-bottom: 16px;">Article Updated</h1>
             <p>Hi ${name},</p>
             <p><strong>${actorName}</strong> just edited an article you created:</p>
             <h2 style="font-size: 18px; color: #111;">${articleTitle}</h2>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">View Article</a>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${getAppUrl()}${link}" style="background-color: #6366f1; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">View Article</a>
+                </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
             </div>
-            <p>Best,<br>The Cofactor Team</p>
         </div>
     `
 })
@@ -204,12 +216,98 @@ export const articleDeleteNotificationTemplate: TemplateFn<ArticleDeleteEmailDat
     subject: `Your article "${articleTitle}" was deleted`,
     text: `Hi ${name},\n\nYour article "${articleTitle}" has been deleted by an administrator.\n\nIf you believe this was a mistake, please contact support.\n\nBest,\nThe Cofactor Team`,
     html: `
-        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #ef4444;">Article Deleted</h1>
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #ef4444; font-size: 28px; margin-bottom: 16px;">Article Deleted</h1>
             <p>Hi ${name},</p>
             <p>Your article <strong>"${articleTitle}"</strong> has been deleted by an administrator.</p>
-            <p>If you believe this was a mistake, please contact support.</p>
-            <p>Best,<br>The Cofactor Team</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">If you believe this was a mistake, please contact support.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
+        </div>
+    `
+})
+
+interface ScoutApplicationNotificationData {
+    applicantName: string
+    applicantEmail: string
+    university: string
+    department: string
+    userRole: string
+    researchAreas: string
+    applicationDate: string
+}
+
+export const scoutApplicationNotificationTemplate: TemplateFn<ScoutApplicationNotificationData> = ({ applicantName, applicantEmail, university, department, userRole, researchAreas, applicationDate }) => ({
+    subject: 'New Scout Application Received',
+    text: `New Scout Application\n\nApplicant: ${applicantName}\nEmail: ${applicantEmail}\nUniversity: ${university}\nDepartment: ${department}\nRole: ${userRole}\nResearch Areas: ${researchAreas}\nSubmitted: ${applicationDate}\n\nReview the application in the admin dashboard.`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">New Scout Application 🎯</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">A new scout application has been submitted and requires review.</p>
+                <div style="background-color: #FAFBFC; padding: 20px; border-radius: 4px; margin: 24px 0;">
+                    <p style="margin: 8px 0;"><strong>Applicant:</strong> ${applicantName}</p>
+                    <p style="margin: 8px 0;"><strong>Email:</strong> ${applicantEmail}</p>
+                    <p style="margin: 8px 0;"><strong>University:</strong> ${university}</p>
+                    <p style="margin: 8px 0;"><strong>Department:</strong> ${department}</p>
+                    <p style="margin: 8px 0;"><strong>Role:</strong> ${userRole}</p>
+                    <p style="margin: 8px 0;"><strong>Research Areas:</strong> ${researchAreas}</p>
+                    <p style="margin: 8px 0;"><strong>Submitted:</strong> ${applicationDate}</p>
+                </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor System</p>
+            </div>
+        </div>
+    `
+})
+
+interface ScoutApplicationReminderData {
+    applicantName: string
+    applicantEmail: string
+    university: string
+    daysSinceApplication: number
+}
+
+export const scoutApplicationReminderTemplate: TemplateFn<ScoutApplicationReminderData> = ({ applicantName, applicantEmail, university, daysSinceApplication }) => ({
+    subject: 'Scout Application Reminder',
+    text: `Scout Application Reminder\n\nApplicant: ${applicantName}\nEmail: ${applicantEmail}\nUniversity: ${university}\nDays since application: ${daysSinceApplication}\n\nThis applicant is requesting a status update on their pending scout application.`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #F59E0B; font-size: 28px; margin-bottom: 16px;">Scout Application Reminder 🔔</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">An applicant is requesting a status update on their pending scout application.</p>
+                <div style="background-color: #FEF3C7; padding: 20px; border-radius: 4px; margin: 24px 0; border-left: 4px solid #F59E0B;">
+                    <p style="margin: 8px 0;"><strong>Applicant:</strong> ${applicantName}</p>
+                    <p style="margin: 8px 0;"><strong>Email:</strong> ${applicantEmail}</p>
+                    <p style="margin: 8px 0;"><strong>University:</strong> ${university}</p>
+                    <p style="margin: 8px 0;"><strong>Days since application:</strong> ${daysSinceApplication}</p>
+                </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor System</p>
+            </div>
+        </div>
+    `
+})
+
+interface ReminderConfirmationData {
+    name: string
+}
+
+export const reminderConfirmationTemplate: TemplateFn<ReminderConfirmationData> = ({ name }) => ({
+    subject: 'Reminder Sent to Team',
+    text: `Hi ${name},\n\nWe've sent a reminder to our team about your pending scout application.\n\nWe appreciate your patience and will get back to you as soon as possible.\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Reminder Sent ✓</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">We've sent a reminder to our team about your pending scout application.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">We appreciate your patience and will get back to you as soon as possible.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
         </div>
     `
 })
@@ -224,7 +322,7 @@ export const scoutApplicationConfirmationTemplate: TemplateFn<ScoutApplicationCo
     html: `
         <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
             <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
-                <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
                 <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Application Received! 🎯</h1>
                 <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
                 <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Thank you for applying to become a <strong>Cofactor Scout</strong>!</p>
@@ -246,7 +344,7 @@ export const scoutApprovalTemplate: TemplateFn<ScoutApprovalData> = ({ name }) =
     html: `
         <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
             <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
-                <img src="https://club.cofactor.world/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px;" />
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
                 <h1 style="color: #2D7D46; font-size: 28px; margin-bottom: 16px;">Welcome to the Scout Network! 🚀</h1>
                 <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
                 <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;"><strong>Congratulations!</strong> Your application to become a Cofactor Scout has been approved.</p>
@@ -254,6 +352,82 @@ export const scoutApprovalTemplate: TemplateFn<ScoutApprovalData> = ({ name }) =
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="${getAppUrl()}/dashboard" style="background-color: #0D7377; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">Go to Dashboard</a>
                 </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
+        </div>
+    `
+})
+
+interface AccountUpdateData {
+    name: string
+    changes: string
+}
+
+export const accountUpdateTemplate: TemplateFn<AccountUpdateData> = ({ name, changes }) => ({
+    subject: 'Account Settings Updated',
+    text: `Hi ${name},\n\nYour account settings have been successfully updated.\n\nChanges made: ${changes}\n\nIf you didn't make these changes, please contact support immediately.\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Account Settings Updated ✓</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Your account settings have been successfully updated.</p>
+                <div style="background-color: #FAFBFC; padding: 16px; border-radius: 4px; margin: 24px 0;">
+                    <p style="color: #6B7280; font-size: 14px; margin: 0;"><strong>Changes made:</strong> ${changes}</p>
+                </div>
+                <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">If you didn't make these changes, please contact support immediately.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
+        </div>
+    `
+})
+
+interface ProfileUpdateData {
+    name: string
+}
+
+export const profileUpdateTemplate: TemplateFn<ProfileUpdateData> = ({ name }) => ({
+    subject: 'Profile Updated',
+    text: `Hi ${name},\n\nYour profile has been successfully updated.\n\nView your profile: ${getAppUrl()}/settings?tab=profile\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Profile Updated ✓</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Your profile has been successfully updated.</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${getAppUrl()}/settings?tab=profile" style="background-color: #0D7377; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">View Profile</a>
+                </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
+        </div>
+    `
+})
+
+interface NewSignInData {
+    name: string
+    timestamp: string
+    location?: string
+}
+
+export const newSignInTemplate: TemplateFn<NewSignInData> = ({ name, timestamp, location }) => ({
+    subject: 'New Sign-In to Your Account',
+    text: `Hi ${name},\n\nWe detected a new sign-in to your Cofactor Scout account.\n\nTime: ${timestamp}${location ? `\nLocation: ${location}` : ''}\n\nIf this was you, no action is needed. If you don't recognize this activity, please secure your account immediately.\n\nBest,\nThe Cofactor Team`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">New Sign-In Detected 🔐</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${name},</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">We detected a new sign-in to your Cofactor Scout account.</p>
+                <div style="background-color: #FAFBFC; padding: 16px; border-radius: 4px; margin: 24px 0;">
+                    <p style="color: #1B2A4A; font-size: 14px; margin: 0 0 8px 0;"><strong>Time:</strong> ${timestamp}</p>
+                    ${location ? `<p style="color: #1B2A4A; font-size: 14px; margin: 0;"><strong>Location:</strong> ${location}</p>` : ''}
+                </div>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">If this was you, no action is needed.</p>
+                <p style="color: #EF4444; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">If you don't recognize this activity, please secure your account immediately by changing your password.</p>
                 <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
             </div>
         </div>
@@ -271,7 +445,13 @@ export const emailTemplates = {
     articleUpdate: articleUpdateNotificationTemplate,
     articleDelete: articleDeleteNotificationTemplate,
     scoutApplicationConfirmation: scoutApplicationConfirmationTemplate,
-    scoutApproval: scoutApprovalTemplate
+    scoutApplicationNotification: scoutApplicationNotificationTemplate,
+    scoutApplicationReminder: scoutApplicationReminderTemplate,
+    reminderConfirmation: reminderConfirmationTemplate,
+    scoutApproval: scoutApprovalTemplate,
+    accountUpdate: accountUpdateTemplate,
+    profileUpdate: profileUpdateTemplate,
+    newSignIn: newSignInTemplate
 } as const
 
 

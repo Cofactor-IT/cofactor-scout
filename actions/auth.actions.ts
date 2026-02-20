@@ -115,13 +115,21 @@ async function createUser(
     })
 
     // Send verification email synchronously
-    const { sendVerificationEmail } = await import('@/lib/email/send')
+    const { sendVerificationEmail, sendWelcomeEmail } = await import('@/lib/email/send')
     logger.info('Attempting to send verification email', { email: userData.email })
     try {
         await sendVerificationEmail(userData.email, userData.name, verificationToken)
         logger.info('Verification email sent successfully', { email: userData.email })
     } catch (err) {
         logger.error('Failed to send verification email', { email: userData.email, error: err })
+    }
+
+    // Send welcome email
+    try {
+        await sendWelcomeEmail(userData.email, userData.name)
+        logger.info('Welcome email sent successfully', { email: userData.email })
+    } catch (err) {
+        logger.error('Failed to send welcome email', { email: userData.email, error: err })
     }
 
     logger.info('User registered successfully', {

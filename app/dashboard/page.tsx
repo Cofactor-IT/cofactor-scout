@@ -3,14 +3,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import { prisma } from '@/lib/database/prisma'
 import Link from 'next/link'
-import Image from 'next/image'
-import NavbarLogo from '@/public/cofactor-scout-navbar-logo.png'
 import { FileText, Clock, CheckCircle, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { UserDropdown } from '@/components/ui/user-dropdown'
 import { PromotionBanner } from '@/components/ui/promotion-banner'
-import { Dropdown } from '@/components/ui/dropdown'
+import { DashboardNavbar } from '@/components/dashboard-navbar'
+import { SubmissionsTable } from '@/components/SubmissionsTable'
 
 async function getDashboardData(userId: string) {
   const submissions = await prisma.researchSubmission.findMany({
@@ -44,7 +42,7 @@ export default async function DashboardPage() {
 
   const isScout = user.role === 'SCOUT'
   const displayName = user.fullName || 'User'
-  const firstName = user.firstName || displayName.split(' ')[0]
+  const firstName = user.preferredName || user.firstName || displayName.split(' ')[0]
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || displayName.slice(0, 2).toUpperCase()
 
   const statusConfig = {
@@ -55,42 +53,28 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="h-[80px] bg-[#E5E7EB] px-[8.33vw] flex items-center justify-between">
-        <Image 
-          src={NavbarLogo} 
-          alt="CofactorScout" 
-          width={150} 
-          height={30}
-          className="h-[2.08vw] w-auto"
-        />
-        
-        <div className="flex items-center gap-[3.33vw]">
-          <Link href="/dashboard" className="underline text-[#1B2A4A] text-[17.5px]">My Submissions</Link>
-          <Link href="/dashboard/drafts" className="text-[#1B2A4A] text-[17.5px]">My Drafts</Link>
-          
-          <UserDropdown 
-            displayName={displayName}
-            role={isScout ? 'Verified Scout' : 'Community Contributor'}
-            initials={initials}
-          />
-        </div>
-      </nav>
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
+      <DashboardNavbar 
+        displayName={displayName}
+        role={isScout ? 'Verified Scout' : 'Community Contributor'}
+        initials={initials}
+        profilePictureUrl={user.profilePictureUrl}
+        activePage="submissions"
+      />
 
       {/* Hero Section */}
-      <section className="bg-[#FAFBFC] h-[13.91vw] flex flex-col justify-center px-[8.33vw]">
-        <h2 className="mb-[0.83vw]">Welcome, {firstName}!</h2>
-        <div className="flex items-center gap-[1.11vw]">
-          <div className="inline-block px-[1.11vw] py-[0.42vw] rounded-full" style={{ backgroundColor: isScout ? '#D1FAE5' : '#E5E7EB' }}>
-            <span className="caption" style={{ color: isScout ? '#2D7D46' : '#1B2A4A' }}>
+      <section className="bg-[#FAFBFC] h-auto md:h-[150px] flex flex-col justify-center px-4 md:px-8 lg:px-[120px] mt-[70px] flex-shrink-0 py-6 md:py-0">
+        <h2 className="mb-[12px]">Welcome, {firstName}!</h2>
+        <div className="flex flex-wrap items-center gap-[12px] md:gap-[16px]">
+          <div className="flex items-center h-[48px] px-[16px] rounded-full" style={{ backgroundColor: isScout ? '#D1FAE5' : '#E5E7EB' }}>
+            <span className="text-[12px] font-normal font-sans" style={{ color: isScout ? '#2D7D46' : '#1B2A4A' }}>
               {isScout ? 'Verified Scout' : 'Community Contributor'}
             </span>
           </div>
           {!isScout && (
             <Link href="/scout/apply">
-              <Button className="h-[2.78vw] px-[1.67vw] flex items-center justify-center">
-                <span className="caption">Apply to be a Scout</span>
+              <Button className="h-[48px] px-[24px] text-[14px]">
+                Apply to be a Scout
               </Button>
             </Link>
           )}
@@ -98,93 +82,49 @@ export default async function DashboardPage() {
       </section>
 
       {/* Statistics Cards */}
-      <section className="bg-[#FAFBFC] h-[12.5vw] flex items-center px-[8.33vw]">
-        <div className="flex justify-center gap-[2.78vw] w-full">
-          <Card className="w-[25.93vw] h-[10.1vw] flex flex-col justify-center px-[1.67vw] shadow-sm">
-            <FileText className="w-[1.89vw] h-[1.89vw] mb-[0.71vw] text-[#0D7377]" strokeWidth={1.5} />
-            <div className="text-[2.83vw] font-bold mb-[0.24vw] text-[#1B2A4A] font-sans">{totalSubmissions}</div>
-            <div className="caption text-[#6B7280]">Total Submissions</div>
+      <section className="bg-[#FAFBFC] h-auto md:h-[180px] flex items-center px-4 md:px-8 lg:px-[120px] flex-shrink-0 py-6 md:py-0">
+        <div className="flex gap-[20px] md:gap-[40px] w-full overflow-x-auto md:overflow-x-visible pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
+          <Card className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 h-[145px] flex flex-col justify-center px-[24px] shadow-sm flex-shrink-0">
+            <FileText className="w-[27px] h-[27px] mb-[10px] text-[#0D7377]" strokeWidth={1.5} />
+            <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{totalSubmissions}</div>
+            <div className="text-[14px] text-[#6B7280]">Total Submissions</div>
           </Card>
 
-          <Card className="w-[25.93vw] h-[10.1vw] flex flex-col justify-center px-[1.67vw] shadow-sm">
-            <Clock className="w-[1.89vw] h-[1.89vw] mb-[0.71vw] text-[#F59E0B]" strokeWidth={1.5} />
-            <div className="text-[2.83vw] font-bold mb-[0.24vw] text-[#1B2A4A] font-sans">{pendingReview}</div>
-            <div className="caption text-[#6B7280]">Pending Review</div>
+          <Card className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 h-[145px] flex flex-col justify-center px-[24px] shadow-sm flex-shrink-0">
+            <Clock className="w-[27px] h-[27px] mb-[10px] text-[#F59E0B]" strokeWidth={1.5} />
+            <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{pendingReview}</div>
+            <div className="text-[14px] text-[#6B7280]">Pending Review</div>
           </Card>
 
-          <Card className="w-[25.93vw] h-[10.1vw] flex flex-col justify-center px-[1.67vw] shadow-sm">
-            <CheckCircle className="w-[1.89vw] h-[1.89vw] mb-[0.71vw] text-[#2D7D46]" strokeWidth={1.5} />
-            <div className="text-[2.83vw] font-bold mb-[0.24vw] text-[#1B2A4A] font-sans">{approved}</div>
-            <div className="caption text-[#6B7280]">Approved</div>
+          <Card className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 h-[145px] flex flex-col justify-center px-[24px] shadow-sm flex-shrink-0">
+            <CheckCircle className="w-[27px] h-[27px] mb-[10px] text-[#2D7D46]" strokeWidth={1.5} />
+            <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{approved}</div>
+            <div className="text-[14px] text-[#6B7280]">Approved</div>
           </Card>
         </div>
       </section>
 
       {/* CTA Button */}
-      <section className="bg-[#FAFBFC] h-[7.22vw] flex items-center justify-center px-[8.33vw]">
+      <section className="bg-[#FAFBFC] h-auto md:h-[104px] flex items-center justify-center px-4 md:px-8 lg:px-[120px] flex-shrink-0 py-6 md:py-0">
         <Link href="/dashboard/submit">
-          <Button className="w-[22.22vw] h-[4.44vw] flex items-center justify-center gap-[0.56vw]">
-            <Plus className="w-[1.39vw] h-[1.39vw]" />
+          <Button className="w-full md:w-[320px] h-[64px] flex items-center justify-center gap-[8px]">
+            <Plus className="w-[20px] h-[20px]" />
             Submit Research Lead
           </Button>
         </Link>
       </section>
 
       {/* Promotion Banner */}
-      <PromotionBanner />
+      <div className="flex-shrink-0">
+        <PromotionBanner />
+      </div>
 
       {/* Submissions Table */}
-      <section className="bg-white py-[4.17vw] px-[8.33vw]">
-        <div className="flex items-center justify-between mb-[2.22vw]">
-          <h3>My Submissions</h3>
-          <Dropdown>
-            <option>All Submissions</option>
-            <option>Pending</option>
-            <option>Approved</option>
-          </Dropdown>
-        </div>
-
-        <div className="border border-[#E5E7EB] rounded-[4px]">
-          {/* Table Header */}
-          <div className="grid grid-cols-[2fr_3fr_2fr_1.5fr_1fr] gap-[1.67vw] px-[1.67vw] py-[1.11vw] bg-[#FAFBFC] border-b border-[#E5E7EB]">
-            <div className="label uppercase text-[#6B7280]">RESEARCHER</div>
-            <div className="label uppercase text-[#6B7280]">RESEARCH TOPIC</div>
-            <div className="label uppercase text-[#6B7280]">STATUS</div>
-            <div className="label uppercase text-[#6B7280]">DATE SUBMITTED</div>
-            <div className="label uppercase text-[#6B7280]">ACTIONS</div>
-          </div>
-
-          {/* Table Rows */}
-          {submissions.length === 0 ? (
-            <div className="px-[1.67vw] py-[2.5vw] text-center body text-[#6B7280]">
-              No submissions yet. Submit your first research lead!
-            </div>
-          ) : (
-            submissions.map((submission) => {
-              const status = statusConfig[submission.status as keyof typeof statusConfig]
-              return (
-                <div key={submission.id} className="grid grid-cols-[2fr_3fr_2fr_1.5fr_1fr] gap-[1.67vw] px-[1.67vw] py-[1.39vw] border-b border-[#E5E7EB] last:border-b-0">
-                  <div className="body">{submission.researcherName || 'N/A'}</div>
-                  <div className="body">{submission.researchTopic || 'Untitled'}</div>
-                  <div>
-                    <span 
-                      className="inline-block px-[0.83vw] py-[0.28vw] rounded-full caption"
-                      style={{ backgroundColor: status?.bg, color: status?.text }}
-                    >
-                      {status?.label || submission.status}
-                    </span>
-                  </div>
-                  <div className="caption text-[#6B7280]">
-                    {new Date(submission.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </div>
-                  <Link href={`/dashboard/submissions/${submission.id}`} className="body text-[#0D7377] underline">
-                    View
-                  </Link>
-                </div>
-              )
-            })
-          )}
-        </div>
+      <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] flex-1 overflow-y-auto">
+        <SubmissionsTable 
+          submissions={submissions}
+          statusConfig={statusConfig}
+        />
       </section>
     </div>
   )

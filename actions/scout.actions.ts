@@ -21,6 +21,83 @@ function splitName(fullName: string): { firstName: string; lastName: string } {
     return { firstName, lastName }
 }
 
+const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
+
+export async function sendScoutApplicationReminder(): Promise<{ error?: string; success?: string }> {
+    try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) {
+            return { error: 'Not authenticated' }
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                scoutApplicationStatus: true,
+                scoutApplicationDate: true,
+                lastReminderSent: true,
+                fullName: true,
+                email: true,
+                university: true
+            }
+        })
+
+        if (!user || user.scoutApplicationStatus !== 'PENDING') {
+            return { error: 'No pending application found' }
+        }
+
+        if (!user.scoutApplicationDate) {
+            return { error: 'Application date not found' }
+        }
+
+        const now = Date.now()
+        const applicationAge = now - user.scoutApplicationDate.getTime()
+
+        // Check if application is older than 1 month - allow reapplication
+        if (applicationAge > ONE_MONTH_MS) {
+            return { error: 'APPLICATION_EXPIRED' }
+        }
+
+        // Check if reminder was sent in the last week
+        if (user.lastReminderSent) {
+            const timeSinceLastReminder = now - user.lastReminderSent.getTime()
+            if (timeSinceLastReminder < ONE_WEEK_MS) {
+                const daysUntilNextReminder = Math.ceil((ONE_WEEK_MS - timeSinceLastReminder) / (24 * 60 * 60 * 1000))
+                return { error: `You can send another reminder in ${daysUntilNextReminder} day${daysUntilNextReminder > 1 ? 's' : ''}` }
+            }
+        }
+
+        // Update last reminder sent
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { lastReminderSent: new Date() }
+        })
+
+        // Send reminder to team
+        const { sendScoutApplicationReminderEmail, sendReminderConfirmationEmail } = await import('@/lib/email/send')
+        const daysSinceApplication = Math.floor(applicationAge / (24 * 60 * 60 * 1000))
+
+        try {
+            await sendScoutApplicationReminderEmail(
+                user.fullName,
+                user.email,
+                user.university || 'Not specified',
+                daysSinceApplication
+            )
+            await sendReminderConfirmationEmail(user.email, user.fullName)
+            logger.info('Scout application reminder sent', { userId: session.user.id })
+        } catch (err) {
+            logger.error('Failed to send reminder emails', { error: err })
+        }
+
+        return { success: 'Reminder sent to team' }
+    } catch (error) {
+        logger.error('Send reminder failed', { error })
+        return { error: 'Failed to send reminder' }
+    }
+}
+
 export async function submitScoutApplication(
     prevState: { error?: string; success?: string } | undefined,
     formData: FormData
@@ -126,12 +203,24 @@ export async function submitScoutApplication(
         })
 
         // Send confirmation email
-        const { sendScoutApplicationConfirmationEmail } = await import('@/lib/email/send')
+        const { sendScoutApplicationConfirmationEmail, sendScoutApplicationNotificationEmail } = await import('@/lib/email/send')
         try {
             await sendScoutApplicationConfirmationEmail(email, userFullName)
             logger.info('Scout application confirmation email sent', { email })
+
+            // Send notification to team
+            await sendScoutApplicationNotificationEmail(
+                userFullName,
+                email,
+                university,
+                department,
+                userRole,
+                researchAreas,
+                new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            )
+            logger.info('Scout application notification sent to team', { email })
         } catch (err) {
-            logger.error('Failed to send scout application confirmation email', { email, error: err })
+            logger.error('Failed to send scout application emails', { email, error: err })
         }
 
         logger.info('Scout application submitted', { userId, email })

@@ -9,9 +9,10 @@ interface UserDropdownProps {
   displayName: string
   role: string
   initials: string
+  profilePictureUrl?: string | null
 }
 
-export function UserDropdown({ displayName, role, initials }: UserDropdownProps) {
+export function UserDropdown({ displayName, role, initials, profilePictureUrl }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -30,43 +31,53 @@ export function UserDropdown({ displayName, role, initials }: UserDropdownProps)
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-[0.83vw] cursor-pointer"
+        className="flex items-center gap-[12px] cursor-pointer"
       >
         <div className="text-right">
-          <div className="font-bold text-[#1B2A4A] text-[17.5px]">{displayName}</div>
-          <div className="text-[#6B7280] text-[15px]">{role}</div>
+          <div className="font-medium text-[#1B2A4A] text-[14px]">{displayName}</div>
+          <div className="text-[#6B7280] text-[12px]">{role}</div>
         </div>
-        <div className="w-[2.78vw] h-[2.78vw] rounded-full bg-[#1B2A4A] flex items-center justify-center">
-          <span className="caption text-white font-medium">{initials}</span>
-        </div>
+        {profilePictureUrl ? (
+          <img 
+            src={profilePictureUrl} 
+            alt={displayName}
+            className="w-[40px] h-[40px] rounded-full object-cover border-2 border-[#E5E7EB]"
+          />
+        ) : (
+          <div className="w-[40px] h-[40px] rounded-full bg-[#1B2A4A] border-2 border-[#E5E7EB] flex items-center justify-center">
+            <span className="text-[14px] text-white font-bold">{initials}</span>
+          </div>
+        )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-[3.33vw] w-[13.89vw] bg-white border border-[#E5E7EB] rounded-[4px] shadow-md z-50">
+        <div className="absolute right-0 top-[48px] w-[200px] bg-white border border-[#E5E7EB] rounded-[4px] shadow-md z-50">
           <Link
-            href="/profile"
-            className="flex items-center gap-[0.56vw] px-[1.11vw] py-[0.83vw] text-[#1B2A4A] hover:bg-[#FAFBFC] text-[17.5px]"
+            href="/settings"
+            className="flex items-center gap-[12px] px-[16px] py-[12px] h-[44px] text-[#1B2A4A] hover:bg-[#FAFBFC] transition-colors"
             onClick={() => setIsOpen(false)}
           >
-            <User className="w-[1.11vw] h-[1.11vw]" />
-            Account
+            <User className="w-[18px] h-[18px] text-[#6B7280]" />
+            <span className="text-[15px] font-normal">Account</span>
           </Link>
           
           <Link
-            href="/profile/settings"
-            className="flex items-center gap-[0.56vw] px-[1.11vw] py-[0.83vw] text-[#1B2A4A] hover:bg-[#FAFBFC] text-[17.5px]"
+            href="/settings?tab=profile"
+            className="flex items-center gap-[12px] px-[16px] py-[12px] h-[44px] text-[#1B2A4A] hover:bg-[#FAFBFC] transition-colors"
             onClick={() => setIsOpen(false)}
           >
-            <Settings className="w-[1.11vw] h-[1.11vw]" />
-            Settings
+            <Settings className="w-[18px] h-[18px] text-[#6B7280]" />
+            <span className="text-[15px] font-normal">Settings</span>
           </Link>
+          
+          <div className="h-[1px] bg-[#E5E7EB] my-[8px]" />
           
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="w-full flex items-center gap-[0.56vw] px-[1.11vw] py-[0.83vw] text-[#EF4444] hover:bg-[#FAFBFC] border-t border-[#E5E7EB] text-[17.5px]"
+            className="w-full flex items-center gap-[12px] px-[16px] py-[12px] h-[44px] text-[#EF4444] hover:bg-[#FEE2E2] transition-colors"
           >
-            <LogOut className="w-[1.11vw] h-[1.11vw]" />
-            Sign Out
+            <LogOut className="w-[18px] h-[18px]" />
+            <span className="text-[15px] font-normal">Sign Out</span>
           </button>
         </div>
       )}

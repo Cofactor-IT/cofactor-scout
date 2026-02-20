@@ -15,10 +15,10 @@ export function Button({
   onClick,
   type = 'button'
 }: ButtonProps) {
-  const baseStyles = 'px-[1.67vw] py-[0.83vw] rounded-full button-text whitespace-nowrap transition-all';
+  const baseStyles = 'button rounded-full flex items-center justify-center whitespace-nowrap transition-all shadow-[0px_2px_4px_rgba(13,115,119,0.2)]';
   
   const variantStyles = {
-    primary: 'bg-[#0D7377] text-white hover:bg-[#0a5a5d]',
+    primary: 'bg-[#0D7377] text-white hover:bg-[#0A5A5D]',
     secondary: 'bg-white text-[#1B2A4A] border-2 border-[#1B2A4A] hover:bg-[#1B2A4A] hover:text-white'
   };
 

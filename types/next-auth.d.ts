@@ -6,6 +6,7 @@ declare module 'next-auth' {
         id: string
         role: Role
         emailVerified: Date | null
+        rememberMe?: boolean
     }
 
     interface Session {
@@ -21,5 +22,6 @@ declare module 'next-auth/jwt' {
     interface JWT {
         id: string
         role: Role
+        rememberMe?: boolean
     }
 }

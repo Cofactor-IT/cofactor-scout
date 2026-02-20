@@ -201,6 +201,79 @@ export async function sendArticleDeleteEmail(
 }
 
 /**
+ * Send scout application notification to team
+ */
+export async function sendScoutApplicationNotificationEmail(
+    applicantName: string,
+    applicantEmail: string,
+    university: string,
+    department: string,
+    userRole: string,
+    researchAreas: string,
+    applicationDate: string
+): Promise<void> {
+    const teamEmails = ['it@cofactor.world', 'team@cofactor.world']
+    const template = emailTemplates.scoutApplicationNotification({
+        applicantName,
+        applicantEmail,
+        university,
+        department,
+        userRole,
+        researchAreas,
+        applicationDate
+    })
+
+    for (const email of teamEmails) {
+        await sendEmail({
+            to: email,
+            template,
+            metadata: { type: 'scoutApplicationNotification', applicantEmail }
+        })
+    }
+}
+
+/**
+ * Send scout application reminder to team
+ */
+export async function sendScoutApplicationReminderEmail(
+    applicantName: string,
+    applicantEmail: string,
+    university: string,
+    daysSinceApplication: number
+): Promise<void> {
+    const teamEmails = ['it@cofactor.world', 'team@cofactor.world']
+    const template = emailTemplates.scoutApplicationReminder({
+        applicantName,
+        applicantEmail,
+        university,
+        daysSinceApplication
+    })
+
+    for (const email of teamEmails) {
+        await sendEmail({
+            to: email,
+            template,
+            metadata: { type: 'scoutApplicationReminder', applicantEmail }
+        })
+    }
+}
+
+/**
+ * Send reminder confirmation to applicant
+ */
+export async function sendReminderConfirmationEmail(
+    toEmail: string,
+    name: string
+): Promise<void> {
+    const template = emailTemplates.reminderConfirmation({ name })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'reminderConfirmation' }
+    })
+}
+
+/**
  * Send scout application confirmation
  */
 export async function sendScoutApplicationConfirmationEmail(
@@ -227,6 +300,54 @@ export async function sendScoutApprovalEmail(
         to: toEmail,
         template,
         metadata: { type: 'scoutApproval' }
+    })
+}
+
+/**
+ * Send account update confirmation
+ */
+export async function sendAccountUpdateEmail(
+    toEmail: string,
+    name: string,
+    changes: string
+): Promise<void> {
+    const template = emailTemplates.accountUpdate({ name, changes })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'accountUpdate' }
+    })
+}
+
+/**
+ * Send profile update confirmation
+ */
+export async function sendProfileUpdateEmail(
+    toEmail: string,
+    name: string
+): Promise<void> {
+    const template = emailTemplates.profileUpdate({ name })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'profileUpdate' }
+    })
+}
+
+/**
+ * Send new sign-in notification
+ */
+export async function sendNewSignInEmail(
+    toEmail: string,
+    name: string,
+    timestamp: string,
+    location?: string
+): Promise<void> {
+    const template = emailTemplates.newSignIn({ name, timestamp, location })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'newSignIn' }
     })
 }
 

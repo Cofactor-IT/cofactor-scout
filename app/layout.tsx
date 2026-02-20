@@ -1,6 +1,8 @@
 import { Merriweather, Rethink_Sans } from 'next/font/google'
 import './globals.css'
 import type { Metadata } from 'next'
+import { SupportWidget } from '@/components/SupportWidget'
+import { getServerSession } from 'next-auth'
 
 const merriweather = Merriweather({
   subsets: ['latin'],
@@ -23,14 +25,19 @@ export const metadata: Metadata = {
   description: 'Discover Research. Connect Investor. Earn Commission',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await getServerSession()
+  
   return (
     <html lang="en">
-      <body className={`${merriweather.variable} ${rethinkSans.variable} antialiased`}>{children}</body>
+      <body className={`${merriweather.variable} ${rethinkSans.variable} antialiased`}>
+        {children}
+        {session && <SupportWidget />}
+      </body>
     </html>
   )
 }

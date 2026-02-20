@@ -34,33 +34,33 @@ export default function SignUpPage() {
     <div className="min-h-screen bg-[#FAFBFC]">
       <AuthNavbar />
 
-      <div className="flex items-center justify-center min-h-[calc(100vh-158px)]">
-        <div className="w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-[48px]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-158px)] px-4">
+        <div className="w-full max-w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-[40px]">
           {/* Header */}
-          <h1 className="text-[36px] font-bold text-[#1B2A4A] mb-[12px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+          <h1 className="text-[32px] font-bold text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
             Create Your Account
           </h1>
-          <p className="text-[16px] text-[#6B7280] mb-[32px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+          <p className="text-[14px] text-[#6B7280] mb-[24px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
             Join Cofactor Scout to start submitting research leads
           </p>
 
           {/* Error/Success Messages */}
           {state?.error && (
-            <div className="mb-[24px] p-[12px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px] text-[#EF4444] text-[14px]">
+            <div className="mb-[20px] p-[10px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px] text-[#EF4444] text-[13px]">
               {state.error}
             </div>
           )}
           {state?.success && (
-            <div className="mb-[24px] p-[12px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[14px]">
+            <div className="mb-[20px] p-[10px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[13px]">
               {state.success}
             </div>
           )}
 
           {/* Form */}
-          <form action={formAction} className="space-y-[24px]">
+          <form action={formAction} className="space-y-[20px]">
             {/* Name */}
             <div>
-              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
                 Name
               </label>
               <input
@@ -68,14 +68,14 @@ export default function SignUpPage() {
                 name="name"
                 placeholder="Enter your full name"
                 required
-                className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                className="w-full h-[42px] px-[14px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
                 style={{ fontFamily: 'var(--font-merriweather)' }}
               />
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
                 Email
               </label>
               <input
@@ -83,14 +83,14 @@ export default function SignUpPage() {
                 name="email"
                 placeholder="you@university.edu"
                 required
-                className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                className="w-full h-[42px] px-[14px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
                 style={{ fontFamily: 'var(--font-merriweather)' }}
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
                 Password
               </label>
               <div className="relative">
@@ -101,27 +101,27 @@ export default function SignUpPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
                   required
-                  className="w-full h-[48px] px-[16px] pr-[48px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                  className="w-full h-[42px] px-[14px] pr-[42px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
                   style={{ fontFamily: 'var(--font-merriweather)' }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
+                  className="absolute right-[14px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <div className="mt-[8px] space-y-[4px]">
+              <div className="mt-[6px] space-y-[3px]">
                 {requirements.map((req, index) => (
-                  <div key={index} className="flex items-center gap-[6px]">
+                  <div key={index} className="flex items-center gap-[5px]">
                     {req.met ? (
-                      <Check size={14} className="text-[#2D7D46]" />
+                      <Check size={12} className="text-[#2D7D46]" />
                     ) : (
-                      <X size={14} className="text-[#EF4444]" />
+                      <X size={12} className="text-[#EF4444]" />
                     )}
                     <span 
-                      className="text-[12px] italic transition-colors"
+                      className="text-[11px] italic transition-colors"
                       style={{ 
                         fontFamily: 'var(--font-merriweather)',
                         color: req.met ? '#2D7D46' : '#EF4444'
@@ -136,7 +136,7 @@ export default function SignUpPage() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
                 Confirm Password
               </label>
               <div className="relative">
@@ -147,30 +147,30 @@ export default function SignUpPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter your password"
                   required
-                  className="w-full h-[48px] px-[16px] pr-[48px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                  className="w-full h-[42px] px-[14px] pr-[42px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
                   style={{ fontFamily: 'var(--font-merriweather)' }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
+                  className="absolute right-[14px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
                 >
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               {confirmPassword && (
-                <div className="mt-[8px] flex items-center gap-[6px]">
+                <div className="mt-[6px] flex items-center gap-[5px]">
                   {password === confirmPassword ? (
                     <>
-                      <Check size={14} className="text-[#2D7D46]" />
-                      <span className="text-[12px] italic text-[#2D7D46]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                      <Check size={12} className="text-[#2D7D46]" />
+                      <span className="text-[11px] italic text-[#2D7D46]" style={{ fontFamily: 'var(--font-merriweather)' }}>
                         Passwords match
                       </span>
                     </>
                   ) : (
                     <>
-                      <X size={14} className="text-[#EF4444]" />
-                      <span className="text-[12px] italic text-[#EF4444]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                      <X size={12} className="text-[#EF4444]" />
+                      <span className="text-[11px] italic text-[#EF4444]" style={{ fontFamily: 'var(--font-merriweather)' }}>
                         Passwords do not match
                       </span>
                     </>
@@ -181,14 +181,14 @@ export default function SignUpPage() {
 
             {/* University (Optional) */}
             <div>
-              <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+              <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
                 University/Institute <span className="text-[#6B7280] font-normal">(Optional)</span>
               </label>
               <input
                 type="text"
                 name="universityName"
                 placeholder="e.g., Stanford University"
-                className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                className="w-full h-[42px] px-[14px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
                 style={{ fontFamily: 'var(--font-merriweather)' }}
               />
             </div>
@@ -196,15 +196,15 @@ export default function SignUpPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full h-[56px] bg-[#0D7377] text-white rounded-full flex items-center justify-center gap-[8px] text-[16px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors"
+              className="w-full h-[48px] bg-[#0D7377] text-white rounded-full flex items-center justify-center gap-[8px] text-[15px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors"
               style={{ fontFamily: 'var(--font-rethink-sans)' }}
             >
-              <Plus size={20} />
+              <Plus size={18} />
               Create Account
             </button>
 
             {/* Scout Link */}
-            <p className="text-center text-[14px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+            <p className="text-center text-[13px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
               Ready to join our talent network?{' '}
               <Link href="/auth/signup?path=apply" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
                 Sign up as a scout
@@ -215,8 +215,8 @@ export default function SignUpPage() {
       </div>
 
       {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10">
-        <p className="text-[16px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10 px-4">
+        <p className="text-[14px] md:text-[16px] text-[#6B7280] text-center" style={{ fontFamily: 'var(--font-merriweather)' }}>
           Already have an account?{' '}
           <Link href="/auth/signin" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
             Sign in

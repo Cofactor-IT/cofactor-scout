@@ -4,12 +4,14 @@ import { prisma } from '@/lib/database/prisma'
 import { redirect } from 'next/navigation'
 import ScoutApplicationForm from './scout-application-form'
 
+const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000
+
 export default async function ScoutApplicationPage() {
     const session = await getServerSession(authOptions)
 
     // If not logged in, show form with empty fields
     if (!session?.user) {
-        return <ScoutApplicationForm user={null} />
+        return <ScoutApplicationForm user={null} applicationStatus={null} />
     }
 
     // Check if already applied or approved
@@ -20,6 +22,8 @@ export default async function ScoutApplicationPage() {
             email: true,
             university: true,
             scoutApplicationStatus: true,
+            scoutApplicationDate: true,
+            lastReminderSent: true,
             role: true
         }
     })
@@ -33,10 +37,39 @@ export default async function ScoutApplicationPage() {
         redirect('/dashboard')
     }
 
-    // If application pending or approved, redirect to dashboard
-    if (user.scoutApplicationStatus === 'PENDING' || user.scoutApplicationStatus === 'APPROVED') {
+    // Check if application is older than 1 month - allow reapplication
+    if (user.scoutApplicationStatus === 'PENDING' && user.scoutApplicationDate) {
+        const applicationAge = Date.now() - user.scoutApplicationDate.getTime()
+        if (applicationAge > ONE_MONTH_MS) {
+            // Reset application status to allow reapplication
+            await prisma.user.update({
+                where: { id: session.user.id },
+                data: {
+                    scoutApplicationStatus: 'NOT_APPLIED',
+                    scoutApplicationDate: null,
+                    lastReminderSent: null
+                }
+            })
+            return <ScoutApplicationForm user={user} applicationStatus={null} />
+        }
+    }
+
+    // If application pending, show status with reminder option
+    if (user.scoutApplicationStatus === 'PENDING') {
+        return <ScoutApplicationForm 
+            user={user} 
+            applicationStatus={{
+                status: 'PENDING',
+                applicationDate: user.scoutApplicationDate!,
+                lastReminderSent: user.lastReminderSent
+            }} 
+        />
+    }
+
+    // If application approved, redirect to dashboard
+    if (user.scoutApplicationStatus === 'APPROVED') {
         redirect('/dashboard')
     }
 
-    return <ScoutApplicationForm user={user} />
+    return <ScoutApplicationForm user={user} applicationStatus={null} />
 }

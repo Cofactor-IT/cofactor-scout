@@ -45,6 +45,7 @@ enum SubmissionStatus {
 
 // Career stage of researcher
 enum CareerStage {
+  UNDERGRAD_STUDENT
   PHD_STUDENT
   POSTDOC
   PROFESSOR
@@ -121,6 +122,7 @@ model User {
   howSourceLeads         String?
   scoutApplicationStatus ScoutApplicationStatus @default(NOT_APPLIED)
   scoutApplicationDate   DateTime?
+  lastReminderSent       DateTime?
 
   // Profile Settings
   bio                String?
@@ -175,6 +177,7 @@ model ResearchSubmission {
   fundingStatus            FundingStatus?
   keyPublications          String?
   potentialApplications    String?
+  supportingLinks          Json?             @default("[]")
   submissionSource         SubmissionSource?
   relationshipToResearcher Relationship?
   researcherAwareness      Boolean           @default(false)

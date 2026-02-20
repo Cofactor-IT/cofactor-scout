@@ -55,3 +55,6 @@ next-env.d.ts
 # IDEs
 .vscode/
 .idea/
+
+# file tree
+structure.txt

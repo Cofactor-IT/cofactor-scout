@@ -37,6 +37,7 @@ function SignInForm() {
       const result = await signIn('credentials', {
         email: emailValue,
         password,
+        rememberMe: rememberMe.toString(),
         redirect: false,
       })
 
@@ -89,47 +90,47 @@ function SignInForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-158px)]">
-      <div className="w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-[48px]">
+    <div className="flex items-center justify-center min-h-[calc(100vh-158px)] px-4">
+      <div className="w-full max-w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-[40px]">
         {/* Header */}
-        <h1 className="text-[36px] font-bold text-[#1B2A4A] mb-[12px]" style={{ fontFamily: 'var(--font-rethink-sans)', letterSpacing: '-0.18px' }}>
+        <h1 className="text-[32px] font-bold text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)', letterSpacing: '-0.18px' }}>
           Welcome Back
         </h1>
-        <p className="text-[16px] text-[#6B7280] mb-[32px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+        <p className="text-[14px] text-[#6B7280] mb-[24px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
           Sign in to continue to Cofactor Scout
         </p>
 
         {/* Success Message */}
         {message && (
-          <div className="mb-[24px] p-[12px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[14px]">
+          <div className="mb-[20px] p-[10px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[13px]">
             {message}
           </div>
         )}
 
         {/* Resend Success Message */}
         {resendSuccess && (
-          <div className="mb-[24px] p-[12px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[14px]">
+          <div className="mb-[20px] p-[10px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[13px]">
             {resendSuccess}
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="mb-[24px] p-[12px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px]">
-            <p className="text-[#EF4444] text-[14px] mb-[8px]">{error}</p>
+          <div className="mb-[20px] p-[10px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px]">
+            <p className="text-[#EF4444] text-[13px] mb-[6px]">{error}</p>
             {error.includes('verify your email') && email && (
               <button
                 onClick={handleResendVerification}
                 disabled={resendLoading || resendCooldown > 0}
-                className="mt-[8px] flex items-center gap-[6px] text-[14px] text-[#0D7377] hover:text-[#0a5a5d] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-[6px] flex items-center gap-[5px] text-[13px] text-[#0D7377] hover:text-[#0a5a5d] disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ fontFamily: 'var(--font-rethink-sans)' }}
               >
-                <Mail size={14} />
+                <Mail size={13} />
                 {resendLoading ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email'}
               </button>
             )}
             {error === 'Invalid email or password' && (
-              <p className="text-[14px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+              <p className="text-[13px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
                 Don't have an account?{' '}
                 <Link href="/auth/signup" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
                   Sign up here
@@ -143,7 +144,7 @@ function SignInForm() {
         <form onSubmit={handleSubmit} className="space-y-[16px]">
           {/* Email */}
           <div>
-            <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+            <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
               Email
             </label>
             <input
@@ -153,14 +154,14 @@ function SignInForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@university.edu"
               required
-              className="w-full h-[48px] px-[16px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+              className="w-full h-[42px] px-[14px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
               style={{ fontFamily: 'var(--font-merriweather)' }}
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+            <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
               Password
             </label>
             <div className="relative">
@@ -169,33 +170,33 @@ function SignInForm() {
                 name="password"
                 placeholder="Enter your password"
                 required
-                className="w-full h-[48px] px-[16px] pr-[48px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[16px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
+                className="w-full h-[42px] px-[14px] pr-[42px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
                 style={{ fontFamily: 'var(--font-merriweather)' }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
+                className="absolute right-[14px] top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1B2A4A]"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
           {/* Options Row */}
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-[8px] cursor-pointer">
+            <label className="flex items-center gap-[6px] cursor-pointer group">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-[20px] h-[20px] border-2 border-[#E5E7EB] rounded-[4px] cursor-pointer"
+                className="w-[18px] h-[18px] border-2 border-[#E5E7EB] rounded-[4px] cursor-pointer"
               />
-              <span className="text-[14px] text-[#1B2A4A]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
-                Remember me
+              <span className="text-[13px] text-[#1B2A4A]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                Remember me for 30 days
               </span>
             </label>
-            <Link href="/auth/forgot-password" className="text-[14px] text-[#0D7377] underline hover:text-[#0a5a5d]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+            <Link href="/auth/forgot-password" className="text-[13px] text-[#0D7377] underline hover:text-[#0a5a5d]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
               Forgot password?
             </Link>
           </div>
@@ -204,7 +205,7 @@ function SignInForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-[56px] bg-[#0D7377] text-white rounded-full flex items-center justify-center text-[18px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-[48px] bg-[#0D7377] text-white rounded-full flex items-center justify-center text-[15px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-rethink-sans)', boxShadow: '0px 2px 4px rgba(13,115,119,0.2)' }}
           >
             {loading ? 'Signing in...' : 'Sign In'}
@@ -234,8 +235,8 @@ export default function SignInPage() {
       </Suspense>
 
       {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10">
-        <p className="text-[16px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10 px-4">
+        <p className="text-[14px] md:text-[16px] text-[#6B7280] text-center" style={{ fontFamily: 'var(--font-merriweather)' }}>
           Don't have an account?{' '}
           <Link href="/auth/signup" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
             Sign up

@@ -18,10 +18,10 @@ export default function NotFound() {
                     </p>
 
                     <div className="flex flex-col gap-3 w-full">
-                        <Link href="/">
-                            <Button className="w-full">
-                                <Home className="mr-2 h-4 w-4" />
-                                Go to Homepage
+                        <Link href="/" className="w-full">
+                            <Button className="w-full flex items-center justify-center gap-2">
+                                <Home className="h-4 w-4" />
+                                <span>Go to Homepage</span>
                             </Button>
                         </Link>
                     </div>

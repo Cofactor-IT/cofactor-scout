@@ -6,6 +6,7 @@
   :root {
     --navy: #1B2A4A;
     --teal: #0D7377;
+    --teal-dark: #0A5A5D;
     --off-white: #FAFBFC;
     --cool-gray: #6B7280;
     --purple: #6B5CE7;
@@ -17,149 +18,195 @@
     --white: #FFFFFF;
   }
 
-  /* Default heading styles */
-  h1 {
-    font-family: var(--font-rethink-sans), sans-serif;
-    font-weight: 700;
-    font-size: 3.33vw;
-    line-height: 1;
-    letter-spacing: -0.01em;
-    color: #1B2A4A;
-  }
-
-  h2 {
-    font-family: var(--font-rethink-sans), sans-serif;
-    font-weight: 700;
-    font-size: 2.5vw;
-    line-height: 1;
-    letter-spacing: -0.005em;
-    color: #1B2A4A;
-  }
-
-  h3 {
-    font-family: var(--font-rethink-sans), sans-serif;
-    font-weight: 600;
-    font-size: 1.67vw;
-    line-height: 1;
-    letter-spacing: 0;
-    color: #1B2A4A;
-  }
-
-  h4 {
-    font-family: var(--font-rethink-sans), sans-serif;
-    font-weight: 600;
-    font-size: 1.25vw;
-    line-height: 1;
-    letter-spacing: 0;
-    color: #1B2A4A;
-  }
-
-  /* Default body styles */
-  body {
-    font-family: var(--font-merriweather), serif;
-    font-weight: 400;
-    font-size: 1.11vw;
-    line-height: 1.5;
-    letter-spacing: 0;
-    color: #1B2A4A;
-  }
-
-  p {
-    font-family: var(--font-merriweather), serif;
-    font-weight: 400;
-    font-size: 1.11vw;
-    line-height: 1.5;
-    letter-spacing: 0;
-    color: #1B2A4A;
-  }
-
   /* Heading 1 - Hero Headlines */
-  .heading-1 {
+  h1, .h1 {
     font-family: var(--font-rethink-sans), sans-serif;
     font-weight: 700;
-    font-size: 3.33vw;
-    line-height: 1;
+    font-size: 36px;
+    line-height: 1.1;
     letter-spacing: -0.01em;
+    color: #1B2A4A;
+  }
+
+  @media (min-width: 768px) {
+    h1, .h1 {
+      font-size: 48px;
+      line-height: 1;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h1, .h1 {
+      font-size: 60px;
+    }
   }
 
   /* Heading 2 - Section Titles */
-  .heading-2 {
+  h2, .h2 {
     font-family: var(--font-rethink-sans), sans-serif;
     font-weight: 700;
-    font-size: 2.5vw;
-    line-height: 1;
+    font-size: 28px;
+    line-height: 1.1;
     letter-spacing: -0.005em;
+    color: #1B2A4A;
+  }
+
+  @media (min-width: 768px) {
+    h2, .h2 {
+      font-size: 36px;
+      line-height: 1;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h2, .h2 {
+      font-size: 45px;
+    }
   }
 
   /* Heading 3 - Subsection Titles */
-  .heading-3 {
+  h3, .h3 {
     font-family: var(--font-rethink-sans), sans-serif;
     font-weight: 600;
-    font-size: 1.67vw;
-    line-height: 1;
+    font-size: 22px;
+    line-height: 1.1;
     letter-spacing: 0;
+    color: #1B2A4A;
+  }
+
+  @media (min-width: 768px) {
+    h3, .h3 {
+      font-size: 26px;
+      line-height: 1;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h3, .h3 {
+      font-size: 30px;
+    }
   }
 
   /* Heading 4 - Card Titles */
-  .heading-4 {
+  h4, .h4 {
     font-family: var(--font-rethink-sans), sans-serif;
     font-weight: 600;
-    font-size: 1.25vw;
-    line-height: 1;
+    font-size: 18px;
+    line-height: 1.1;
     letter-spacing: 0;
+    color: #1B2A4A;
+  }
+
+  @media (min-width: 768px) {
+    h4, .h4 {
+      font-size: 20px;
+      line-height: 1;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    h4, .h4 {
+      font-size: 22.5px;
+    }
   }
 
   /* Body Large */
   .body-large {
-    font-family: var(--font-merriweather), serif !important;
+    font-family: var(--font-merriweather), serif;
     font-weight: 400;
-    font-size: 1.15vw;
+    font-size: 18px;
     line-height: 1.5;
     letter-spacing: 0;
   }
 
+  @media (min-width: 1024px) {
+    .body-large {
+      font-size: 22.5px;
+    }
+  }
+
   /* Body Regular */
-  .body {
-    font-family: var(--font-merriweather), serif !important;
+  body, p, .body {
+    font-family: var(--font-rethink-sans), sans-serif;
     font-weight: 400;
     font-size: 16px;
     line-height: 1.5;
     letter-spacing: 0;
+    color: #1B2A4A;
+  }
+
+  @media (min-width: 1024px) {
+    body, p, .body {
+      font-size: 20px;
+    }
   }
 
   /* Body Bold */
   .body-bold {
-    font-family: var(--font-merriweather), serif !important;
+    font-family: var(--font-merriweather), serif;
     font-weight: 700;
     font-size: 16px;
     line-height: 1.5;
     letter-spacing: 0;
   }
 
-  /* Caption */
+  @media (min-width: 1024px) {
+    .body-bold {
+      font-size: 20px;
+    }
+  }
+
+  /* Caption - Metadata */
   .caption {
     font-family: var(--font-rethink-sans), sans-serif;
     font-weight: 400;
-    font-size: 0.97vw;
+    font-size: 14px;
     line-height: 1.4;
     letter-spacing: 0;
   }
 
-  /* Button Text */
-  .button-text {
-    font-family: var(--font-rethink-sans), sans-serif;
-    font-weight: 500;
-    font-size: 1.11vw;
-    line-height: 1;
-    letter-spacing: 0.005em;
+  @media (min-width: 1024px) {
+    .caption {
+      font-size: 17.5px;
+    }
   }
 
-  /* Label */
+  /* Button Text */
+  .button {
+    font-family: var(--font-rethink-sans), sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1;
+    letter-spacing: 0.005em;
+    padding: 10px 20px;
+  }
+
+  @media (min-width: 768px) {
+    .button {
+      font-size: 16px;
+      padding: 12px 24px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .button {
+      font-size: 20px;
+      padding: 14px 32px;
+    }
+  }
+
+  /* Label - Form Labels */
   .label {
     font-family: var(--font-rethink-sans), sans-serif;
     font-weight: 500;
-    font-size: 0.97vw;
+    font-size: 14px;
     line-height: 1;
     letter-spacing: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .label {
+      font-size: 17.5px;
+    }
   }
 }

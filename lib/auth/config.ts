@@ -14,7 +14,8 @@ export const authOptions: NextAuthOptions = {
             name: 'Credentials',
             credentials: {
                 email: { label: "Email", type: "email" },
-                password: { label: "Password", type: "password" }
+                password: { label: "Password", type: "password" },
+                rememberMe: { label: "Remember Me", type: "text" }
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null
@@ -82,12 +83,26 @@ export const authOptions: NextAuthOptions = {
                     })
                 }
 
+                // Send sign-in notification email
+                const { sendNewSignInEmail } = await import('@/lib/email/send')
+                try {
+                    const timestamp = new Date().toLocaleString('en-US', { 
+                        dateStyle: 'medium', 
+                        timeStyle: 'short' 
+                    })
+                    await sendNewSignInEmail(user.email, user.fullName, timestamp)
+                    logger.info('Sign-in notification sent', { email: user.email })
+                } catch (err) {
+                    logger.error('Failed to send sign-in notification', { email: user.email, error: err })
+                }
+
                 return {
                     id: user.id,
                     email: user.email,
                     name: user.fullName,
                     role: user.role,
-                    emailVerified: user.emailVerified
+                    emailVerified: user.emailVerified,
+                    rememberMe: credentials.rememberMe === 'true'
                 }
             }
         })
@@ -102,10 +117,14 @@ export const authOptions: NextAuthOptions = {
             }
             return session
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = user.id
                 token.role = user.role
+                token.rememberMe = user.rememberMe
+                // Set token expiration based on rememberMe
+                const maxAge = user.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 // 30 days or 1 day
+                token.exp = Math.floor(Date.now() / 1000) + maxAge
             }
             return token
         },
@@ -126,7 +145,7 @@ export const authOptions: NextAuthOptions = {
     },
     session: {
         strategy: "jwt",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 60 * 24 * 30, // 30 days max (will be overridden by JWT callback)
     },
     secret: process.env.NEXTAUTH_SECRET
 }

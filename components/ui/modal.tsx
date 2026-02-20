@@ -27,24 +27,24 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
   if (!isOpen) return null
 
   const sizeClasses = {
-    sm: 'w-[27.78vw]',
-    md: 'w-[41.67vw]',
-    lg: 'w-[55.56vw]',
+    sm: 'w-[90vw] max-w-[400px]',
+    md: 'w-[90vw] max-w-[600px]',
+    lg: 'w-[90vw] max-w-[800px]',
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className={`relative bg-white rounded-[4px] shadow-lg ${sizeClasses[size]}`}>
-        <div className="flex items-center justify-between px-[1.67vw] py-[1.11vw] border-b border-[#E5E7EB]">
-          <h3>{title}</h3>
+      <div className={`relative bg-white rounded-[4px] shadow-lg ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-[#E5E7EB]">
+          <h3 className="text-[18px] md:text-[20px]">{title}</h3>
           <button onClick={onClose} className="text-[#6B7280] hover:text-[#1B2A4A]">
-            <X className="w-[1.67vw] h-[1.67vw]" />
+            <X className="w-[20px] h-[20px] md:w-[24px] md:h-[24px]" />
           </button>
         </div>
-        <div className="px-[1.67vw] py-[1.67vw]">{children}</div>
+        <div className="px-4 md:px-6 py-4 md:py-6">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-[0.83vw] px-[1.67vw] py-[1.11vw] border-t border-[#E5E7EB]">
+          <div className="flex items-center justify-end gap-3 px-4 md:px-6 py-4 border-t border-[#E5E7EB]">
             {footer}
           </div>
         )}
