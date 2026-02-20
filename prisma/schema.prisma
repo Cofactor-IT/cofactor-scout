@@ -123,6 +123,7 @@ model User {
   howSourceLeads         String?
   scoutApplicationStatus ScoutApplicationStatus @default(NOT_APPLIED)
   scoutApplicationDate   DateTime?
+  scoutApprovedAt        DateTime?
 
   // Profile Settings
   bio                String?
@@ -234,5 +235,6 @@ model SystemSettings {
   id                       String   @id @default(cuid())
   enableEmailNotifications Boolean  @default(true)
   enableInAppNotifications Boolean  @default(true)
+  scoutNotificationEmail   String?  @default("it@cofactor.world")
   updatedAt                DateTime @updatedAt
 }

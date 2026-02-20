@@ -1,69 +1,70 @@
 'use server'
 
-/**
- * DEPRECATED: This file contained wiki-related admin actions
- * The schema has been migrated to Cofactor Scout (research submission platform)
- * 
- * Removed models: WikiRevision, UniPage, Institute, Lab, SecondaryUniversityRequest
- * 
- * TODO: Implement new admin actions for:
- * - ResearchSubmission moderation
- * - User management
- * - System settings
- */
+import { prisma } from '@/lib/database/prisma'
+import { requireAdmin } from '@/lib/auth/session'
+import { logger } from '@/lib/logger'
+import { sendScoutApprovalEmail, sendScoutRejectionEmail } from '@/lib/email/send'
 
-export async function approveRevision() {
-    throw new Error('Wiki functionality has been removed. This action is no longer available.')
+export async function approveScoutApplication(userId: string): Promise<{ success?: boolean; error?: string }> {
+    try {
+        const admin = await requireAdmin()
+
+        const user = await prisma.user.findUnique({ where: { id: userId } })
+        if (!user || user.scoutApplicationStatus !== 'PENDING') {
+            return { error: 'Application not found or not pending.' }
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                role: 'SCOUT',
+                scoutApplicationStatus: 'APPROVED',
+                scoutApprovedAt: new Date()
+            }
+        })
+
+        try {
+            await sendScoutApprovalEmail(user.email, user.fullName)
+            logger.info('Scout approval email sent', { email: user.email })
+        } catch (err) {
+            logger.error('Failed to send scout approval email', { error: err })
+        }
+
+        logger.info('Scout application approved', { adminId: admin.id, applicantId: userId })
+        return { success: true }
+    } catch (e: any) {
+        logger.error('Failed to approve scout application', { error: e })
+        return { error: e.message || 'Error approving application' }
+    }
 }
 
-export async function rejectRevision() {
-    throw new Error('Wiki functionality has been removed. This action is no longer available.')
-}
+export async function rejectScoutApplication(userId: string, feedback?: string): Promise<{ success?: boolean; error?: string }> {
+    try {
+        const admin = await requireAdmin()
 
-export async function bulkApproveRevisions() {
-    throw new Error('Wiki functionality has been removed. This action is no longer available.')
-}
+        const user = await prisma.user.findUnique({ where: { id: userId } })
+        if (!user || user.scoutApplicationStatus !== 'PENDING') {
+            return { error: 'Application not found or not pending.' }
+        }
 
-export async function bulkRejectRevisions() {
-    throw new Error('Wiki functionality has been removed. This action is no longer available.')
-}
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                scoutApplicationStatus: 'REJECTED'
+            }
+        })
 
-export async function getPendingRevisionsWithModerationInfo() {
-    throw new Error('Wiki functionality has been removed. This action is no longer available.')
-}
+        try {
+            await sendScoutRejectionEmail(user.email, user.fullName, feedback)
+            logger.info('Scout rejection email sent', { email: user.email })
+        } catch (err) {
+            logger.error('Failed to send scout rejection email', { error: err })
+        }
 
-export async function approveStaff() {
-    throw new Error('Staff approval system has been removed.')
-}
-
-export async function rejectStaff() {
-    throw new Error('Staff approval system has been removed.')
-}
-
-export async function deletePage() {
-    throw new Error('Wiki functionality has been removed. This action is no longer available.')
-}
-
-export async function approveInstitute() {
-    throw new Error('Institute management has been removed.')
-}
-
-export async function rejectInstitute() {
-    throw new Error('Institute management has been removed.')
-}
-
-export async function approveLab() {
-    throw new Error('Lab management has been removed.')
-}
-
-export async function rejectLab() {
-    throw new Error('Lab management has been removed.')
-}
-
-export async function approveSecondaryUniversityRequest() {
-    throw new Error('Secondary university feature has been removed.')
-}
-
-export async function rejectSecondaryUniversityRequest() {
-    throw new Error('Secondary university feature has been removed.')
+        logger.info('Scout application rejected', { adminId: admin.id, applicantId: userId })
+        return { success: true }
+    } catch (e: any) {
+        logger.error('Failed to reject scout application', { error: e })
+        return { error: e.message || 'Error rejecting application' }
+    }
 }
