@@ -86,9 +86,9 @@ export async function sendScoutApplicationReminder(): Promise<{ error?: string; 
 }
 
 export async function submitScoutApplication(
-    prevState: { error?: string; success?: string } | undefined,
+    prevState: { error?: string; success?: string; data?: any } | undefined,
     formData: FormData
-): Promise<{ error?: string; success?: string }> {
+): Promise<{ error?: string; success?: string; data?: any }> {
     try {
         const session = await getServerSession(authOptions)
 
@@ -129,8 +129,25 @@ export async function submitScoutApplication(
 
             userId = session.user.id
             userFullName = user.fullName
+
+            // Update user with scout application
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    university,
+                    department,
+                    linkedinUrl: linkedinUrl || null,
+                    userRole: userRole as any,
+                    userRoleOther: userRole === 'OTHER' ? userRoleOther : null,
+                    researchAreas,
+                    whyScout,
+                    howSourceLeads,
+                    scoutApplicationStatus: 'PENDING',
+                    scoutApplicationDate: new Date()
+                }
+            })
         } else {
-            // User is not logged in - create account
+            // User is not logged in - store application data and redirect to signup
             const existingUser = await prisma.user.findUnique({
                 where: { email },
                 select: { id: true }
@@ -140,56 +157,23 @@ export async function submitScoutApplication(
                 return { error: 'An account with this email already exists. Please sign in first.' }
             }
 
-            // Generate temporary password
-            const tempPassword = randomBytes(16).toString('hex')
-            const hashedPassword = await bcrypt.hash(tempPassword, 10)
-            const verificationToken = generateSecureToken()
-            const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
-            const { firstName, lastName } = splitName(name)
-
-            const newUser = await prisma.user.create({
+            // Store application data in session/URL and redirect to signup
+            return { 
+                success: 'REDIRECT_TO_SIGNUP',
                 data: {
+                    name,
                     email,
-                    fullName: name,
-                    firstName,
-                    lastName,
-                    password: hashedPassword,
-                    role: 'CONTRIBUTOR',
-                    verificationToken,
-                    verificationExpires,
-                    university
-                },
-                select: { id: true }
-            })
-
-            userId = newUser.id
-            userFullName = name
-
-            // Send verification email
-            const { sendVerificationEmail } = await import('@/lib/email/send')
-            try {
-                await sendVerificationEmail(email, name, verificationToken)
-            } catch (err) {
-                logger.error('Failed to send verification email', { email, error: err })
+                    university,
+                    department,
+                    linkedinUrl,
+                    userRole,
+                    userRoleOther,
+                    researchAreas,
+                    whyScout,
+                    howSourceLeads
+                }
             }
         }
-
-        // Update user with scout application
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                university,
-                department,
-                linkedinUrl: linkedinUrl || null,
-                userRole: userRole as any,
-                userRoleOther: userRole === 'OTHER' ? userRoleOther : null,
-                researchAreas,
-                whyScout,
-                howSourceLeads,
-                scoutApplicationStatus: 'PENDING',
-                scoutApplicationDate: new Date()
-            }
-        })
 
         // Send confirmation email
         const { sendScoutApplicationConfirmationEmail, sendScoutApplicationNotificationEmail } = await import('@/lib/email/send')

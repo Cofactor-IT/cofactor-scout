@@ -83,19 +83,6 @@ export const authOptions: NextAuthOptions = {
                     })
                 }
 
-                // Send sign-in notification email
-                const { sendNewSignInEmail } = await import('@/lib/email/send')
-                try {
-                    const timestamp = new Date().toLocaleString('en-US', { 
-                        dateStyle: 'medium', 
-                        timeStyle: 'short' 
-                    })
-                    await sendNewSignInEmail(user.email, user.fullName, timestamp)
-                    logger.info('Sign-in notification sent', { email: user.email })
-                } catch (err) {
-                    logger.error('Failed to send sign-in notification', { email: user.email, error: err })
-                }
-
                 return {
                     id: user.id,
                     email: user.email,

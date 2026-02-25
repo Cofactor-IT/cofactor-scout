@@ -112,7 +112,7 @@ export default async function DraftsPage() {
             </section>
 
             {/* Drafts Table */}
-            <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] flex-1 overflow-y-auto">
+            <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] pb-[80px] flex-1 overflow-y-auto">
                 <DraftsTable 
                     drafts={drafts}
                     deleteDraft={deleteDraft}

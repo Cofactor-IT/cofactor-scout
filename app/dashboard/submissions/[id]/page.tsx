@@ -5,6 +5,12 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { CommentForm } from '@/components/CommentForm'
 import { CommentList } from '@/components/CommentList'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Submission | Cofactor Scout',
+  description: 'View your research submission details and updates.'
+}
 
 export const dynamic = 'force-dynamic'
 

@@ -2,6 +2,12 @@ import { requireAuth } from '@/lib/auth/session'
 import { prisma } from '@/lib/database/prisma'
 import { DashboardNavbar } from '@/components/dashboard-navbar'
 import { Step1Form } from '@/components/submission/Step1Form'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Submit Research Lead | Cofactor Scout',
+  description: 'Submit a promising research lead to connect with venture capital investors.'
+}
 
 export default async function SubmitPage() {
   const session = await requireAuth()

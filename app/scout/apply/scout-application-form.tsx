@@ -28,7 +28,11 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
     const [reminderState, setReminderState] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false })
 
     useEffect(() => {
-        if (state?.success) {
+        if (state?.success === 'REDIRECT_TO_SIGNUP') {
+            // Encode application data and redirect to signup
+            const data = encodeURIComponent(JSON.stringify(state.data))
+            router.push(`/auth/signup?scoutApp=${data}`)
+        } else if (state?.success) {
             router.push('/scout/apply/submitted')
         }
     }, [state, router])
@@ -58,6 +62,10 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
 
     const isLoggedIn = !!user
     const isValidLinkedIn = !linkedinUrl || /^https?:\/\/(www\.)?linkedin\.com\/in\/.+/.test(linkedinUrl)
+    const [email, setEmail] = useState(user?.email || '')
+    const [name, setName] = useState(user?.fullName || '')
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    const isValidName = name.trim().length >= 2
 
     // Show pending status if application is pending
     if (applicationStatus?.status === 'PENDING') {
@@ -176,7 +184,8 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     <input
                                         type="text"
                                         name="name"
-                                        defaultValue={user?.fullName || ''}
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
                                         readOnly={isLoggedIn}
                                         required
                                         placeholder="Enter your full name"
@@ -185,6 +194,21 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     />
                                     {isLoggedIn && <Lock size={16} className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280]" />}
                                 </div>
+                                {!isLoggedIn && name && (
+                                    <div className="mt-[8px] flex items-center gap-[8px] text-[14px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                                        {isValidName ? (
+                                            <>
+                                                <Check size={16} className="text-[#2D7D46]" />
+                                                <span className="text-[#2D7D46]">Valid name</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <X size={16} className="text-[#EF4444]" />
+                                                <span className="text-[#EF4444]">Name must be at least 2 characters</span>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Email - Locked */}
@@ -196,7 +220,8 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     <input
                                         type="email"
                                         name="email"
-                                        defaultValue={user?.email || ''}
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
                                         readOnly={isLoggedIn}
                                         required
                                         placeholder="you@university.edu"
@@ -205,6 +230,21 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     />
                                     {isLoggedIn && <Lock size={16} className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[#6B7280]" />}
                                 </div>
+                                {!isLoggedIn && email && (
+                                    <div className="mt-[8px] flex items-center gap-[8px] text-[14px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                                        {isValidEmail ? (
+                                            <>
+                                                <Check size={16} className="text-[#2D7D46]" />
+                                                <span className="text-[#2D7D46]">Valid email</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <X size={16} className="text-[#EF4444]" />
+                                                <span className="text-[#EF4444]">Enter a valid email</span>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* University */}

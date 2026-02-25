@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { MessageSquare } from 'lucide-react'
 import { deleteComment } from '@/actions/comment.actions'
 
 interface Comment {
@@ -30,6 +31,20 @@ export function CommentList({ comments, currentUserId, submissionId }: CommentLi
     setDeleting(commentId)
     await deleteComment(commentId, submissionId)
     setDeleting(null)
+  }
+
+  if (comments.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-[48px] text-center">
+        <MessageSquare className="w-[64px] h-[64px] text-[#6B7280] mb-[16px]" strokeWidth={1.5} />
+        <h4 className="text-[20px] font-semibold text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+          No comments yet
+        </h4>
+        <p className="text-[14px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+          Be the first to add a comment or update
+        </p>
+      </div>
+    )
   }
 
   return (

@@ -90,8 +90,8 @@ function SignInForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-158px)] px-4">
-      <div className="w-full max-w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-[40px]">
+    <div className="flex items-center justify-center min-h-[calc(100vh-158px)] px-4 py-8">
+      <div className="w-full max-w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-[48px] my-8">
         {/* Header */}
         <h1 className="text-[32px] font-bold text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)', letterSpacing: '-0.18px' }}>
           Welcome Back
@@ -208,7 +208,14 @@ function SignInForm() {
             className="w-full h-[48px] bg-[#0D7377] text-white rounded-full flex items-center justify-center text-[15px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'var(--font-rethink-sans)', boxShadow: '0px 2px 4px rgba(13,115,119,0.2)' }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Signing in...</span>
+              </div>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
       </div>
@@ -218,12 +225,12 @@ function SignInForm() {
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-[#FAFBFC]">
+    <div className="min-h-screen bg-[#FAFBFC] pt-[78px]">
       <AuthNavbar />
 
       <Suspense fallback={
-        <div className="flex items-center justify-center min-h-[calc(100vh-158px)]">
-          <div className="w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-[48px]">
+        <div className="flex items-center justify-center min-h-[calc(100vh-158px)] px-4">
+          <div className="w-full max-w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-[48px] my-8">
             <div className="animate-pulse space-y-4">
               <div className="h-8 bg-[#E5E7EB] rounded w-3/4"></div>
               <div className="h-4 bg-[#E5E7EB] rounded w-1/2"></div>
@@ -235,7 +242,7 @@ export default function SignInPage() {
       </Suspense>
 
       {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10 px-4">
+      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-40 px-4">
         <p className="text-[14px] md:text-[16px] text-[#6B7280] text-center" style={{ fontFamily: 'var(--font-merriweather)' }}>
           Don't have an account?{' '}
           <Link href="/auth/signup" className="text-[#0D7377] underline hover:text-[#0a5a5d]">

@@ -5,6 +5,12 @@ import { DashboardNavbar } from '@/components/dashboard-navbar'
 import { SettingsTabs } from '@/components/settings/SettingsTabs'
 import { AccountSettings } from '@/components/settings/AccountSettings'
 import { ProfileSettings } from '@/components/settings/ProfileSettings'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Settings | Cofactor Scout',
+  description: 'Manage your account settings and profile information.'
+}
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await requireAuth()

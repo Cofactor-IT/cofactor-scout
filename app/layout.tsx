@@ -3,6 +3,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { SupportWidget } from '@/components/SupportWidget'
 import { getServerSession } from 'next-auth'
+import { Toaster } from 'sonner'
 
 const merriweather = Merriweather({
   subsets: ['latin'],
@@ -37,6 +38,7 @@ export default async function RootLayout({
       <body className={`${merriweather.variable} ${rethinkSans.variable} antialiased`}>
         {children}
         {session && <SupportWidget />}
+        <Toaster position="bottom-right" />
       </body>
     </html>
   )

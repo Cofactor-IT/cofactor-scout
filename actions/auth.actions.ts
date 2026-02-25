@@ -205,16 +205,78 @@ export async function signUp(
         // Determine university
         const university = await determineUniversity(validatedEmail, formData)
 
+        // Check if this is a scout application signup
+        const isScoutApp = formData.get('scoutApplication') === 'true'
+
         // Create user only if doesn't exist
         if (!existingUser) {
             const hashedPassword = await bcrypt.hash(password, 10)
 
-            await createUser(
-                validationResult.data,
-                hashedPassword,
-                role,
-                university
-            )
+            if (isScoutApp) {
+                // Create user with scout application data
+                const verificationToken = generateSecureToken()
+                const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+                const { firstName, lastName } = splitName(name)
+
+                await prisma.user.create({
+                    data: {
+                        email: validatedEmail,
+                        fullName: name,
+                        firstName,
+                        lastName,
+                        password: hashedPassword,
+                        role,
+                        verificationToken,
+                        verificationExpires,
+                        university,
+                        department: formData.get('department') as string,
+                        linkedinUrl: (formData.get('linkedinUrl') as string) || null,
+                        userRole: formData.get('userRole') as any,
+                        userRoleOther: formData.get('userRole') === 'OTHER' ? (formData.get('userRoleOther') as string) : null,
+                        researchAreas: formData.get('researchAreas') as string,
+                        whyScout: formData.get('whyScout') as string,
+                        howSourceLeads: formData.get('howSourceLeads') as string,
+                        scoutApplicationStatus: 'PENDING',
+                        scoutApplicationDate: new Date()
+                    }
+                })
+
+                // Send verification email
+                const { sendVerificationEmail } = await import('@/lib/email/send')
+                try {
+                    await sendVerificationEmail(validatedEmail, name, verificationToken)
+                    logger.info('Verification email sent successfully', { email: validatedEmail })
+                } catch (err) {
+                    logger.error('Failed to send verification email', { email: validatedEmail, error: err })
+                }
+
+                // Send scout application emails
+                const { sendScoutApplicationConfirmationEmail, sendScoutApplicationNotificationEmail } = await import('@/lib/email/send')
+                try {
+                    await sendScoutApplicationConfirmationEmail(validatedEmail, name)
+                    await sendScoutApplicationNotificationEmail(
+                        name,
+                        validatedEmail,
+                        university || 'Not specified',
+                        formData.get('department') as string,
+                        formData.get('userRole') as string,
+                        formData.get('researchAreas') as string,
+                        new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                    )
+                    logger.info('Scout application emails sent', { email: validatedEmail })
+                } catch (err) {
+                    logger.error('Failed to send scout application emails', { email: validatedEmail, error: err })
+                }
+
+                logger.info('Scout application account created', { email: validatedEmail })
+            } else {
+                await createUser(
+                    validationResult.data,
+                    hashedPassword,
+                    role,
+                    university
+                )
+            }
         }
 
         // Enforce timing delay

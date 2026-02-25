@@ -3,6 +3,12 @@ import { authOptions } from '@/lib/auth/config'
 import { prisma } from '@/lib/database/prisma'
 import { redirect } from 'next/navigation'
 import ScoutApplicationForm from './scout-application-form'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Apply to Be a Scout | Cofactor Scout',
+  description: 'Apply to become a verified Cofactor Scout and earn higher commission rates.'
+}
 
 const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000
 

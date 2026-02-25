@@ -4,7 +4,7 @@ import NavbarLogo from '@/public/cofactor-scout-navbar-logo.png';
 
 export function AuthNavbar() {
   return (
-    <nav className="relative w-full h-[78px] bg-[#E5E7EB] border-b border-[#E5E7EB] px-4 md:px-8 lg:px-[120px]">
+    <nav className="fixed top-0 left-0 right-0 w-full h-[78px] bg-[#E5E7EB] border-b border-[#E5E7EB] px-4 md:px-8 lg:px-[120px] z-50">
       <div className="absolute left-4 md:left-8 lg:left-[120px] top-[19px]">
         <Image 
           src={NavbarLogo}
