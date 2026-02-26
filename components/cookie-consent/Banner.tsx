@@ -77,7 +77,7 @@ export function CookieBanner() {
                     </p>
 
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="button border border-[#E5E7EB] rounded-md hover:bg-[#FAFBFC] whitespace-nowrap"
