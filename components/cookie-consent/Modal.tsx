@@ -33,10 +33,10 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="bg-white max-w-lg w-full rounded-lg shadow-xl overflow-hidden border">
-                <div className="px-6 py-4 border-b flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-foreground">Cookie Preferences</h2>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <div className="bg-white max-w-lg w-full rounded-lg shadow-xl overflow-hidden border border-[#E5E7EB]">
+                <div className="px-6 py-4 border-b border-[#E5E7EB] flex justify-between items-center">
+                    <h3>Cookie Preferences</h3>
+                    <button onClick={onClose} className="text-[#6B7280] hover:text-[#1B2A4A]">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -44,26 +44,26 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
                 </div>
 
                 <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-                    <p className="body text-muted-foreground">
+                    <p className="body text-sm text-[#6B7280]">
                         We use cookies to ensure the basic functionalities of the website and to enhance your online experience.
                         You can choose for each category to opt-in/out whenever you want.
                     </p>
 
                     {/* Strictly Necessary */}
-                    <div className="space-y-2 border p-4 rounded-md bg-muted/30">
+                    <div className="space-y-2 border border-[#E5E7EB] p-4 rounded-md bg-[#FAFBFC]">
                         <div className="flex justify-between items-start">
-                            <h3 className="font-medium text-foreground">Strictly Necessary Cookies</h3>
-                            <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-1 rounded">Always On</span>
+                            <h4>Strictly Necessary Cookies</h4>
+                            <span className="caption font-semibold bg-[#0D7377]/10 px-2 py-1 rounded" style={{ color: '#0D7377' }}>Always On</span>
                         </div>
-                        <p className="body text-muted-foreground">
+                        <p className="body text-sm text-[#6B7280]">
                             These cookies are essential for the proper functioning of the website, such as authentication and security features. They cannot be disabled.
                         </p>
                     </div>
 
                     {/* Analytics */}
-                    <div className="space-y-2 border p-4 rounded-md">
+                    <div className="space-y-2 border border-[#E5E7EB] p-4 rounded-md">
                         <div className="flex justify-between items-start">
-                            <h3 className="font-medium text-foreground">Analytics Cookies</h3>
+                            <h4>Analytics Cookies</h4>
                             <label className="relative inline-flex items-center cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -74,15 +74,15 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
                                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0D7377]"></div>
                             </label>
                         </div>
-                        <p className="body text-muted-foreground">
+                        <p className="body text-sm text-[#6B7280]">
                             These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously (Vercel Analytics).
                         </p>
                     </div>
 
                     {/* Error Monitoring */}
-                    <div className="space-y-2 border p-4 rounded-md">
+                    <div className="space-y-2 border border-[#E5E7EB] p-4 rounded-md">
                         <div className="flex justify-between items-start">
-                            <h3 className="font-medium text-foreground">Error Monitoring</h3>
+                            <h4>Error Monitoring</h4>
                             <label className="relative inline-flex items-center cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -93,21 +93,22 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
                                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0D7377]"></div>
                             </label>
                         </div>
-                        <p className="body text-muted-foreground">
+                        <p className="body text-sm text-[#6B7280]">
                             These cookies allow us to monitor errors and performance issues so we can fix them quickly (Sentry).
                         </p>
                     </div>
                 </div>
 
-                <div className="px-6 py-4 border-t bg-muted/10 flex justify-end gap-3">
+                <div className="px-6 py-4 border-t border-[#E5E7EB] bg-[#FAFBFC] flex justify-end gap-3">
                     <button
-                        className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-muted"
+                        className="button border border-[#E5E7EB] rounded-md hover:bg-white"
                         onClick={onClose}
+                        style={{ color: '#1B2A4A' }}
                     >
                         Cancel
                     </button>
                     <button
-                        className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                        className="button bg-[#0D7377] text-white rounded-md hover:bg-[#0A5A5D]"
                         onClick={handleSave}
                     >
                         Save Preferences

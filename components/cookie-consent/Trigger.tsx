@@ -35,7 +35,7 @@ export function CookieConsentTrigger() {
         <>
             <button
                 onClick={() => setShowCookieModal(true)}
-                className="text-sm text-muted-foreground hover:text-foreground underline"
+                className="caption text-[#6B7280] hover:text-[#1B2A4A] underline"
             >
                 Cookie Settings
             </button>

@@ -68,29 +68,33 @@ export function CookieBanner() {
 
     return (
         <>
-            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex-1 max-w-4xl">
-                    <h2 className="font-semibold text-lg mb-2 text-foreground">We value your privacy</h2>
-                    <p className="body text-muted-foreground">
-                        We use cookies to improve your experience. We use non-essential cookies for analytics (Vercel) and error monitoring (Sentry), which may transfer data according to their policies. You can choose to accept all, reject all non-essential, or customize your preferences. Review our <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link> for details.
+                    <h4 className="mb-2">We value your privacy</h4>
+
+                    <p className="body text-sm text-[#6B7280]">
+                        We use cookies to improve your experience. We use non-essential cookies for analytics (Vercel) and error monitoring (Sentry), which may transfer data according to their policies. You can choose to accept all, reject all non-essential, or customize your preferences. Review our <Link href="/privacy" className="underline hover:text-[#1B2A4A]" style={{ color: '#6B7280' }}>Privacy Policy</Link> for details.
                     </p>
+
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 shrink-0">
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-muted whitespace-nowrap"
+                        className="button border border-[#E5E7EB] rounded-md hover:bg-[#FAFBFC] whitespace-nowrap"
+                        style={{ color: '#1B2A4A' }}
                     >
                         Customize
                     </button>
                     <button
                         onClick={rejectAll}
-                        className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-muted whitespace-nowrap"
+                        className="button border border-[#E5E7EB] rounded-md hover:bg-[#FAFBFC] whitespace-nowrap"
+                        style={{ color: '#1B2A4A' }}
                     >
                         Reject All
                     </button>
                     <button
                         onClick={acceptAll}
-                        className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 whitespace-nowrap"
+                        className="button bg-[#0D7377] text-white rounded-md hover:bg-[#0A5A5D] whitespace-nowrap"
                     >
                         Accept All
                     </button>
