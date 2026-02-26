@@ -127,7 +127,7 @@
 
   /* Body Regular */
   body, p, .body {
-    font-family: var(--font-rethink-sans), sans-serif;
+    font-family: var(--font-merriweather), sans-serif;
     font-weight: 400;
     font-size: 16px;
     line-height: 1.5;
