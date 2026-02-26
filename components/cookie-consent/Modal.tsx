@@ -44,7 +44,7 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
                 </div>
 
                 <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="body text-muted-foreground">
                         We use cookies to ensure the basic functionalities of the website and to enhance your online experience.
                         You can choose for each category to opt-in/out whenever you want.
                     </p>
@@ -55,7 +55,7 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
                             <h3 className="font-medium text-foreground">Strictly Necessary Cookies</h3>
                             <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-1 rounded">Always On</span>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="body text-muted-foreground">
                             These cookies are essential for the proper functioning of the website, such as authentication and security features. They cannot be disabled.
                         </p>
                     </div>
@@ -74,7 +74,7 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
                                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0D7377]"></div>
                             </label>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="body text-muted-foreground">
                             These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously (Vercel Analytics).
                         </p>
                     </div>
@@ -93,7 +93,7 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
                                 <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0D7377]"></div>
                             </label>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="body text-muted-foreground">
                             These cookies allow us to monitor errors and performance issues so we can fix them quickly (Sentry).
                         </p>
                     </div>

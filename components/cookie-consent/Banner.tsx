@@ -70,8 +70,8 @@ export function CookieBanner() {
         <>
             <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex-1 max-w-4xl">
-                    <h3 className="font-semibold text-lg mb-2 text-foreground">We value your privacy</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h2 className="font-semibold text-lg mb-2 text-foreground">We value your privacy</h2>
+                    <p className="body text-muted-foreground">
                         We use cookies to improve your experience. We use non-essential cookies for analytics (Vercel) and error monitoring (Sentry), which may transfer data according to their policies. You can choose to accept all, reject all non-essential, or customize your preferences. Review our <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link> for details.
                     </p>
                 </div>
