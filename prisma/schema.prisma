@@ -238,3 +238,16 @@ model SystemSettings {
   scoutNotificationEmail   String?  @default("it@cofactor.world")
   updatedAt                DateTime @updatedAt
 }
+
+// User consent records for GDPR compliance
+model ConsentRecord {
+  id        String   @id @default(cuid())
+  userId    String?  
+  analytics Boolean
+  error     Boolean
+  userAgent String?
+  ipAddress String?  
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

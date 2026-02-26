@@ -118,8 +118,8 @@ export default withAuth(
             authorized: ({ token, req }) => {
                 const path = req.nextUrl.pathname
 
-                // Allow access to home page, auth pages, scout application, and submitted page for everyone
-                if (path === '/' || path.startsWith('/auth') || path.startsWith('/scout/apply')) {
+                // Allow access to home page, auth pages, scout application, consent API, and submitted page for everyone
+                if (path === '/' || path.startsWith('/auth') || path.startsWith('/scout/apply') || path === '/api/consent') {
                     return true
                 }
 
@@ -136,6 +136,6 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        "/((?!_next/static|_next/image|favicon.ico|public|api/auth|api/health).*)" ,
+        "/((?!_next/static|_next/image|favicon.ico|public|api/auth|api/health|api/consent).*)",
     ]
 }

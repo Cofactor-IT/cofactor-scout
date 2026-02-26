@@ -1,6 +1,31 @@
 import { track as clientTrack } from '@vercel/analytics'
 
+export async function hasAnalyticsConsent(): Promise<boolean> {
+    if (typeof window === 'undefined') {
+        try {
+            const { cookies } = await import('next/headers')
+            const cookieStore = await cookies()
+            const consentCookie = cookieStore.get('cf_consent')?.value
+            if (!consentCookie) return false
+            const consent = JSON.parse(decodeURIComponent(consentCookie))
+            return !!consent.analytics
+        } catch (e) {
+            // Cannot read cookies in this context (e.g. Prisma query logging out of request lifecycle)
+            return false
+        }
+    } else {
+        try {
+            return document.cookie.includes('"analytics":true')
+        } catch (e) {
+            return false
+        }
+    }
+}
+
 async function track(name: string, properties?: Record<string, string | number | boolean>) {
+    const isConsentGiven = await hasAnalyticsConsent()
+    if (!isConsentGiven) return // Silently abort if no consent
+
     if (typeof window === 'undefined') {
         try {
             const { track: serverTrack } = await import('@vercel/analytics/server')

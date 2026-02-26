@@ -86,9 +86,9 @@ export const authOptions: NextAuthOptions = {
                 // Send sign-in notification email
                 const { sendNewSignInEmail } = await import('@/lib/email/send')
                 try {
-                    const timestamp = new Date().toLocaleString('en-US', { 
-                        dateStyle: 'medium', 
-                        timeStyle: 'short' 
+                    const timestamp = new Date().toLocaleString('en-US', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
                     })
                     await sendNewSignInEmail(user.email, user.fullName, timestamp)
                     logger.info('Sign-in notification sent', { email: user.email })
@@ -112,8 +112,6 @@ export const authOptions: NextAuthOptions = {
             if (session.user) {
                 session.user.id = token.id as string
                 session.user.role = token.role
-                const { setSentryUser } = await import('@/instrumentation/sentry')
-                setSentryUser(token.id as string, session.user.email || '', token.role as string)
             }
             return session
         },

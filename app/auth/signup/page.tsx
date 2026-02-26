@@ -7,6 +7,7 @@ import { Eye, EyeOff, Plus, Check, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { AuthNavbar } from '@/components/ui/auth-navbar'
 import { useRouter } from 'next/navigation'
+import { CookieConsentTrigger } from '@/components/cookie-consent/Trigger'
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -120,9 +121,9 @@ export default function SignUpPage() {
                     ) : (
                       <X size={12} className="text-[#EF4444]" />
                     )}
-                    <span 
+                    <span
                       className="text-[11px] italic transition-colors"
-                      style={{ 
+                      style={{
                         fontFamily: 'var(--font-merriweather)',
                         color: req.met ? '#2D7D46' : '#EF4444'
                       }}
@@ -215,13 +216,15 @@ export default function SignUpPage() {
       </div>
 
       {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10 px-4">
-        <p className="text-[14px] md:text-[16px] text-[#6B7280] text-center" style={{ fontFamily: 'var(--font-merriweather)' }}>
-          Already have an account?{' '}
-          <Link href="/auth/signin" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
-            Sign in
-          </Link>
+      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10 px-4 gap-6">
+        <p className="body-small text-[#6B7280] text-center max-w-[600px]">
+          By continuing, you agree to Cofactor's Terms of Service and Privacy Policy.
+          Use of the platform constitutes acceptance of these agreements.
         </p>
+        <div className="text-[#E5E7EB] hidden md:block">|</div>
+        <div className="hidden md:block">
+          <CookieConsentTrigger />
+        </div>
       </footer>
     </div>
   )

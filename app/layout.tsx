@@ -3,6 +3,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { SupportWidget } from '@/components/SupportWidget'
 import { getServerSession } from 'next-auth'
+import { CookieBanner } from '@/components/cookie-consent/Banner'
 
 const merriweather = Merriweather({
   subsets: ['latin'],
@@ -31,12 +32,13 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const session = await getServerSession()
-  
+
   return (
     <html lang="en">
       <body className={`${merriweather.variable} ${rethinkSans.variable} antialiased`}>
         {children}
         {session && <SupportWidget />}
+        <CookieBanner />
       </body>
     </html>
   )

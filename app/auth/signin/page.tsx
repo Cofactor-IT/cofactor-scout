@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Mail } from 'lucide-react'
 import { useState, FormEvent, Suspense } from 'react'
+import { CookieConsentTrigger } from '@/components/cookie-consent/Trigger'
 import { AuthNavbar } from '@/components/ui/auth-navbar'
 import { resendVerificationEmail } from '@/actions/auth.actions'
 
@@ -60,16 +61,16 @@ function SignInForm() {
 
   async function handleResendVerification() {
     if (!email || resendCooldown > 0) return
-    
+
     setResendLoading(true)
     setResendSuccess('')
     setError('')
-    
+
     const formData = new FormData()
     formData.append('email', email)
-    
+
     const result = await resendVerificationEmail(undefined, formData)
-    
+
     if (result.success) {
       setResendSuccess(result.success)
       setResendCooldown(60)
@@ -85,7 +86,7 @@ function SignInForm() {
     } else if (result.error) {
       setError(result.error)
     }
-    
+
     setResendLoading(false)
   }
 
@@ -235,13 +236,15 @@ export default function SignInPage() {
       </Suspense>
 
       {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10 px-4">
-        <p className="text-[14px] md:text-[16px] text-[#6B7280] text-center" style={{ fontFamily: 'var(--font-merriweather)' }}>
-          Don't have an account?{' '}
-          <Link href="/auth/signup" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
-            Sign up
-          </Link>
+      <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10 px-4 gap-6">
+        <p className="body-small text-[#6B7280] text-center max-w-[600px]">
+          By continuing, you agree to Cofactor's Terms of Service and Privacy Policy.
+          Use of the platform constitutes acceptance of these agreements.
         </p>
+        <div className="text-[#E5E7EB] hidden md:block">|</div>
+        <div className="hidden md:block">
+          <CookieConsentTrigger />
+        </div>
       </footer>
     </div>
   )
