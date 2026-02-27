@@ -1,20 +1,33 @@
+/**
+ * @file Modal.tsx
+ * @description Cookie preferences customization modal.
+ * Allows users to toggle individual cookie categories (analytics, error monitoring).
+ */
 "use client"
 
 import { useState, useEffect } from 'react'
+import { ConsentState } from './types'
 
-type ConsentState = {
-    analytics: boolean;
-    error: boolean;
-    version: number;
-}
-
+/**
+ * Props for the CookieModal component.
+ */
 interface ModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (consent: ConsentState) => void;
-    initialState: ConsentState;
+    /** Whether the modal is currently open */
+    isOpen: boolean
+    /** Callback to close the modal */
+    onClose: () => void
+    /** Callback to save consent preferences */
+    onSave: (consent: ConsentState) => void
+    /** Initial consent state to populate the form */
+    initialState: ConsentState
 }
 
+/**
+ * Cookie preferences modal component.
+ * Displays toggles for analytics and error monitoring cookies.
+ * @param props - Modal configuration and callbacks
+ * @returns Modal dialog with cookie preference toggles
+ */
 export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProps) {
     const [preferences, setPreferences] = useState<ConsentState>(initialState)
 
@@ -27,6 +40,9 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
 
     if (!isOpen) return null
 
+    /**
+     * Saves the current preferences and closes the modal.
+     */
     const handleSave = () => {
         onSave(preferences)
     }

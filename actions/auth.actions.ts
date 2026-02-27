@@ -319,6 +319,9 @@ export async function signUp(
                         formData.get('department') as string,
                         formData.get('userRole') as string,
                         formData.get('researchAreas') as string,
+                        formData.get('whyScout') as string,
+                        formData.get('howSourceLeads') as string,
+                        (formData.get('linkedinUrl') as string) || null,
                         new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
                     )
                     logger.info('Scout application emails sent', { email: validatedEmail })

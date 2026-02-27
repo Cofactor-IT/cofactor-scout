@@ -1,68 +1,68 @@
+/**
+ * @file Banner.tsx
+ * @description Cookie consent banner component.
+ * Displays on first visit and allows users to accept/reject/customize cookie preferences.
+ */
 "use client"
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { CookieModal } from './Modal'
-
-export type ConsentState = {
-    analytics: boolean;
-    error: boolean;
-    version: number;
-}
+import { ConsentState } from './types'
+import { CONSENT_VERSION } from './constants'
+import { readConsentCookie, writeConsentCookie, recordConsentOnBackend } from './utils'
 
 const DEFAULT_CONSENT: ConsentState = {
     analytics: false,
     error: false,
-    version: 1
+    version: CONSENT_VERSION
 }
 
+/**
+ * Cookie consent banner component.
+ * Shows on first visit, allows users to accept all, reject all, or customize preferences.
+ * @returns Cookie banner with action buttons and customization modal
+ */
 export function CookieBanner() {
     const [isVisible, setIsVisible] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [currentConsent, setCurrentConsent] = useState<ConsentState>(DEFAULT_CONSENT)
 
     useEffect(() => {
-        // Check array of cookies for cf_consent
-        const match = document.cookie.match(new RegExp('(^| )cf_consent=([^;]+)'))
-        if (match) {
-            try {
-                const storedConsent = JSON.parse(decodeURIComponent(match[2]))
-                setCurrentConsent(storedConsent)
-            } catch (e) {
-                setIsVisible(true) // Invalid cookie -> show banner
-            }
+        const storedConsent = readConsentCookie()
+        if (storedConsent) {
+            setCurrentConsent(storedConsent)
         } else {
             setIsVisible(true)
         }
     }, [])
 
+    /**
+     * Saves consent preferences to cookie, records on backend, and reloads page.
+     * @param consent - User's consent preferences
+     */
     const handleSave = async (consent: ConsentState) => {
-        // 6 months expiration
-        const maxAge = 60 * 60 * 24 * 182
-
-        document.cookie = `cf_consent=${encodeURIComponent(JSON.stringify(consent))}; path=/; max-age=${maxAge}; samesite=strict`
+        writeConsentCookie(consent)
 
         setIsVisible(false)
         setIsModalOpen(false)
         setCurrentConsent(consent)
 
-        try {
-            // Attempt to record consent on backend (fire and forget)
-            fetch('/api/consent', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(consent)
-            }).catch(() => { })
-        } catch (e) {
-            // Ignore
-        }
+        recordConsentOnBackend(consent)
 
         // Reload so Sentry and Analytics evaluate correctly
         window.location.reload()
     }
 
-    const acceptAll = () => handleSave({ analytics: true, error: true, version: 1 })
-    const rejectAll = () => handleSave({ analytics: false, error: false, version: 1 })
+    /**
+     * Accepts all cookie categories.
+     */
+    const acceptAll = () => handleSave({ analytics: true, error: true, version: CONSENT_VERSION })
+    
+    /**
+     * Rejects all non-essential cookie categories.
+     */
+    const rejectAll = () => handleSave({ analytics: false, error: false, version: CONSENT_VERSION })
 
     if (!isVisible) return null
 

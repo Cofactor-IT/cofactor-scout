@@ -1,33 +1,47 @@
+/**
+ * @file Trigger.tsx
+ * @description Cookie settings trigger button.
+ * Allows users to reopen cookie preferences after initial consent.
+ */
 "use client"
 
 import { useState, useEffect } from 'react'
 import { CookieModal } from './Modal'
+import { ConsentState } from './types'
+import { CONSENT_VERSION } from './constants'
+import { readConsentCookie, writeConsentCookie, recordConsentOnBackend } from './utils'
 
+const DEFAULT_CONSENT: ConsentState = {
+    analytics: false,
+    error: false,
+    version: CONSENT_VERSION
+}
+
+/**
+ * Cookie consent trigger button component.
+ * Displays a "Cookie Settings" link that reopens the preferences modal.
+ * @returns Button and modal for managing cookie preferences
+ */
 export function CookieConsentTrigger() {
     const [showCookieModal, setShowCookieModal] = useState(false)
-    const [cookieConsent, setCookieConsent] = useState({ analytics: false, error: false, version: 1 })
+    const [cookieConsent, setCookieConsent] = useState<ConsentState>(DEFAULT_CONSENT)
 
     useEffect(() => {
-        const match = document.cookie.match(new RegExp('(^| )cf_consent=([^;]+)'))
-        if (match) {
-            try {
-                setCookieConsent(JSON.parse(decodeURIComponent(match[2])))
-            } catch (e) { }
+        const storedConsent = readConsentCookie()
+        if (storedConsent) {
+            setCookieConsent(storedConsent)
         }
     }, [])
 
-    const handleSaveCookie = (consent: { analytics: boolean, error: boolean, version: number }) => {
-        const maxAge = 60 * 60 * 24 * 182
-        document.cookie = `cf_consent=${encodeURIComponent(JSON.stringify(consent))}; path=/; max-age=${maxAge}; samesite=strict`
+    /**
+     * Saves consent preferences to cookie, records on backend, and reloads page.
+     * @param consent - User's consent preferences
+     */
+    const handleSaveCookie = (consent: ConsentState) => {
+        writeConsentCookie(consent)
         setShowCookieModal(false)
         setCookieConsent(consent)
-        try {
-            fetch('/api/consent', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(consent)
-            }).catch(() => { })
-        } catch (e) { }
+        recordConsentOnBackend(consent)
         window.location.reload()
     }
 

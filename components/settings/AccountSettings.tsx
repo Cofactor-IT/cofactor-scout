@@ -61,6 +61,14 @@ export function AccountSettings({ user }: AccountSettingsProps) {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
+  const [showCookieModal, setShowCookieModal] = useState(false)
+  const [cookieConsent, setCookieConsent] = useState({ analytics: false, error: false, version: 1 })
+
+  const handleSaveCookie = (state: { analytics: boolean; error: boolean; version: number }) => {
+    setCookieConsent(state)
+    setShowCookieModal(false)
+  }
+
   /**
    * Handles password change with validation.
    * Checks that new password and confirmation match.
