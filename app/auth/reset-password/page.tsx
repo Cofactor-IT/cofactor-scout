@@ -1,3 +1,9 @@
+/**
+ * Reset Password Page
+ * 
+ * Allows users to set new password using reset token from email.
+ * Validates password strength and confirms password match.
+ */
 'use client'
 
 import { useState, FormEvent, useEffect, Suspense } from 'react'
@@ -19,6 +25,7 @@ function ResetPasswordForm() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
+  // Password strength requirements
   const requirements = [
     { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
     { label: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },

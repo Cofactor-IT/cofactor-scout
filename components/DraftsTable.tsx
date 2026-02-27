@@ -1,3 +1,9 @@
+/**
+ * Drafts Table Component
+ * 
+ * Displays user's draft submissions in a searchable table.
+ * Allows continuing, deleting individual drafts, or clearing all drafts.
+ */
 'use client'
 
 import { useState, useMemo } from 'react'
@@ -21,6 +27,7 @@ interface DraftsTableProps {
 export function DraftsTable({ drafts, deleteDraft, clearAllDrafts }: DraftsTableProps) {
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Filter drafts based on search query
   const filteredDrafts = useMemo(() => {
     if (!searchQuery) return drafts
     

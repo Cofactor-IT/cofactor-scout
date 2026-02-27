@@ -1,3 +1,13 @@
+/**
+ * submission.actions.ts
+ * 
+ * Server Actions for research submission management including drafts,
+ * submission, retrieval, and deletion.
+ * 
+ * All actions verify user authentication and ownership before operations.
+ * Submissions go through draft -> submitted workflow with email notifications.
+ */
+
 'use server'
 
 import { prisma } from '@/lib/database/prisma'
@@ -7,6 +17,11 @@ import nodemailer from 'nodemailer'
 import { isEmailConfigured, getFromAddress } from '@/lib/email/utils'
 import { logger } from '@/lib/logger'
 
+// ============================================
+// EMAIL CONFIGURATION
+// ============================================
+
+// SMTP transporter for sending submission confirmation emails
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
@@ -17,14 +32,29 @@ const transporter = nodemailer.createTransport({
   },
 })
 
+// ============================================
+// EXPORTED SERVER ACTIONS
+// ============================================
+
+/**
+ * Saves or updates a research submission draft.
+ * Validates for duplicate research topics before saving.
+ * Cleans enum fields by converting empty strings to null.
+ * 
+ * @param data - Draft data including all submission fields
+ * @param data.id - Draft ID for updates, 'new' for creation
+ * @returns Success status and draft ID, or error message
+ * @throws {Error} If user is not authenticated
+ */
 export async function saveDraft(data: any) {
+  // Always read userId from session, never from client input
   const session = await requireAuth()
   
   try {
-    // Clean data - convert empty strings to null for enum fields
+    // Clean data - convert empty strings to null for enum fields to prevent validation errors
     const { id, supportingLinks, ...restData } = data
     
-    // Check for duplicate research topic
+    // Prevent duplicate submissions with same research topic
     if (restData.researchTopic) {
       const existingSubmission = await prisma.researchSubmission.findFirst({
         where: {
@@ -39,6 +69,7 @@ export async function saveDraft(data: any) {
       }
     }
     
+    // Normalize enum fields - empty strings become null, OTHER values preserve custom text
     const cleanData = {
       ...restData,
       researcherCareerStage: restData.researcherCareerStage && restData.researcherCareerStage !== '' ? restData.researcherCareerStage : null,
@@ -80,6 +111,16 @@ export async function saveDraft(data: any) {
   }
 }
 
+/**
+ * Converts a draft to a submitted research lead.
+ * Updates user statistics and sends confirmation email.
+ * Sets status to PENDING_RESEARCH for team review.
+ * 
+ * @param data - Submission data with draft ID
+ * @param data.id - ID of draft to submit
+ * @returns Success status and submission ID, or error message
+ * @throws {Error} If user is not authenticated or draft not found
+ */
 export async function submitResearch(data: any) {
   const session = await requireAuth()
   
@@ -88,7 +129,7 @@ export async function submitResearch(data: any) {
   }
   
   try {
-    // Verify ownership before updating
+    // Verify ownership and draft status before submitting
     const existingSubmission = await prisma.researchSubmission.findFirst({
       where: {
         id: data.id,
@@ -102,6 +143,7 @@ export async function submitResearch(data: any) {
       return { success: false, error: 'Draft not found or already submitted' }
     }
     
+    // Mark draft as submitted and set initial status
     const submission = await prisma.researchSubmission.update({
       where: { id: data.id },
       data: {
@@ -111,7 +153,7 @@ export async function submitResearch(data: any) {
       }
     })
     
-    // Update user stats
+    // Increment user submission counters
     await prisma.user.update({
       where: { id: session.id },
       data: {
@@ -120,7 +162,7 @@ export async function submitResearch(data: any) {
       }
     })
     
-    // Send confirmation email
+    // Send confirmation email if SMTP is configured
     if (isEmailConfigured()) {
       try {
         const user = await prisma.user.findUnique({
@@ -151,6 +193,7 @@ export async function submitResearch(data: any) {
       }
     }
     
+    // Revalidate dashboard pages to show updated data
     revalidatePath('/dashboard')
     revalidatePath('/dashboard/drafts')
     return { success: true, id: submission.id }
@@ -160,6 +203,14 @@ export async function submitResearch(data: any) {
   }
 }
 
+/**
+ * Retrieves a draft by ID for editing.
+ * Verifies user owns the draft before returning.
+ * 
+ * @param id - Draft ID to retrieve
+ * @returns Draft data or error message
+ * @throws {Error} If user is not authenticated
+ */
 export async function getDraft(id: string) {
   const session = await requireAuth()
   
@@ -178,6 +229,14 @@ export async function getDraft(id: string) {
   }
 }
 
+/**
+ * Deletes a draft submission.
+ * Verifies user owns the draft before deletion.
+ * 
+ * @param id - Draft ID to delete
+ * @returns Success status or error message
+ * @throws {Error} If user is not authenticated or draft not found
+ */
 export async function deleteDraft(id: string) {
   const session = await requireAuth()
   
@@ -186,7 +245,7 @@ export async function deleteDraft(id: string) {
   }
   
   try {
-    // Verify ownership before deleting
+    // Verify ownership and draft status before deleting
     const draft = await prisma.researchSubmission.findFirst({
       where: {
         id,

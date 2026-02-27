@@ -1,3 +1,9 @@
+/**
+ * Settings Actions
+ * 
+ * Server actions for user settings including profile updates, account changes, and password management.
+ * Simpler alternative to profile-settings.actions.ts with less validation.
+ */
 'use server'
 
 import { prisma } from '@/lib/database/prisma'
@@ -7,6 +13,12 @@ import { sendProfileUpdateEmail, sendAccountUpdateEmail } from '@/lib/email/send
 import { logger } from '@/lib/logger'
 import bcrypt from 'bcryptjs'
 
+/**
+ * Update user profile information
+ * 
+ * @param data - Profile data including bio, university, links, and profile picture
+ * @returns Success status or error message
+ */
 export async function updateProfile(data: {
   bio: string
   university: string
@@ -67,6 +79,12 @@ export async function updateProfile(data: {
   }
 }
 
+/**
+ * Update user account information (name)
+ * 
+ * @param data - First name, last name, and preferred name
+ * @returns Success status or error message
+ */
 export async function updateAccount(data: {
   firstName: string
   lastName: string
@@ -100,6 +118,7 @@ export async function updateAccount(data: {
       logger.error('Failed to send account update email', { userId: session.id, error: err })
     }
     
+    // Revalidate all pages that display user name
     revalidatePath('/settings')
     revalidatePath('/dashboard')
     revalidatePath('/dashboard/drafts')
@@ -110,6 +129,12 @@ export async function updateAccount(data: {
   }
 }
 
+/**
+ * Validates URL format
+ * 
+ * @param url - URL to validate
+ * @returns True if valid HTTP/HTTPS URL
+ */
 function isValidUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
@@ -119,6 +144,12 @@ function isValidUrl(url: string): boolean {
   }
 }
 
+/**
+ * Change user password
+ * 
+ * @param data - Current and new password
+ * @returns Success status or error message
+ */
 export async function changePassword(data: {
   currentPassword: string
   newPassword: string

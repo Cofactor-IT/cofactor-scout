@@ -1,3 +1,9 @@
+/**
+ * Progress Stepper Component
+ * 
+ * Visual progress indicator for multi-step submission form.
+ * Shows current step, allows navigation to previous steps, and displays completion status.
+ */
 'use client'
 
 import Link from 'next/link'
@@ -14,6 +20,7 @@ interface ProgressStepperProps {
 }
 
 export function ProgressStepper({ currentStep, steps, draftId }: ProgressStepperProps) {
+  // Generate URL for each step based on draft ID
   const getStepUrl = (stepNumber: number) => {
     if (!draftId) return '#'
     if (stepNumber === 1) return `/dashboard/submit?draft=${draftId}`
@@ -22,6 +29,7 @@ export function ProgressStepper({ currentStep, steps, draftId }: ProgressStepper
     return '#'
   }
 
+  // Prevent navigation if no draft exists
   const handleClick = (e: React.MouseEvent, stepNumber: number) => {
     if (!draftId) {
       e.preventDefault()

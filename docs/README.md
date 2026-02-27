@@ -1,384 +1,184 @@
 # Cofactor Scout Documentation
 
-Complete documentation for the Cofactor Scout platform.
+**Last Updated:** 2026-02-26  
+**Audience:** All
 
 ---
 
-## 📚 Quick Links
+## What's in This Folder
 
-### For Developers
-- [**Quick Start**](../README.md#quick-start) - Get up and running in 5 minutes
-- [**Architecture**](./technical/ARCHITECTURE.md) - System design and tech stack
-- [**Database**](./technical/DATABASE.md) - Complete schema documentation
-- [**API Reference**](./technical/API.md) - All server actions and endpoints
-- [**Testing**](./technical/TESTING.md) - How to write and run tests
-
-### For Product Managers
-- [**Product Overview**](./product/OVERVIEW.md) - Features, user roles, and workflows
-- [**Roadmap**](./product/OVERVIEW.md#roadmap) - MVP vs Post-MVP features
-
-### For Security Auditors
-- [**Authentication & Security**](./technical/AUTHENTICATION.md) - Complete security documentation
-- [**Security Checklist**](./technical/AUTHENTICATION.md#security-checklist) - What's implemented
+This folder contains all documentation for Cofactor Scout, organized by audience and purpose.
 
 ---
 
-## 📖 Documentation Structure
+## Folder Structure
 
-### Technical Documentation (`technical/`)
+### decisions/
+**Audience:** Developers, Architects  
+**Purpose:** Architecture Decision Records (ADRs)
 
-#### [ARCHITECTURE.md](./technical/ARCHITECTURE.md)
-Complete system architecture documentation.
+Documents major technical decisions and their reasoning:
+- ADR-001: Server Actions over API Routes
+- ADR-002: NextAuth Credentials Provider
+- ADR-003: Supabase over Self-Hosted PostgreSQL
 
-**Contents:**
-- Tech stack overview
-- Architecture patterns
-- Project structure
-- Data flow diagrams
-- Security architecture
-- Database architecture
-- Deployment architecture
-- Performance optimizations
-- Monitoring & observability
-- Scalability considerations
+### engineering/
+**Audience:** Developers  
+**Purpose:** Development workflow and standards
 
-**Audience:** Senior developers, architects, DevOps engineers
+- BRANCHING.md — Git branching strategy
+- CODE_REVIEW.md — Code review guidelines
+- COMMIT_MESSAGES.md — Commit message format
+- MERGE_REQUESTS.md — Pull request process
+- TESTING.md — Testing procedures
 
----
+### features/
+**Audience:** Developers, Product Managers  
+**Purpose:** Feature-specific documentation
 
-#### [DATABASE.md](./technical/DATABASE.md)
-Complete database schema documentation.
+Each feature has 4 files:
+- PRIMER.md — Non-technical overview
+- TECHNICAL.md — Implementation details
+- BUGS.md — Known and fixed bugs
+- CHANGELOG.md — Feature history
 
-**Contents:**
-- All 9 enums documented
-- All 5 models documented
-- Every field explained
-- All relationships
-- Indexes and constraints
-- Query patterns
-- Migration strategy
-- Performance considerations
-- Backup & recovery
+**Features documented:**
+- authentication/ — Sign up, sign in, password reset
+- submissions/ — Research submission flow
+- scout-application/ — Scout application process
 
-**Audience:** Backend developers, database administrators
+### guides/
+**Audience:** Developers  
+**Purpose:** Setup and operational guides
 
----
+- DEPLOYMENT.md — Production deployment
+- ENVIRONMENT_SETUP.md — Local development setup
+- TROUBLESHOOTING.md — Common issues and solutions
 
-#### [AUTHENTICATION.md](./technical/AUTHENTICATION.md)
-Authentication and security documentation.
+### pm-notes/
+**Audience:** Developers, Designers  
+**Purpose:** Design system and code standards
 
-**Contents:**
-- Complete authentication flow
-- Session management
-- Password security
-- Input validation & sanitization
-- Rate limiting
-- Security headers
-- Email security
-- CSRF protection
-- XSS prevention
-- Monitoring & logging
-- Security checklist
-- Environment variables
-- Testing procedures
-- Troubleshooting guide
-
-**Audience:** Security engineers, backend developers
+- ANIMATION_GUIDELINES.md — Animation patterns
+- CODE_STANDARDS.md — Code quality rules
+- COMMENTING_GUIDELINES.md — Documentation standards
+- DESIGN_GUIDELINES.md — UI/UX design system
 
 ---
 
-#### [API.md](./technical/API.md)
-Complete API and server actions documentation.
-
-**Contents:**
-- All authentication actions
-- All submission actions
-- All scout actions
-- Session helpers
-- Email functions
-- Validation schemas
-- Error handling patterns
-- Rate limiting configuration
-- Testing examples
-
-**Audience:** Full-stack developers, API consumers
-
----
-
-#### [COMPONENTS.md](./technical/COMPONENTS.md)
-Complete component documentation.
-
-**Contents:**
-- All UI components
-- All feature components
-- Component props and usage
-- Styling guidelines
-- Accessibility features
-- Performance optimizations
-- Testing patterns
-
-**Audience:** Frontend developers, UI/UX designers
-
----
-
-#### [TESTING.md](./technical/TESTING.md)
-Complete testing documentation.
-
-**Contents:**
-- Testing stack overview
-- Test structure
-- Running tests
-- Configuration details
-- Writing tests
-- Test coverage goals
-- Testing best practices
-- Mocking strategies
-- Integration testing plans
-- CI/CD setup
-- Debugging tests
-
-**Audience:** QA engineers, developers
-
----
-
-### Product Documentation (`product/`)
-
-#### [OVERVIEW.md](./product/OVERVIEW.md)
-Product overview for non-technical stakeholders.
-
-**Contents:**
-- What is Cofactor Scout?
-- Core value proposition
-- Two-tier user system
-- Key features
-- Submission pipeline
-- User roles & permissions
-- Commission structure
-- Security & privacy
-- Technical requirements
-- Roadmap
-- Success metrics
-- Support information
-- Glossary
-
-**Audience:** Product managers, stakeholders, investors
-
----
-
-### Root Documentation
-
-#### [README.md](../README.md)
-Main project documentation.
-
-**Contents:**
-- Project overview
-- Tech stack
-- Quick start guide
-- Project structure
-- Environment variables
-- Database management
-- Testing instructions
-- Deployment guides
-- Security checklist
-- Contributing guidelines
-- Troubleshooting
-- Support information
-
-**Audience:** All developers, new contributors
-
----
-
-#### [AUDIT_SUMMARY.md](../AUDIT_SUMMARY.md)
-Complete audit and documentation summary.
-
-**Contents:**
-- Executive summary
-- Audit scope
-- Documentation created
-- Tests created
-- Key findings
-- Code statistics
-- Technology assessment
-- Security assessment
-- Performance assessment
-- Recommendations
-- Conclusion
-
-**Audience:** Technical leads, managers, auditors
-
----
-
-## 🎯 Documentation by Role
+## Quick Links by Role
 
 ### New Developer
-1. Start with [README.md](../README.md) - Quick start
-2. Read [ARCHITECTURE.md](./technical/ARCHITECTURE.md) - Understand the system
-3. Review [DATABASE.md](./technical/DATABASE.md) - Learn the data model
-4. Check [COMPONENTS.md](./technical/COMPONENTS.md) - UI components
-5. Read [TESTING.md](./technical/TESTING.md) - Write tests
+1. [ENVIRONMENT_SETUP.md](./guides/ENVIRONMENT_SETUP.md) — Get started
+2. [CODE_STANDARDS.md](./pm-notes/CODE_STANDARDS.md) — Code quality
+3. [DESIGN_GUIDELINES.md](./pm-notes/DESIGN_GUIDELINES.md) — UI patterns
+4. [BRANCHING.md](./engineering/BRANCHING.md) — Git workflow
 
 ### Backend Developer
-1. [ARCHITECTURE.md](./technical/ARCHITECTURE.md) - System design
-2. [DATABASE.md](./technical/DATABASE.md) - Database schema
-3. [AUTHENTICATION.md](./technical/AUTHENTICATION.md) - Auth system
-4. [API.md](./technical/API.md) - Server actions
-5. [TESTING.md](./technical/TESTING.md) - Testing guide
+1. [Authentication TECHNICAL.md](./features/authentication/TECHNICAL.md)
+2. [Submissions TECHNICAL.md](./features/submissions/TECHNICAL.md)
+3. [ADR-001](./decisions/ADR-001-server-actions-over-api-routes.md)
+4. [CODE_REVIEW.md](./engineering/CODE_REVIEW.md)
 
 ### Frontend Developer
-1. [ARCHITECTURE.md](./technical/ARCHITECTURE.md) - System overview
-2. [COMPONENTS.md](./technical/COMPONENTS.md) - Component library
-3. [API.md](./technical/API.md) - API reference
-4. [TESTING.md](./technical/TESTING.md) - Testing guide
-
-### DevOps Engineer
-1. [ARCHITECTURE.md](./technical/ARCHITECTURE.md) - Deployment architecture
-2. [DATABASE.md](./technical/DATABASE.md) - Database setup
-3. [README.md](../README.md) - Environment variables
-4. [AUTHENTICATION.md](./technical/AUTHENTICATION.md) - Security setup
+1. [DESIGN_GUIDELINES.md](./pm-notes/DESIGN_GUIDELINES.md)
+2. [ANIMATION_GUIDELINES.md](./pm-notes/ANIMATION_GUIDELINES.md)
+3. [Authentication PRIMER.md](./features/authentication/PRIMER.md)
+4. [Submissions PRIMER.md](./features/submissions/PRIMER.md)
 
 ### Product Manager
-1. [OVERVIEW.md](./product/OVERVIEW.md) - Product overview
-2. [README.md](../README.md) - Tech stack
-3. [AUDIT_SUMMARY.md](../AUDIT_SUMMARY.md) - Project status
+1. [Authentication PRIMER.md](./features/authentication/PRIMER.md)
+2. [Submissions PRIMER.md](./features/submissions/PRIMER.md)
+3. [Scout Application PRIMER.md](./features/scout-application/PRIMER.md)
 
-### Security Auditor
-1. [AUTHENTICATION.md](./technical/AUTHENTICATION.md) - Security measures
-2. [DATABASE.md](./technical/DATABASE.md) - Data security
-3. [API.md](./technical/API.md) - Input validation
-4. [AUDIT_SUMMARY.md](../AUDIT_SUMMARY.md) - Security assessment
-
----
-
-## 🔍 Documentation by Topic
-
-### Authentication
-- [AUTHENTICATION.md](./technical/AUTHENTICATION.md) - Complete auth documentation
-- [API.md](./technical/API.md) - Auth actions
-- [DATABASE.md](./technical/DATABASE.md) - User model
-
-### Database
-- [DATABASE.md](./technical/DATABASE.md) - Complete schema
-- [ARCHITECTURE.md](./technical/ARCHITECTURE.md) - Database architecture
-- [README.md](../README.md) - Database management
-
-### Security
-- [AUTHENTICATION.md](./technical/AUTHENTICATION.md) - Security measures
-- [API.md](./technical/API.md) - Input validation
-- [TESTING.md](./technical/TESTING.md) - Security tests
-
-### Testing
-- [TESTING.md](./technical/TESTING.md) - Complete testing guide
-- [README.md](../README.md) - Running tests
-- [AUDIT_SUMMARY.md](../AUDIT_SUMMARY.md) - Test coverage
-
-### Deployment
-- [README.md](../README.md) - Deployment guides
-- [ARCHITECTURE.md](./technical/ARCHITECTURE.md) - Deployment architecture
-- [DATABASE.md](./technical/DATABASE.md) - Database setup
-
-### Components
-- [COMPONENTS.md](./technical/COMPONENTS.md) - Complete component docs
-- [ARCHITECTURE.md](./technical/ARCHITECTURE.md) - Component patterns
+### DevOps Engineer
+1. [DEPLOYMENT.md](./guides/DEPLOYMENT.md)
+2. [ENVIRONMENT_SETUP.md](./guides/ENVIRONMENT_SETUP.md)
+3. [TROUBLESHOOTING.md](./guides/TROUBLESHOOTING.md)
 
 ---
 
-## 📝 Documentation Standards
+## Documentation Standards
 
-### Format
-- All documentation in Markdown
+### File Naming
+- Folders: kebab-case (e.g., `scout-application/`)
+- Files: UPPER_SNAKE_CASE.md (e.g., `TECHNICAL.md`)
+- Exception: README.md
+
+### Required Sections
+Every documentation file must have:
+- **Last Updated:** Date at top
+- **Audience:** Who should read this
 - Clear headings and structure
-- Code examples where applicable
-- Tables for comparisons
-- Links to related docs
 
-### Maintenance
-- Update docs when code changes
-- Keep examples up to date
-- Add new features to docs
-- Remove obsolete information
-
-### Style
-- Clear, concise language
-- Technical accuracy
-- Practical examples
-- Troubleshooting tips
+### No References To
+- ❌ Old wiki platform (Cofactor Club)
+- ❌ Admin or staff roles (only CONTRIBUTOR, SCOUT, ADMIN)
+- ❌ cofactor.club domain (use scout.cofactor.world)
 
 ---
 
-## 🤝 Contributing to Documentation
+## Contributing to Documentation
 
 ### Adding New Documentation
 1. Create file in appropriate folder
-2. Follow existing format
-3. Add to this index
-4. Update related docs
+2. Follow naming conventions
+3. Include required sections
+4. Update this README.md
 5. Submit PR
 
 ### Updating Existing Documentation
 1. Make changes
-2. Update last modified date
-3. Update related docs
+2. Update "Last Updated" date
+3. Update related docs if needed
 4. Submit PR
 
-### Documentation Review
-- Technical accuracy
-- Clarity and readability
-- Code examples work
-- Links are valid
-- Formatting is consistent
+---
+
+## Documentation by Topic
+
+### Authentication
+- [PRIMER.md](./features/authentication/PRIMER.md) — How it works
+- [TECHNICAL.md](./features/authentication/TECHNICAL.md) — Implementation
+- [BUGS.md](./features/authentication/BUGS.md) — Known issues
+- [CHANGELOG.md](./features/authentication/CHANGELOG.md) — History
+
+### Submissions
+- [PRIMER.md](./features/submissions/PRIMER.md) — How it works
+- [TECHNICAL.md](./features/submissions/TECHNICAL.md) — Implementation
+- [BUGS.md](./features/submissions/BUGS.md) — Known issues
+- [CHANGELOG.md](./features/submissions/CHANGELOG.md) — History
+
+### Scout Application
+- [PRIMER.md](./features/scout-application/PRIMER.md) — How it works
+- [TECHNICAL.md](./features/scout-application/TECHNICAL.md) — Implementation
+- [BUGS.md](./features/scout-application/BUGS.md) — Known issues
+- [CHANGELOG.md](./features/scout-application/CHANGELOG.md) — History
+
+### Design System
+- [DESIGN_GUIDELINES.md](./pm-notes/DESIGN_GUIDELINES.md) — Complete design system
+- [ANIMATION_GUIDELINES.md](./pm-notes/ANIMATION_GUIDELINES.md) — Animation patterns
+
+### Development Workflow
+- [BRANCHING.md](./engineering/BRANCHING.md) — Git workflow
+- [COMMIT_MESSAGES.md](./engineering/COMMIT_MESSAGES.md) — Commit format
+- [MERGE_REQUESTS.md](./engineering/MERGE_REQUESTS.md) — PR process
+- [CODE_REVIEW.md](./engineering/CODE_REVIEW.md) — Review guidelines
+- [TESTING.md](./engineering/TESTING.md) — Testing procedures
 
 ---
 
-## 📊 Documentation Statistics
+## External Resources
 
-- **Total Files**: 10 documentation files
-- **Total Lines**: ~8,000 lines
-- **Total Words**: ~50,000 words
-- **Code Examples**: 100+ examples
-- **Diagrams**: 5+ diagrams
-- **Tables**: 30+ tables
-
----
-
-## 🔗 External Resources
-
-### Next.js
 - [Next.js Documentation](https://nextjs.org/docs)
-- [App Router Guide](https://nextjs.org/docs/app)
-- [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)
-
-### Prisma
 - [Prisma Documentation](https://www.prisma.io/docs)
-- [Prisma Schema](https://www.prisma.io/docs/concepts/components/prisma-schema)
-- [Prisma Client](https://www.prisma.io/docs/concepts/components/prisma-client)
-
-### NextAuth.js
 - [NextAuth.js Documentation](https://next-auth.js.org/)
-- [Credentials Provider](https://next-auth.js.org/providers/credentials)
-- [JWT Sessions](https://next-auth.js.org/configuration/options#jwt)
-
-### Testing
-- [Vitest Documentation](https://vitest.dev/)
-- [Testing Best Practices](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
-
-### Security
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Web Security Cheat Sheet](https://cheatsheetseries.owasp.org/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 
 ---
 
-## 📞 Support
+## Support
 
-### Documentation Issues
-- Report issues: [GitHub Issues](https://github.com/your-org/cofactor-scout/issues)
-- Suggest improvements: [GitHub Discussions](https://github.com/your-org/cofactor-scout/discussions)
-
-### Technical Support
-- Email: support@cofactor.world
-- Documentation: This folder
-
----
-
-**Last Updated**: February 19, 2026  
-**Version**: 1.0.0  
-**Status**: Complete
+- **Documentation Issues:** [GitHub Issues](https://github.com/your-org/cofactor-scout/issues)
+- **Technical Support:** support@cofactor.world
+- **Main README:** [../README.md](../README.md)

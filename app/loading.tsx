@@ -1,3 +1,8 @@
+/**
+ * Global Loading Page
+ * 
+ * Displays loading spinner while pages are being rendered.
+ */
 export default function Loading() {
   return (
     <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center">

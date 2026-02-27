@@ -1,3 +1,16 @@
+/**
+ * ProfileSettings.tsx
+ * 
+ * Profile settings component for managing public profile information.
+ * 
+ * Features:
+ * - Upload/remove profile picture with image compression
+ * - Edit bio, university, department
+ * - Manage LinkedIn and personal website URLs
+ * - Add/remove additional social links
+ * - Confirmation modal for changes
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -8,6 +21,9 @@ import { Modal } from '@/components/ui/modal'
 import { updateProfile } from '@/actions/settings.actions'
 import { compressImage } from '@/lib/image-upload'
 
+/**
+ * Props for ProfileSettings component.
+ */
 interface ProfileSettingsProps {
   user: {
     fullName: string
@@ -23,6 +39,10 @@ interface ProfileSettingsProps {
   }
 }
 
+/**
+ * Profile settings component with image upload and social links.
+ * Client component with local state for form data and image processing.
+ */
 export function ProfileSettings({ user }: ProfileSettingsProps) {
   const [formData, setFormData] = useState({
     bio: user.bio || '',
@@ -39,19 +59,26 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
   const [loading, setLoading] = useState(false)
   const [uploadError, setUploadError] = useState('')
 
+  // Generate initials for avatar fallback
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.fullName.slice(0, 2).toUpperCase()
 
+  /**
+   * Handles profile picture upload with compression.
+   * Validates file type and size before processing.
+   */
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     
     setUploadError('')
     
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       setUploadError('Please upload an image file')
       return
     }
     
+    // Validate file size (10MB limit)
     if (file.size > 10 * 1024 * 1024) {
       setUploadError('Image must be less than 10MB')
       return
@@ -59,6 +86,7 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
     
     try {
       setLoading(true)
+      // Compress image to 200x200 for profile picture
       const compressed = await compressImage(file, 200)
       setFormData({ ...formData, profilePictureUrl: compressed })
       setLoading(false)
@@ -68,10 +96,16 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
     }
   }
 
+  /**
+   * Removes profile picture, reverting to initials.
+   */
   const handleRemoveImage = () => {
     setFormData({ ...formData, profilePictureUrl: null })
   }
 
+  /**
+   * Saves profile changes after modal confirmation.
+   */
   const handleSave = async () => {
     setShowModal(false)
     setLoading(true)

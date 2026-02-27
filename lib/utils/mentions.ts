@@ -1,17 +1,20 @@
+/**
+ * Mentions Utilities
+ * 
+ * Functions for extracting @mentions from content and sending notification emails.
+ */
 import { prisma } from '@/lib/database/prisma'
 import { sendMentionEmail } from '@/lib/email/send'
 import { logger } from '@/lib/logger'
 
 /**
  * Extract mentioned names from content
- * Looks for @Name pattern
+ * 
+ * @param content - Text content to scan for @mentions
+ * @returns Array of unique mentioned names (without @ prefix)
  */
 export function extractMentions(content: string): string[] {
-    // Regex to find @Name patterns
-    // Matches @ followed by word characters, allowing for potential spaces if we want to support "@John Doe" later, 
-    // but for now let's stick to simple @Name or @NameName to match typical username/slug patterns if possible, 
-    // or just @Name for simplicity as per plan.
-    // Let's go with a robust one that catches @Word
+    // Match @Word pattern
     const mentionRegex = /@(\w+)/g
     const matches = content.match(mentionRegex)
 
@@ -22,7 +25,12 @@ export function extractMentions(content: string): string[] {
 }
 
 /**
- * Process mentions in content and send emails
+ * Process mentions in content and send notification emails
+ * 
+ * @param content - Content containing @mentions
+ * @param link - Link to the content
+ * @param actorName - Name of user who created the mention
+ * @param contextSummary - Brief description of where mention occurred
  */
 export async function processMentions(
     content: string,

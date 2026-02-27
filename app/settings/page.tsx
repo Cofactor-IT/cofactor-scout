@@ -1,3 +1,15 @@
+/**
+ * page.tsx
+ * 
+ * Settings page with tabbed interface for account and profile settings.
+ * 
+ * Tabs:
+ * - Account: Email, password, delete account
+ * - Profile: Name, bio, university, social links
+ * 
+ * Server component that requires authentication.
+ */
+
 import { requireAuth } from '@/lib/auth/session'
 import { prisma } from '@/lib/database/prisma'
 import { redirect } from 'next/navigation'
@@ -12,11 +24,20 @@ export const metadata: Metadata = {
   description: 'Manage your account settings and profile information.'
 }
 
+/**
+ * Settings page component with tabbed interface.
+ * Fetches user data and renders appropriate settings tab.
+ * 
+ * @param searchParams - URL search params containing active tab
+ */
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  // Require authentication and get user session
   const session = await requireAuth()
   const params = await searchParams
+  // Default to account tab if not specified
   const activeTab = params.tab || 'account'
   
+  // Fetch user data for settings forms
   const user = await prisma.user.findUnique({
     where: { id: session.id },
     select: {
@@ -39,6 +60,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
   if (!user) redirect('/auth/signin')
 
+  // Extract display data for navbar
   const isScout = user.role === 'SCOUT'
   const displayName = user.fullName || 'User'
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || displayName.slice(0, 2).toUpperCase()

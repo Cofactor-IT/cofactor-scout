@@ -1,6 +1,8 @@
 /**
  * Icon Utilities
- * Helper functions for working with custom SVG icons
+ * 
+ * Helper functions and constants for working with custom SVG icons.
+ * Provides centralized icon path management.
  */
 
 export const ICON_PATHS = {

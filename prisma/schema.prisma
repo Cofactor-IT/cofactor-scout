@@ -9,14 +9,22 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// User roles in the platform
+// ============================================
+// ENUMS
+// ============================================
+
+/// Platform access level for users.
+/// CONTRIBUTOR: Default role, can submit research leads.
+/// SCOUT: Verified role with higher commission, requires application.
+/// ADMIN: Full platform access for team members.
 enum Role {
   CONTRIBUTOR
   SCOUT
   ADMIN
 }
 
-// Academic/professional roles
+/// Academic or professional role of user.
+/// Used in scout applications to understand background.
 enum UserRole {
   PHD_STUDENT
   POSTDOC
@@ -26,7 +34,11 @@ enum UserRole {
   OTHER
 }
 
-// Scout application workflow status
+/// Scout application workflow status.
+/// NOT_APPLIED: Default state for new users.
+/// PENDING: Application submitted, awaiting team review.
+/// APPROVED: Promoted to SCOUT role.
+/// REJECTED: Application denied, can reapply after 30 days.
 enum ScoutApplicationStatus {
   NOT_APPLIED
   PENDING
@@ -34,7 +46,12 @@ enum ScoutApplicationStatus {
   REJECTED
 }
 
-// Research submission pipeline stages
+/// Research submission pipeline stages.
+/// PENDING_RESEARCH: Initial submission, awaiting team review.
+/// VALIDATING: Team is verifying research quality.
+/// PITCHED_MATCHMAKING: Presented to potential investors.
+/// MATCH_MADE: Successfully matched with investor.
+/// REJECTED: Did not meet quality standards.
 enum SubmissionStatus {
   PENDING_RESEARCH
   VALIDATING
@@ -43,7 +60,8 @@ enum SubmissionStatus {
   REJECTED
 }
 
-// Career stage of researcher
+/// Career stage of researcher being submitted.
+/// Used to assess research maturity and credibility.
 enum CareerStage {
   UNDERGRAD_STUDENT
   PHD_STUDENT
@@ -54,7 +72,8 @@ enum CareerStage {
   OTHER
 }
 
-// Research maturity level
+/// Research maturity level.
+/// Indicates how developed the research is.
 enum ResearchStage {
   EARLY_CONCEPT
   ACTIVE_RESEARCH
@@ -62,7 +81,8 @@ enum ResearchStage {
   PUBLISHED
 }
 
-// Funding status of research
+/// Funding status of research project.
+/// Helps determine investment readiness.
 enum FundingStatus {
   NOT_SEEKING
   SEEKING_SEED
@@ -72,7 +92,8 @@ enum FundingStatus {
   VC_BACKED
 }
 
-// How the scout found this lead
+/// How the scout discovered this research lead.
+/// Used for quality tracking and scout evaluation.
 enum SubmissionSource {
   CONFERENCE
   ACADEMIC_PAPER
@@ -82,7 +103,8 @@ enum SubmissionSource {
   OTHER
 }
 
-// Scout's relationship to researcher
+/// Scout's relationship to the researcher.
+/// Affects credibility and conflict of interest assessment.
 enum Relationship {
   LAB_MATE
   CLASSMATE
@@ -91,11 +113,19 @@ enum Relationship {
   OTHER
 }
 
-// Core user model - handles authentication and profile
+// ============================================
+// MODELS
+// ============================================
+
+/// User account and authentication data.
+/// Stores credentials, profile information, and scout application status.
+/// Role determines access level and commission rates.
 model User {
   // Core Identity
   id            String  @id @default(cuid())
+  /// Email address, normalized to lowercase to prevent duplicates
   email         String  @unique
+  /// Bcrypt hashed password with cost factor 10. Never stored in plain text.
   password      String
   fullName      String
   firstName     String
@@ -104,10 +134,14 @@ model User {
   role          Role    @default(CONTRIBUTOR)
 
   // Authentication
+  /// Timestamp when email was verified. Null if not verified.
   emailVerified       DateTime?
+  /// Secure token sent in verification email. Expires after 24 hours.
   verificationToken   String?   @unique
   verificationExpires DateTime?
+  /// Number of consecutive failed login attempts. Resets on successful login.
   failedLoginAttempts Int       @default(0)
+  /// Account locks after 5 failed attempts for 15 minutes.
   lockedUntil         DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -116,27 +150,36 @@ model User {
   university             String?
   department             String?
   linkedinUrl            String?
+  /// Academic or professional role
   userRole               UserRole?
+  /// Custom role description if userRole is OTHER
   userRoleOther          String?
   researchAreas          String?
   whyScout               String?
   howSourceLeads         String?
   scoutApplicationStatus ScoutApplicationStatus @default(NOT_APPLIED)
+  /// Date when scout application was submitted
   scoutApplicationDate   DateTime?
 
   // Profile Settings
   bio                String?
   personalWebsite    String?
+  /// JSON array of additional social/professional links
   additionalLinks    Json?
   profilePictureUrl  String?
 
   // Account Security
+  /// Two-factor authentication enabled flag (schema ready, not implemented)
   twoFactorEnabled   Boolean  @default(false)
+  /// TOTP secret for 2FA (schema ready, not implemented)
   twoFactorSecret    String?
 
   // Stats
+  /// Total research submissions (drafts + submitted)
   totalSubmissions    Int @default(0)
+  /// Submissions in PENDING_RESEARCH or VALIDATING status
   pendingSubmissions  Int @default(0)
+  /// Submissions in MATCH_MADE status
   approvedSubmissions Int @default(0)
 
   // Relations
@@ -150,16 +193,21 @@ model User {
   @@index([createdAt])
 }
 
-// Research lead submission - 3-step form
+/// Research lead submission with 3-step form workflow.
+/// Step 1: Research summary and researcher contact info.
+/// Step 2: Additional details about research maturity and funding.
+/// Step 3: Scout's pitch on why this is interesting.
 model ResearchSubmission {
   // Core
   id          String           @id @default(cuid())
   userId      String
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   status      SubmissionStatus @default(PENDING_RESEARCH)
+  /// True if submission is still being edited, false after submission
   isDraft     Boolean          @default(false)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  /// Timestamp when draft was converted to submission
   submittedAt DateTime?
 
   // Step 1 - Research Summary
@@ -172,22 +220,27 @@ model ResearchSubmission {
 
   // Step 2 - Additional Details
   researcherCareerStage      CareerStage?
+  /// Custom career stage if researcherCareerStage is OTHER
   researcherCareerStageOther String?
   researcherLinkedin         String?
   researchStage            ResearchStage?
   fundingStatus            FundingStatus?
   keyPublications          String?
   potentialApplications    String?
+  /// JSON array of supporting URLs
   supportingLinks          Json?             @default("[]")
   submissionSource         SubmissionSource?
   relationshipToResearcher Relationship?
+  /// Whether researcher knows they're being submitted
   researcherAwareness      Boolean           @default(false)
 
   // Step 3 - Scout Pitch
   whyInteresting String?
 
   // System
+  /// Flagged by duplicate detection system
   isDuplicate Boolean @default(false)
+  /// ID of original submission if this is a duplicate
   duplicateOf String?
 
   // Relations
@@ -201,7 +254,8 @@ model ResearchSubmission {
   @@index([submittedAt])
 }
 
-// Comments on research submissions
+/// Comments on research submissions.
+/// Used for team collaboration and feedback.
 model SubmissionComment {
   id           String             @id @default(cuid())
   submissionId String
@@ -216,12 +270,15 @@ model SubmissionComment {
   @@index([userId])
 }
 
-// Password reset tokens
+/// Password reset tokens with 1-hour expiration.
+/// Tokens are deleted after use or expiration.
 model PasswordReset {
   id        String   @id @default(cuid())
+  /// Secure random token sent in password reset email
   token     String   @unique
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Token expires after 1 hour
   expires   DateTime
   createdAt DateTime @default(now())
 
@@ -229,7 +286,8 @@ model PasswordReset {
   @@index([token])
 }
 
-// Global system settings
+/// Global system settings.
+/// Currently unused, reserved for future admin configuration.
 model SystemSettings {
   id                       String   @id @default(cuid())
   enableEmailNotifications Boolean  @default(true)

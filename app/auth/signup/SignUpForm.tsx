@@ -1,3 +1,17 @@
+/**
+ * SignUpForm.tsx
+ * 
+ * Sign up form component supporting two flows:
+ * 1. Regular signup: Email, password, name, optional university
+ * 2. Scout application signup: Pre-filled fields from scout application
+ * 
+ * Features:
+ * - Real-time password validation with visual feedback
+ * - Password confirmation matching
+ * - Locked fields for scout applications
+ * - Redirects to signin on success
+ */
+
 'use client'
 
 import { useSearchParams } from 'next/navigation'
@@ -8,6 +22,10 @@ import { Eye, EyeOff, Plus, Check, X, Lock } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
+/**
+ * Sign up form component with password validation.
+ * Handles both regular signup and scout application completion.
+ */
 export function SignUpForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -17,16 +35,18 @@ export function SignUpForm() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   
-  // Parse scout application data from URL
+  // Parse scout application data from URL query params
   const scoutAppData = searchParams.get('scoutApp')
   const scoutData = scoutAppData ? JSON.parse(decodeURIComponent(scoutAppData)) : null
 
+  // Redirect to signin with success message after account creation
   useEffect(() => {
     if (state?.success) {
       router.push('/auth/signin?message=' + encodeURIComponent(state.success))
     }
   }, [state, router])
 
+  // Password complexity requirements with real-time validation
   const requirements = [
     { label: 'At least 8 characters', met: password.length >= 8 },
     { label: 'Contains uppercase letter', met: /[A-Z]/.test(password) },

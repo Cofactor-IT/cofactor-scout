@@ -1,3 +1,16 @@
+/**
+ * page.tsx
+ * 
+ * Sign in page with email/password authentication.
+ * Features:
+ * - Email verification check
+ * - Remember me for 30 days
+ * - Resend verification email with 60s cooldown
+ * - Loading spinner during authentication
+ * 
+ * Client component wrapped in Suspense for search params.
+ */
+
 'use client'
 
 import { signIn } from 'next-auth/react'
@@ -8,6 +21,10 @@ import { useState, FormEvent, Suspense } from 'react'
 import { AuthNavbar } from '@/components/ui/auth-navbar'
 import { resendVerificationEmail } from '@/actions/auth.actions'
 
+/**
+ * Sign in form component with authentication logic.
+ * Handles credential validation, error display, and verification email resend.
+ */
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -22,6 +39,10 @@ function SignInForm() {
 
   const message = searchParams.get('message')
 
+  /**
+   * Handles form submission and NextAuth sign in.
+   * Shows appropriate error messages and redirects on success.
+   */
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
@@ -58,6 +79,10 @@ function SignInForm() {
     }
   }
 
+  /**
+   * Resends verification email with 60-second cooldown.
+   * Only available when error mentions email verification.
+   */
   async function handleResendVerification() {
     if (!email || resendCooldown > 0) return
     
@@ -223,6 +248,10 @@ function SignInForm() {
   )
 }
 
+/**
+ * Sign in page wrapper component.
+ * Includes navbar, form with Suspense, and footer.
+ */
 export default function SignInPage() {
   return (
     <div className="min-h-screen bg-[#FAFBFC] pt-[78px]">

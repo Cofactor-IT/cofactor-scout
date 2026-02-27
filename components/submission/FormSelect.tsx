@@ -1,3 +1,9 @@
+/**
+ * Form Select Component
+ * 
+ * Reusable select dropdown for submission forms.
+ * Includes label, required indicator, and placeholder support.
+ */
 interface FormSelectProps {
   label: string
   name: string
