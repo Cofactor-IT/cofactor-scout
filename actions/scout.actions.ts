@@ -245,6 +245,9 @@ export async function submitScoutApplication(
                 department,
                 userRole,
                 researchAreas,
+                whyScout,
+                howSourceLeads,
+                linkedinUrl,
                 new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
             )
             logger.info('Scout application notification sent to team', { email })

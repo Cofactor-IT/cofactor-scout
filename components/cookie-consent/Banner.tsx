@@ -1,0 +1,112 @@
+"use client"
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { CookieModal } from './Modal'
+
+export type ConsentState = {
+    analytics: boolean;
+    error: boolean;
+    version: number;
+}
+
+const DEFAULT_CONSENT: ConsentState = {
+    analytics: false,
+    error: false,
+    version: 1
+}
+
+export function CookieBanner() {
+    const [isVisible, setIsVisible] = useState(false)
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [currentConsent, setCurrentConsent] = useState<ConsentState>(DEFAULT_CONSENT)
+
+    useEffect(() => {
+        // Check array of cookies for cf_consent
+        const match = document.cookie.match(new RegExp('(^| )cf_consent=([^;]+)'))
+        if (match) {
+            try {
+                const storedConsent = JSON.parse(decodeURIComponent(match[2]))
+                setCurrentConsent(storedConsent)
+            } catch (e) {
+                setIsVisible(true) // Invalid cookie -> show banner
+            }
+        } else {
+            setIsVisible(true)
+        }
+    }, [])
+
+    const handleSave = async (consent: ConsentState) => {
+        // 6 months expiration
+        const maxAge = 60 * 60 * 24 * 182
+
+        document.cookie = `cf_consent=${encodeURIComponent(JSON.stringify(consent))}; path=/; max-age=${maxAge}; samesite=strict`
+
+        setIsVisible(false)
+        setIsModalOpen(false)
+        setCurrentConsent(consent)
+
+        try {
+            // Attempt to record consent on backend (fire and forget)
+            fetch('/api/consent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(consent)
+            }).catch(() => { })
+        } catch (e) {
+            // Ignore
+        }
+
+        // Reload so Sentry and Analytics evaluate correctly
+        window.location.reload()
+    }
+
+    const acceptAll = () => handleSave({ analytics: true, error: true, version: 1 })
+    const rejectAll = () => handleSave({ analytics: false, error: false, version: 1 })
+
+    if (!isVisible) return null
+
+    return (
+        <>
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex-1 max-w-4xl">
+                    <h4 className="mb-2">We value your privacy</h4>
+
+                    <p className="body text-sm text-[#6B7280]">
+                        We use cookies to improve your experience. We use non-essential cookies for analytics (Vercel) and error monitoring (Sentry), which may transfer data according to their policies. You can choose to accept all, reject all non-essential, or customize your preferences. Review our <Link href="/privacy" className="underline hover:text-[#1B2A4A]" style={{ color: '#6B7280' }}>Privacy Policy</Link> for details.
+                    </p>
+
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="button border border-[#E5E7EB] rounded-md hover:bg-[#FAFBFC] whitespace-nowrap"
+                        style={{ color: '#1B2A4A' }}
+                    >
+                        Customize
+                    </button>
+                    <button
+                        onClick={rejectAll}
+                        className="button border border-[#E5E7EB] rounded-md hover:bg-[#FAFBFC] whitespace-nowrap"
+                        style={{ color: '#1B2A4A' }}
+                    >
+                        Reject All
+                    </button>
+                    <button
+                        onClick={acceptAll}
+                        className="button bg-[#0D7377] text-white rounded-md hover:bg-[#0A5A5D] whitespace-nowrap"
+                    >
+                        Accept All
+                    </button>
+                </div>
+            </div>
+
+            <CookieModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSave}
+                initialState={currentConsent}
+            />
+        </>
+    )
+}

@@ -16,6 +16,7 @@ import { Award, UserPlus, Send, SearchCheck, CircleDollarSign } from 'lucide-rea
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import HeroLogo from '@/public/cofactor-scout-hero-logo.png'
+import { CookieConsentTrigger } from '@/components/cookie-consent/Trigger'
 import { FadeIn } from '@/components/ui/FadeIn'
 import { FadeInOnLoad } from '@/components/ui/FadeInOnLoad'
 import type { Metadata } from 'next'
@@ -83,20 +84,20 @@ export default function LandingPage() {
                 <h2 className="mb-8 md:mb-[60px] max-w-full md:max-w-[1400px]">
                     Choose Your Path
                 </h2>
-                
+
                 <p className="body-large mb-12 md:mb-[100px] max-w-full md:max-w-[1600px]">
                     Join our community as a Contributor and start submitting leads immediately, or apply to become a verified Scout for priority review and access to our exclusive network.
                 </p>
-                
+
                 <div className="flex flex-col lg:flex-row justify-center gap-8 lg:gap-[120px] max-w-full lg:max-w-[1320px] mx-auto">
                     {/* Scout Card */}
                     <FadeIn delay={0} className="w-full lg:w-[600px]">
                         <Card className="w-full h-full p-8 md:p-[60px] flex flex-col">
                         <Award className="w-[60px] h-[60px] mb-[30px] text-[#C9A84C]" />
-                        
+
                         <h3 className="mb-[10px]">Scout</h3>
                         <p className="caption text-[#6B7280] mb-[30px]">Verified Network</p>
-                        
+
                         <div className="mb-[40px]">
                             <p className="body-bold mb-[20px]">As a Scout:</p>
                             <div className="space-y-[10px] body">
@@ -106,7 +107,7 @@ export default function LandingPage() {
                                 <p>✓ Higher commission rates</p>
                             </div>
                         </div>
-                        
+
                         <div className="mb-[40px]">
                             <p className="body-bold mb-[10px]">Requires:</p>
                             <ul className="list-disc ml-[30px] body space-y-[10px]">
@@ -115,7 +116,7 @@ export default function LandingPage() {
                                 <li>Review Process</li>
                             </ul>
                         </div>
-                        
+
                         <div className="mt-auto flex justify-center pb-6 md:pb-[35px]">
                             <Link href="/scout/apply" className="w-full md:w-auto">
                                 <Button className="w-full md:w-[240px] h-[56px]">
@@ -130,10 +131,10 @@ export default function LandingPage() {
                     <FadeIn delay={0.15} className="w-full lg:w-[600px]">
                         <Card className="w-full h-full p-8 md:p-[60px] flex flex-col">
                         <UserPlus className="w-[60px] h-[60px] mb-[30px] text-[#6B7280]" />
-                        
+
                         <h3 className="mb-[10px]">Contributor</h3>
                         <p className="caption text-[#6B7280] mb-[30px]">Open Access</p>
-                        
+
                         <div className="mb-[40px]">
                             <p className="body-bold mb-[20px]">As a Contributor:</p>
                             <div className="space-y-[10px] body">
@@ -143,7 +144,7 @@ export default function LandingPage() {
                                 <p>✓ Can apply for Scout status later</p>
                             </div>
                         </div>
-                        
+
                         <div className="mt-auto flex justify-center pb-6 md:pb-[35px]">
                             <Link href="/auth/signup" className="w-full md:w-auto">
                                 <Button className="w-full md:w-[240px] h-[56px]">
@@ -161,7 +162,7 @@ export default function LandingPage() {
                 <h2 className="mb-12 md:mb-[100px] text-center">
                     How Cofactor Works
                 </h2>
-                
+
                 <div className="flex flex-col md:flex-row justify-center gap-8 md:gap-[60px] max-w-full md:max-w-[1800px] mx-auto">
                     {/* Step 1 */}
                     <FadeIn delay={0} className="w-full md:w-[540px]">
@@ -199,13 +200,15 @@ export default function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer className="w-full h-[100px] bg-[#FAFBFC] flex items-center justify-center">
+            <footer className="w-full h-[100px] bg-[#FAFBFC] flex items-center justify-center gap-6">
                 <p className="body text-center">
                     <span className="text-[#6B7280]">Already have an account? </span>
                     <Link href="/auth/signin" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
                         Sign in
                     </Link>
                 </p>
+                <div className="text-[#E5E7EB]">|</div>
+                <CookieConsentTrigger />
             </footer>
         </div>
     )

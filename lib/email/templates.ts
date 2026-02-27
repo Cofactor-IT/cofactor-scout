@@ -7,10 +7,21 @@ function getAppUrl(): string {
     return process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'
 }
 
+/** Escape user-supplied strings before injecting into HTML email templates */
+function escapeHtml(str: string): string {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+}
+
 export interface EmailTemplate {
     subject: string
     text: string
     html: string
+    replyTo?: string
 }
 
 type TemplateFn<T = Record<string, unknown>> = (data: T) => EmailTemplate
@@ -236,32 +247,55 @@ interface ScoutApplicationNotificationData {
     department: string
     userRole: string
     researchAreas: string
+    whyScout: string
+    howSourceLeads: string
+    linkedinUrl?: string | null
     applicationDate: string
 }
 
-export const scoutApplicationNotificationTemplate: TemplateFn<ScoutApplicationNotificationData> = ({ applicantName, applicantEmail, university, department, userRole, researchAreas, applicationDate }) => ({
-    subject: 'New Scout Application Received',
-    text: `New Scout Application\n\nApplicant: ${applicantName}\nEmail: ${applicantEmail}\nUniversity: ${university}\nDepartment: ${department}\nRole: ${userRole}\nResearch Areas: ${researchAreas}\nSubmitted: ${applicationDate}\n\nReview the application in the admin dashboard.`,
-    html: `
+export const scoutApplicationNotificationTemplate: TemplateFn<ScoutApplicationNotificationData> = ({ applicantName, applicantEmail, university, department, userRole, researchAreas, whyScout, howSourceLeads, linkedinUrl, applicationDate }) => {
+    const safeName = escapeHtml(applicantName)
+    const safeEmail = escapeHtml(applicantEmail)
+    const safeUni = escapeHtml(university)
+    const safeDept = escapeHtml(department)
+    const safeRole = escapeHtml(userRole)
+    const safeAreas = escapeHtml(researchAreas)
+    const safeWhy = escapeHtml(whyScout)
+    const safeHow = escapeHtml(howSourceLeads)
+    const safeLinkedin = linkedinUrl ? escapeHtml(linkedinUrl) : null
+    const safeDate = escapeHtml(applicationDate)
+
+    return {
+        subject: 'New Scout Application Received',
+        replyTo: applicantEmail,
+        text: `New Scout Application\n\nApplicant: ${applicantName}\nEmail: ${applicantEmail}\nUniversity: ${university}\nDepartment: ${department}\nRole: ${userRole}\nResearch Areas: ${researchAreas}\nWhy Scout: ${whyScout}\nHow Source: ${howSourceLeads}\nLinkedIn: ${linkedinUrl || 'N/A'}\nSubmitted: ${applicationDate}\n\nReview the application in the admin dashboard.`,
+        html: `
         <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
             <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
                 <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
                 <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">New Scout Application 🎯</h1>
-                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">A new scout application has been submitted and requires review.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">A new scout application has been submitted and requires review. You can reply directly to this email to contact the applicant.</p>
                 <div style="background-color: #FAFBFC; padding: 20px; border-radius: 4px; margin: 24px 0;">
-                    <p style="margin: 8px 0;"><strong>Applicant:</strong> ${applicantName}</p>
-                    <p style="margin: 8px 0;"><strong>Email:</strong> ${applicantEmail}</p>
-                    <p style="margin: 8px 0;"><strong>University:</strong> ${university}</p>
-                    <p style="margin: 8px 0;"><strong>Department:</strong> ${department}</p>
-                    <p style="margin: 8px 0;"><strong>Role:</strong> ${userRole}</p>
-                    <p style="margin: 8px 0;"><strong>Research Areas:</strong> ${researchAreas}</p>
-                    <p style="margin: 8px 0;"><strong>Submitted:</strong> ${applicationDate}</p>
+                    <p style="margin: 8px 0;"><strong>Applicant:</strong> ${safeName}</p>
+                    <p style="margin: 8px 0;"><strong>Email:</strong> ${safeEmail}</p>
+                    <p style="margin: 8px 0;"><strong>University:</strong> ${safeUni}</p>
+                    <p style="margin: 8px 0;"><strong>Department:</strong> ${safeDept}</p>
+                    <p style="margin: 8px 0;"><strong>Role:</strong> ${safeRole}</p>
+                    <p style="margin: 8px 0;"><strong>Research Areas:</strong> ${safeAreas}</p>
+                    <p style="margin: 8px 0;"><strong>Why Scout:</strong> ${safeWhy}</p>
+                    <p style="margin: 8px 0;"><strong>How they source leads:</strong> ${safeHow}</p>
+                    <p style="margin: 8px 0;"><strong>LinkedIn:</strong> ${safeLinkedin ? `<a href="${safeLinkedin}">${safeLinkedin}</a>` : 'N/A'}</p>
+                    <p style="margin: 8px 0;"><strong>Submitted:</strong> ${safeDate}</p>
+                </div>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${getAppUrl()}/admin/scouts" style="background-color: #0D7377; color: white; padding: 14px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 16px; font-weight: 500;">Review in Admin Panel</a>
                 </div>
                 <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor System</p>
             </div>
         </div>
     `
-})
+    }
+}
 
 interface ScoutApplicationReminderData {
     applicantName: string
@@ -434,6 +468,39 @@ export const newSignInTemplate: TemplateFn<NewSignInData> = ({ name, timestamp, 
     `
 })
 
+interface ScoutRejectionData {
+    name: string
+    feedback?: string
+}
+
+export const scoutRejectionTemplate: TemplateFn<ScoutRejectionData> = ({ name, feedback }) => {
+    const safeName = escapeHtml(name)
+    const safeFeedback = feedback ? escapeHtml(feedback) : undefined
+
+    return {
+        subject: 'Update on Your Scout Application',
+        text: `Hi ${name},\n\nThank you for taking the time to apply to become a Cofactor Scout.\n\nAfter careful review, we are unable to accept your application at this time.${feedback ? `\n\nFeedback from our team: ${feedback}` : ''}\n\nWe appreciate your interest in contributing to the Cofactor network.\n\nBest,\nThe Cofactor Team`,
+        html: `
+        <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+                <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+                <h1 style="color: #1B2A4A; font-size: 28px; margin-bottom: 16px;">Update on Your Application</h1>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${safeName},</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Thank you for taking the time to apply to become a Cofactor Scout.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">After careful review, we are unable to accept your application at this time.</p>
+                ${safeFeedback ? `
+                <div style="background-color: #F3F4F6; padding: 16px; border-radius: 4px; margin: 24px 0; border-left: 4px solid #9CA3AF;">
+                    <p style="margin: 0; font-size: 14px; color: #4B5563;"><strong>Feedback from our team:</strong><br/>${safeFeedback}</p>
+                </div>
+                ` : ''}
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">We appreciate your interest in contributing to the Cofactor network.</p>
+                <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6;">Best,<br>The Cofactor Team</p>
+            </div>
+        </div>
+    `
+    }
+}
+
 // Template registry for type-safe template access
 export const emailTemplates = {
     welcome: welcomeEmailTemplate,
@@ -449,6 +516,7 @@ export const emailTemplates = {
     scoutApplicationReminder: scoutApplicationReminderTemplate,
     reminderConfirmation: reminderConfirmationTemplate,
     scoutApproval: scoutApprovalTemplate,
+    scoutRejection: scoutRejectionTemplate,
     accountUpdate: accountUpdateTemplate,
     profileUpdate: profileUpdateTemplate,
     newSignIn: newSignInTemplate

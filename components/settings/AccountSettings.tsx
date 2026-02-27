@@ -19,6 +19,8 @@ import { FormInput } from '@/components/submission/FormInput'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Modal } from '@/components/ui/modal'
 import { updateAccount, changePassword } from '@/actions/settings.actions'
+import { CookieModal } from '@/components/cookie-consent/Modal'
+import { useEffect } from 'react'
 
 /**
  * Props for AccountSettings component.
@@ -44,13 +46,13 @@ export function AccountSettings({ user }: AccountSettingsProps) {
     preferredName: user.preferredName || '',
     email: user.email
   })
-  
+
   const [showSuccess, setShowSuccess] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -65,19 +67,19 @@ export function AccountSettings({ user }: AccountSettingsProps) {
    */
   const handlePasswordChange = async () => {
     setPasswordError('')
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordError('Passwords do not match')
       return
     }
-    
+
     setShowPasswordModal(false)
     setLoading(true)
     const result = await changePassword({
       currentPassword: passwordData.currentPassword,
       newPassword: passwordData.newPassword
     })
-    
+
     if (result.success) {
       setPasswordSuccess(true)
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
@@ -114,21 +116,21 @@ export function AccountSettings({ user }: AccountSettingsProps) {
           <span className="text-[14px] text-[#2D7D46]">Password changed successfully!</span>
         </div>
       )}
-      
+
       {showSuccess && (
         <div className="mb-[24px] p-[12px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] flex items-center gap-[8px]">
           <CheckCircle className="w-[16px] h-[16px] text-[#2D7D46]" />
           <span className="text-[14px] text-[#2D7D46]">Account updated! Confirmation email sent.</span>
         </div>
       )}
-      
+
       {passwordError && (
         <div className="mb-[24px] p-[12px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px] flex items-center gap-[8px]">
           <X className="w-[16px] h-[16px] text-[#EF4444]" />
           <span className="text-[14px] text-[#EF4444]">{passwordError}</span>
         </div>
       )}
-      
+
       {error && (
         <div className="mb-[24px] p-[12px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px] text-[#EF4444] text-[14px]">
           {error}
@@ -170,14 +172,14 @@ export function AccountSettings({ user }: AccountSettingsProps) {
           label="Email"
           name="email"
           value={formData.email}
-          onChange={() => {}}
+          onChange={() => { }}
           type="email"
           helperText="Contact support to change your email"
         />
       </div>
 
       <div className="mt-[32px] flex justify-end">
-        <button 
+        <button
           onClick={() => setShowModal(true)}
           disabled={loading}
           className="px-[32px] py-[12px] bg-[#0D7377] text-white text-[14px] font-medium rounded-full hover:bg-[#0A5A5D] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -214,14 +216,14 @@ export function AccountSettings({ user }: AccountSettingsProps) {
       <div className="h-[1px] bg-[#E5E7EB] my-[40px]" />
 
       <h2 className="text-[24px] font-semibold text-[#1B2A4A] mb-[32px]">Password</h2>
-      <button 
+      <button
         onClick={() => setShowPasswordModal(true)}
         disabled={loading}
         className="px-[24px] py-[12px] bg-[#0D7377] text-white text-[14px] font-medium rounded-full hover:bg-[#0A5A5D] disabled:opacity-50"
       >
         Change Password
       </button>
-      
+
       <Modal
         isOpen={showPasswordModal}
         onClose={() => {
@@ -278,6 +280,27 @@ export function AccountSettings({ user }: AccountSettingsProps) {
           />
         </div>
       </Modal>
+
+      <div className="h-[1px] bg-[#E5E7EB] my-[40px]" />
+
+      <h2 className="text-[24px] font-semibold text-[#1B2A4A] mb-[8px]">Privacy & Cookies</h2>
+      <p className="text-[14px] font-serif text-[#6B7280] mb-[32px]">
+        Manage your cookie and tracking preferences.
+      </p>
+
+      <button
+        onClick={() => setShowCookieModal(true)}
+        className="px-[24px] py-[12px] bg-[#0D7377] text-white text-[14px] font-medium rounded-full hover:bg-[#0A5A5D]"
+      >
+        Manage Cookie Preferences
+      </button>
+
+      <CookieModal
+        isOpen={showCookieModal}
+        onClose={() => setShowCookieModal(false)}
+        onSave={handleSaveCookie}
+        initialState={cookieConsent}
+      />
     </div>
   )
 }

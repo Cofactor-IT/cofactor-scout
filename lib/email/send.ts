@@ -22,6 +22,7 @@ import {
     type EmailTemplate
 } from '@/lib/email/templates'
 import { getAppUrl, getFromAddress, isEmailConfigured } from '@/lib/email/utils'
+import { prisma } from '@/lib/database/prisma'
 
 // Configure SMTP transporter with environment variables
 const transporter = nodemailer.createTransport({
@@ -60,7 +61,7 @@ async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<
         logger.warn('SMTP not configured, skipping email', { to: maskEmail(to), ...metadata })
         return
     }
-    
+
     logger.info('SMTP configured, proceeding with email', { to: maskEmail(to) })
 
     // CHECK GLOBAL SETTINGS - TEMPORARILY DISABLED
@@ -73,12 +74,15 @@ async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<
     //     return
     // }
 
-    const mailOptions = {
+    const mailOptions: Record<string, unknown> = {
         from: getFromAddress(),
         to,
         subject: template.subject,
         text: template.text,
         html: template.html,
+    }
+    if (template.replyTo) {
+        mailOptions.replyTo = template.replyTo
     }
 
     try {
@@ -254,10 +258,18 @@ export async function sendScoutApplicationNotificationEmail(
     department: string,
     userRole: string,
     researchAreas: string,
+    whyScout: string,
+    howSourceLeads: string,
+    linkedinUrl: string | null,
     applicationDate: string
 ): Promise<void> {
-    // Send to both team email addresses
-    const teamEmails = ['it@cofactor.world', 'team@cofactor.world']
+    const settings = await prisma.systemSettings.findFirst()
+    const targetEmail = settings?.scoutNotificationEmail || 'it@cofactor.world'
+
+    // Split by comma if multiple emails are configured
+    const teamEmails = targetEmail.split(',').map(e => e.trim()).filter(Boolean)
+    if (teamEmails.length === 0) teamEmails.push('it@cofactor.world')
+
     const template = emailTemplates.scoutApplicationNotification({
         applicantName,
         applicantEmail,
@@ -265,6 +277,9 @@ export async function sendScoutApplicationNotificationEmail(
         department,
         userRole,
         researchAreas,
+        whyScout,
+        howSourceLeads,
+        linkedinUrl,
         applicationDate
     })
 
@@ -292,7 +307,13 @@ export async function sendScoutApplicationReminderEmail(
     university: string,
     daysSinceApplication: number
 ): Promise<void> {
-    const teamEmails = ['it@cofactor.world', 'team@cofactor.world']
+    const settings = await prisma.systemSettings.findFirst()
+    const targetEmail = settings?.scoutNotificationEmail || 'it@cofactor.world'
+
+    // Split by comma if multiple emails are configured
+    const teamEmails = targetEmail.split(',').map(e => e.trim()).filter(Boolean)
+    if (teamEmails.length === 0) teamEmails.push('it@cofactor.world')
+
     const template = emailTemplates.scoutApplicationReminder({
         applicantName,
         applicantEmail,
@@ -357,6 +378,22 @@ export async function sendScoutApprovalEmail(
         to: toEmail,
         template,
         metadata: { type: 'scoutApproval' }
+    })
+}
+
+/**
+ * Send scout rejection notification
+ */
+export async function sendScoutRejectionEmail(
+    toEmail: string,
+    name: string,
+    feedback?: string
+): Promise<void> {
+    const template = emailTemplates.scoutRejection({ name, feedback })
+    await sendEmail({
+        to: toEmail,
+        template,
+        metadata: { type: 'scoutRejection' }
     })
 }
 

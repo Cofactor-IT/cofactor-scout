@@ -16,6 +16,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { SupportWidget } from '@/components/SupportWidget'
 import { getServerSession } from 'next-auth'
+import { CookieBanner } from '@/components/cookie-consent/Banner'
 import { Toaster } from 'sonner'
 
 // Merriweather font for body text and serif elements
@@ -54,12 +55,13 @@ export default async function RootLayout({
 }) {
   // Check authentication to conditionally show support widget
   const session = await getServerSession()
-  
+
   return (
     <html lang="en">
       <body className={`${merriweather.variable} ${rethinkSans.variable} antialiased`}>
         {children}
         {session && <SupportWidget />}
+        <CookieBanner />
         <Toaster position="bottom-right" />
       </body>
     </html>

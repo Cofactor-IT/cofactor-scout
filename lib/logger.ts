@@ -270,7 +270,9 @@ export function logUserLogin(userId: string, email: string, method: string): voi
         email: maskEmail(email),
         method
     })
-    setSentryUser(userId, email, method)
+    if (typeof window !== 'undefined' && document.cookie.includes('"error":true')) {
+        setSentryUser(userId, email, method)
+    }
 }
 
 /**
@@ -280,7 +282,9 @@ export function logUserLogin(userId: string, email: string, method: string): voi
  */
 export function logUserLogout(userId: string): void {
     info('User logged out', { userId })
-    clearSentryUser()
+    if (typeof window !== 'undefined') {
+        clearSentryUser()
+    }
 }
 
 /**
