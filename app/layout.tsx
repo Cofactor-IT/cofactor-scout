@@ -1,3 +1,16 @@
+/**
+ * layout.tsx
+ * 
+ * Root layout component for the entire application.
+ * Configures fonts, global styles, and persistent UI elements.
+ * 
+ * Features:
+ * - Google Fonts: Merriweather (body) and Rethink Sans (headings)
+ * - Support widget for authenticated users
+ * - Sonner toast notifications
+ * - Global CSS variables for design system
+ */
+
 import { Merriweather, Rethink_Sans } from 'next/font/google'
 import './globals.css'
 import type { Metadata } from 'next'
@@ -5,6 +18,7 @@ import { SupportWidget } from '@/components/SupportWidget'
 import { getServerSession } from 'next-auth'
 import { Toaster } from 'sonner'
 
+// Merriweather font for body text and serif elements
 const merriweather = Merriweather({
   subsets: ['latin'],
   weight: ['300', '400', '700', '900'],
@@ -13,6 +27,7 @@ const merriweather = Merriweather({
   display: 'swap',
 })
 
+// Rethink Sans font for headings and UI elements
 const rethinkSans = Rethink_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'], // Adjust weights as needed based on usage
@@ -26,11 +41,18 @@ export const metadata: Metadata = {
   description: 'Discover Research. Connect Investor. Earn Commission',
 }
 
+/**
+ * Root layout component.
+ * Wraps all pages with fonts, support widget, and toast notifications.
+ * 
+ * @param children - Page content
+ */
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Check authentication to conditionally show support widget
   const session = await getServerSession()
   
   return (

@@ -1,5 +1,19 @@
+/**
+ * button.tsx
+ * 
+ * Reusable button component with primary and secondary variants.
+ * Uses design system colors and typography.
+ * 
+ * Variants:
+ * - primary: Teal background with white text
+ * - secondary: White background with navy border
+ */
+
 'use client'
 
+/**
+ * Props for Button component.
+ */
 interface ButtonProps {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary';
@@ -8,6 +22,16 @@ interface ButtonProps {
   type?: 'button' | 'submit' | 'reset';
 }
 
+/**
+ * Button component with design system styling.
+ * Includes hover states and shadow for depth.
+ * 
+ * @param children - Button content
+ * @param variant - Visual style (primary or secondary)
+ * @param className - Additional CSS classes
+ * @param onClick - Click handler
+ * @param type - HTML button type
+ */
 export function Button({ 
   children, 
   variant = 'primary', 

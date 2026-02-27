@@ -1,3 +1,8 @@
+/**
+ * Dashboard Loading State
+ * 
+ * Skeleton UI shown while dashboard page is loading.
+ */
 export default function DashboardLoading() {
     return (
         <div className="min-h-screen bg-[#FAFBFC]">

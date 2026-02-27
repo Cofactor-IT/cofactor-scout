@@ -1,3 +1,9 @@
+/**
+ * Next.js Middleware (Proxy)
+ * 
+ * Handles authentication, authorization, and security headers.
+ * Includes disabled rate limiting code for future use.
+ */
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 // import { checkRateLimitEdge, getClientIp } from '@/lib/security/rate-limit-edge'
@@ -17,6 +23,7 @@ export default withAuth(
         const isAuthRoute = req.nextUrl.pathname.startsWith("/auth")
         const isApiRoute = req.nextUrl.pathname.startsWith("/api")
 
+        // Restrict admin routes to admin users only
         if (isUrlAdmin && !isAdmin) {
             return NextResponse.rewrite(new URL("/auth/signin?error=AccessDenied", req.url))
         }
@@ -81,6 +88,7 @@ export default withAuth(
         //     }
         // }
 
+        // Content Security Policy header
         const cspHeader = `
             default-src 'self';
             script-src 'self' 'unsafe-inline';
@@ -103,7 +111,7 @@ export default withAuth(
             },
         })
 
-        // Add security headers
+        // Add security headers to response
         response.headers.set('X-Frame-Options', 'DENY')
         response.headers.set('X-Content-Type-Options', 'nosniff')
         response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -115,6 +123,7 @@ export default withAuth(
     },
     {
         callbacks: {
+            // Determine if user is authorized to access route
             authorized: ({ token, req }) => {
                 const path = req.nextUrl.pathname
 

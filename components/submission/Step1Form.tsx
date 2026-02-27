@@ -1,3 +1,9 @@
+/**
+ * Step 1 Form Component
+ * 
+ * First step of research submission form.
+ * Collects research summary and researcher information with auto-save draft functionality.
+ */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -32,6 +38,7 @@ export function Step1Form() {
     return emailRegex.test(email) ? '' : 'Invalid email address'
   }
 
+  // Load existing draft data if draft ID provided
   useEffect(() => {
     if (draftId) {
       getDraft(draftId).then((result) => {

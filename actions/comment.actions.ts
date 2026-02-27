@@ -1,3 +1,9 @@
+/**
+ * Comment Actions
+ * 
+ * Server actions for managing comments on research submissions.
+ * Users can only comment on and delete their own submission comments.
+ */
 'use server'
 
 import { prisma } from '@/lib/database/prisma'
@@ -5,6 +11,13 @@ import { requireAuth } from '@/lib/auth/session'
 import { revalidatePath } from 'next/cache'
 import DOMPurify from 'isomorphic-dompurify'
 
+/**
+ * Adds a comment to a research submission
+ * 
+ * @param submissionId - ID of the submission to comment on
+ * @param content - Comment text (max 5000 characters)
+ * @returns Success status or error message
+ */
 export async function addComment(submissionId: string, content: string) {
   const session = await requireAuth()
   
@@ -41,7 +54,7 @@ export async function addComment(submissionId: string, content: string) {
       return { success: false, error: 'Submission not found or access denied' }
     }
     
-    // Sanitize content to prevent XSS
+    // Strip all HTML tags to prevent XSS
     const sanitizedContent = DOMPurify.sanitize(trimmedContent, {
       ALLOWED_TAGS: [],
       ALLOWED_ATTR: []
@@ -63,6 +76,13 @@ export async function addComment(submissionId: string, content: string) {
   }
 }
 
+/**
+ * Deletes a comment from a submission
+ * 
+ * @param commentId - ID of the comment to delete
+ * @param submissionId - ID of the parent submission (for cache revalidation)
+ * @returns Success status or error message
+ */
 export async function deleteComment(commentId: string, submissionId: string) {
   const session = await requireAuth()
   

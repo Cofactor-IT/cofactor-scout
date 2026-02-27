@@ -1,3 +1,19 @@
+/**
+ * send.ts
+ * 
+ * Email sending functions using Nodemailer.
+ * Provides template-based email sending with error handling and logging.
+ * 
+ * All functions check if SMTP is configured before attempting to send.
+ * Emails are sent synchronously to ensure delivery before response.
+ * 
+ * Email types:
+ * - Authentication: verification, password reset, welcome
+ * - Scout application: confirmation, notification, reminder
+ * - Account: update confirmations, sign-in notifications
+ * - Admin: alerts and notifications
+ */
+
 import nodemailer from 'nodemailer'
 import { logger, maskEmail } from '@/lib/logger'
 import {
@@ -7,7 +23,7 @@ import {
 } from '@/lib/email/templates'
 import { getAppUrl, getFromAddress, isEmailConfigured } from '@/lib/email/utils'
 
-// Configure SMTP Transporter
+// Configure SMTP transporter with environment variables
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT || '587'),
@@ -18,6 +34,9 @@ const transporter = nodemailer.createTransport({
     },
 })
 
+/**
+ * Options for sendEmail function.
+ */
 interface SendEmailOptions {
     to: string
     template: EmailTemplate
@@ -25,12 +44,18 @@ interface SendEmailOptions {
 }
 
 /**
- * Core email sending function
- * Handles SMTP configuration check and error handling
+ * Core email sending function with SMTP configuration check.
+ * Handles error logging and skips sending if SMTP not configured.
+ * 
+ * @param to - Recipient email address
+ * @param template - Email template with subject, text, and HTML
+ * @param metadata - Additional data for logging
+ * @throws Error if email sending fails
  */
 async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<void> {
     logger.info('sendEmail called', { to: maskEmail(to), type: metadata?.type })
     
+    // Skip if SMTP not configured (development/testing)
     if (!isEmailConfigured()) {
         logger.warn('SMTP not configured, skipping email', { to: maskEmail(to), ...metadata })
         return
@@ -66,7 +91,10 @@ async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<
 }
 
 /**
- * Send welcome email to new users
+ * Sends welcome email to new users after account creation.
+ * 
+ * @param toEmail - User's email address
+ * @param name - User's full name
  */
 export async function sendWelcomeEmail(toEmail: string, name: string): Promise<void> {
     const template = emailTemplates.welcome({ name })
@@ -78,7 +106,11 @@ export async function sendWelcomeEmail(toEmail: string, name: string): Promise<v
 }
 
 /**
- * Send email verification link
+ * Sends email verification link with 24-hour expiration.
+ * 
+ * @param toEmail - User's email address
+ * @param name - User's full name
+ * @param token - Verification token (64-char hex string)
  */
 export async function sendVerificationEmail(toEmail: string, name: string, token: string): Promise<void> {
     const template = emailTemplates.verification({ name, token })
@@ -90,7 +122,10 @@ export async function sendVerificationEmail(toEmail: string, name: string, token
 }
 
 /**
- * Send password reset code
+ * Sends password reset code with 1-hour expiration.
+ * 
+ * @param toEmail - User's email address
+ * @param resetCode - Password reset token
  */
 export async function sendPasswordResetEmail(toEmail: string, resetCode: string): Promise<void> {
     const template = emailTemplates.passwordReset({ resetCode })
@@ -201,7 +236,16 @@ export async function sendArticleDeleteEmail(
 }
 
 /**
- * Send scout application notification to team
+ * Sends scout application notification to team emails.
+ * Sent to it@cofactor.world and team@cofactor.world.
+ * 
+ * @param applicantName - Applicant's full name
+ * @param applicantEmail - Applicant's email
+ * @param university - University name
+ * @param department - Department name
+ * @param userRole - Academic/professional role
+ * @param researchAreas - Research areas of interest
+ * @param applicationDate - Formatted application date
  */
 export async function sendScoutApplicationNotificationEmail(
     applicantName: string,
@@ -212,6 +256,7 @@ export async function sendScoutApplicationNotificationEmail(
     researchAreas: string,
     applicationDate: string
 ): Promise<void> {
+    // Send to both team email addresses
     const teamEmails = ['it@cofactor.world', 'team@cofactor.world']
     const template = emailTemplates.scoutApplicationNotification({
         applicantName,
@@ -233,7 +278,13 @@ export async function sendScoutApplicationNotificationEmail(
 }
 
 /**
- * Send scout application reminder to team
+ * Sends reminder about pending scout application to team.
+ * Sent to it@cofactor.world and team@cofactor.world.
+ * 
+ * @param applicantName - Applicant's full name
+ * @param applicantEmail - Applicant's email
+ * @param university - University name
+ * @param daysSinceApplication - Days since application submitted
  */
 export async function sendScoutApplicationReminderEmail(
     applicantName: string,
@@ -259,7 +310,10 @@ export async function sendScoutApplicationReminderEmail(
 }
 
 /**
- * Send reminder confirmation to applicant
+ * Sends confirmation to applicant that reminder was sent to team.
+ * 
+ * @param toEmail - Applicant's email address
+ * @param name - Applicant's full name
  */
 export async function sendReminderConfirmationEmail(
     toEmail: string,
@@ -274,7 +328,10 @@ export async function sendReminderConfirmationEmail(
 }
 
 /**
- * Send scout application confirmation
+ * Sends confirmation email after scout application submission.
+ * 
+ * @param toEmail - Applicant's email address
+ * @param name - Applicant's full name
  */
 export async function sendScoutApplicationConfirmationEmail(
     toEmail: string,

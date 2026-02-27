@@ -1,3 +1,9 @@
+/**
+ * Global Error Page
+ * 
+ * Catches and displays errors that occur during rendering.
+ * Shows error message with retry and home navigation options.
+ */
 'use client'
 
 import { Button } from '@/components/ui/button'
@@ -21,6 +27,7 @@ export default function Error({
                         {error.message || 'An unexpected error occurred. Please try again.'}
                     </p>
 
+                    {/* Show stack trace in development */}
                     {process.env.NODE_ENV === 'development' && error.stack && (
                         <details className="text-xs text-[#6B7280]">
                             <summary className="cursor-pointer hover:text-[#1B2A4A]">Error details</summary>

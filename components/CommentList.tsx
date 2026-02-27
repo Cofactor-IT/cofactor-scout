@@ -1,3 +1,9 @@
+/**
+ * Comment List Component
+ * 
+ * Displays list of comments on a submission with delete functionality.
+ * Shows empty state when no comments exist.
+ */
 'use client'
 
 import { useState } from 'react'

@@ -1,3 +1,9 @@
+/**
+ * Review Card Component
+ * 
+ * Displays a section of form data for review with edit link.
+ * Used in the final review step of submission form.
+ */
 import Link from 'next/link'
 
 interface ReviewField {

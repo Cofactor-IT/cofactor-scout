@@ -1,3 +1,12 @@
+/**
+ * SubmissionsTable.tsx
+ * 
+ * Displays user's research submissions in a filterable table.
+ * Supports search by topic/researcher name and filter by status.
+ * 
+ * Client component with local state for filters.
+ */
+
 'use client'
 
 import { useState, useMemo } from 'react'
@@ -6,6 +15,9 @@ import { FileText } from 'lucide-react'
 import { SearchInput } from '@/components/ui/search-input'
 import { Dropdown } from '@/components/ui/dropdown'
 
+/**
+ * Props for SubmissionsTable component.
+ */
 interface Submission {
   id: string
   researchTopic: string | null
@@ -19,10 +31,18 @@ interface SubmissionsTableProps {
   statusConfig: Record<string, { label: string; bg: string; text: string }>
 }
 
+/**
+ * Table component for displaying and filtering research submissions.
+ * Shows researcher name, topic, status badge, date, and view link.
+ * 
+ * @param submissions - Array of user's submissions
+ * @param statusConfig - Status badge styling configuration
+ */
 export function SubmissionsTable({ submissions, statusConfig }: SubmissionsTableProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
+  // Filter submissions based on search query and status
   const filteredSubmissions = useMemo(() => {
     let filtered = submissions
 

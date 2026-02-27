@@ -1,3 +1,10 @@
+/**
+ * Design Tokens
+ * 
+ * Centralized design system tokens for colors, typography, spacing, and shadows.
+ * Used throughout the application for consistent styling.
+ */
+
 export const colors = {
     // Primary
     navy: '#1B2A4A',

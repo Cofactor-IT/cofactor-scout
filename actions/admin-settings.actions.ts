@@ -1,3 +1,9 @@
+/**
+ * Admin Settings Actions
+ * 
+ * Server actions for managing system-wide settings.
+ * Requires admin authentication for all operations.
+ */
 'use server'
 
 import { prisma } from '@/lib/database/prisma'
@@ -5,6 +11,12 @@ import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/session'
 import { logger } from '@/lib/logger'
 
+/**
+ * Updates global notification settings
+ * 
+ * @param data - Notification preferences
+ * @returns Success status
+ */
 export async function updateNotificationSettings(data: {
     enableEmailNotifications: boolean
     enableInAppNotifications: boolean
@@ -14,6 +26,7 @@ export async function updateNotificationSettings(data: {
     try {
         const existing = await prisma.systemSettings.findFirst()
 
+        // Update existing settings or create new record
         if (existing) {
             await prisma.systemSettings.update({
                 where: { id: existing.id },

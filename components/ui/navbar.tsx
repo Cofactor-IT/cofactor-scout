@@ -1,13 +1,33 @@
+/**
+ * navbar.tsx
+ * 
+ * Main navigation bar component for authenticated pages.
+ * Displays logo, navigation links, and user profile.
+ * 
+ * Note: This component is currently unused. See dashboard-navbar.tsx for active navbar.
+ */
+
 import Link from 'next/link';
 import Image from 'next/image';
 import NavbarLogo from '@/public/cofactor-scout-navbar-logo.png';
 
+/**
+ * Props for Navbar component.
+ */
 interface NavbarProps {
   userName: string;
   userRole: string;
   userInitials: string;
 }
 
+/**
+ * Navigation bar component with logo, links, and user profile.
+ * Fixed height of 80px with absolute positioning for logo and user section.
+ * 
+ * @param userName - User's display name
+ * @param userRole - User's role (Scout or Contributor)
+ * @param userInitials - User's initials for avatar
+ */
 export function Navbar({ userName, userRole, userInitials }: NavbarProps) {
   return (
     <nav className="relative w-full h-[80px] bg-[#E5E7EB] border-b border-[#E5E7EB]">

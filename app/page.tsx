@@ -1,3 +1,15 @@
+/**
+ * page.tsx
+ * 
+ * Landing page for Cofactor Scout platform.
+ * Explains the two-tier system (Contributor vs Scout) and submission workflow.
+ * 
+ * Key sections:
+ * - Hero with dual CTAs (Apply as Scout / Sign up as Contributor)
+ * - Choose Your Path comparison cards
+ * - How It Works 3-step process
+ */
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { Award, UserPlus, Send, SearchCheck, CircleDollarSign } from 'lucide-react'
@@ -13,6 +25,10 @@ export const metadata: Metadata = {
   description: 'Connect promising university research with venture capital. Find cutting-edge projects in your network, submit them to our team, and earn commission when we facilitate successful matches.'
 }
 
+/**
+ * Landing page component.
+ * Server component with static metadata for SEO.
+ */
 export default function LandingPage() {
     return (
         <div className="min-h-screen bg-white">

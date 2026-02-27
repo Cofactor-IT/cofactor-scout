@@ -1,3 +1,9 @@
+/**
+ * Forgot Password Page
+ * 
+ * Allows users to request password reset by entering their email.
+ * Sends reset code to user's email if account exists.
+ */
 'use client'
 
 import { useState, FormEvent } from 'react'

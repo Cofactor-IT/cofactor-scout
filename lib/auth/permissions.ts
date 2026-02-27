@@ -1,3 +1,9 @@
+/**
+ * Permissions Module
+ * 
+ * Role-based access control utilities for authentication and authorization.
+ * Provides helpers for checking user roles and requiring specific permissions.
+ */
 'use server'
 
 import { getServerSession } from 'next-auth'
@@ -14,6 +20,8 @@ interface SessionUser extends User {
 
 /**
  * Get current session user with full type safety
+ * 
+ * @returns Session user or null if not authenticated
  */
 export async function getCurrentUser(): Promise<SessionUser | null> {
     const session = await getServerSession(authOptions)
@@ -22,6 +30,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
 /**
  * Require authentication - throws AuthenticationError if not logged in
+ * 
+ * @returns Authenticated user
+ * @throws AuthenticationError if not authenticated
  */
 export async function requireAuth(): Promise<SessionUser> {
     const user = await getCurrentUser()
@@ -35,6 +46,10 @@ export async function requireAuth(): Promise<SessionUser> {
 
 /**
  * Require admin role - throws if not admin
+ * 
+ * @returns Authenticated admin user
+ * @throws AuthenticationError if not authenticated
+ * @throws AuthorizationError if not admin
  */
 export async function requireAdmin(): Promise<SessionUser> {
     const user = await requireAuth()
@@ -48,6 +63,10 @@ export async function requireAdmin(): Promise<SessionUser> {
 
 /**
  * Require scout or admin role
+ * 
+ * @returns Authenticated scout or admin user
+ * @throws AuthenticationError if not authenticated
+ * @throws AuthorizationError if not scout or admin
  */
 export async function requireScoutOrAdmin(): Promise<SessionUser> {
     const user = await requireAuth()
@@ -61,6 +80,8 @@ export async function requireScoutOrAdmin(): Promise<SessionUser> {
 
 /**
  * Check if user is an admin (non-throwing)
+ * 
+ * @returns True if user is admin
  */
 export async function isAdmin(): Promise<boolean> {
     const user = await getCurrentUser()
@@ -69,6 +90,8 @@ export async function isAdmin(): Promise<boolean> {
 
 /**
  * Check if user is scout or admin (non-throwing)
+ * 
+ * @returns True if user is scout or admin
  */
 export async function isScoutOrAdmin(): Promise<boolean> {
     const user = await getCurrentUser()
@@ -77,6 +100,9 @@ export async function isScoutOrAdmin(): Promise<boolean> {
 
 /**
  * Check if user has any of the specified roles
+ * 
+ * @param roles - Roles to check
+ * @returns True if user has any of the roles
  */
 export async function hasAnyRole(...roles: UserRole[]): Promise<boolean> {
     const user = await getCurrentUser()
@@ -85,6 +111,11 @@ export async function hasAnyRole(...roles: UserRole[]): Promise<boolean> {
 
 /**
  * Require specific roles
+ * 
+ * @param roles - Required roles
+ * @returns Authenticated user with required role
+ * @throws AuthenticationError if not authenticated
+ * @throws AuthorizationError if user doesn't have required role
  */
 export async function requireRoles(...roles: UserRole[]): Promise<SessionUser> {
     const user = await requireAuth()

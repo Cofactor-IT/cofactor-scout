@@ -1,3 +1,13 @@
+/**
+ * schemas.ts
+ * 
+ * Zod validation schemas for all user input across the application.
+ * Includes comprehensive sanitization to prevent XSS, SQL injection, and other attacks.
+ * 
+ * All schemas transform and sanitize input before validation.
+ * Never trust client input - always validate with these schemas.
+ */
+
 import { z } from 'zod'
 import {
     validateAndSanitizeUrl,
@@ -22,7 +32,11 @@ import {
 // ============================================================================
 
 /**
- * Create a Zod schema with SQL injection check
+ * Creates a Zod string schema that rejects SQL injection patterns.
+ * Used as base for any user-provided string that touches the database.
+ * 
+ * @param message - Custom error message for validation failure
+ * @returns Zod string schema with SQL injection check
  */
 function sqlSafeString(message: string = 'Input contains invalid characters') {
     return z.string().refine(
@@ -32,10 +46,17 @@ function sqlSafeString(message: string = 'Input contains invalid characters') {
 }
 
 // ============================================================================
-// AUTHENTICATION SCHEMAS (Enhanced)
+// AUTHENTICATION SCHEMAS
 // ============================================================================
 
+/**
+ * Sign up form validation schema.
+ * Email is normalized to lowercase and trimmed to prevent duplicates.
+ * Password requires 8+ chars with uppercase, lowercase, number, and special char.
+ * Name is sanitized to remove HTML and dangerous characters.
+ */
 export const signUpSchema = z.object({
+    // Email normalized to lowercase to prevent duplicate accounts
     email: z.string()
         .min(1, 'Email is required')
         .email('Invalid email address')
@@ -46,6 +67,7 @@ export const signUpSchema = z.object({
             (email) => !containsSqlInjection(email),
             'Invalid email format'
         ),
+    // Password complexity requirements enforced for security
     password: z.string()
         .min(8, 'Password must be at least 8 characters')
         .max(128, 'Password is too long')
@@ -65,6 +87,7 @@ export const signUpSchema = z.object({
             (password) => /[^A-Za-z0-9]/.test(password),
             'Password must contain at least one special character'
         ),
+    // Name sanitized to remove HTML tags and dangerous characters
     name: z.string()
         .min(2, 'Name must be at least 2 characters')
         .max(100, 'Name is too long')
@@ -82,7 +105,10 @@ export const signUpSchema = z.object({
         }),
 })
 
-
+/**
+ * Sign in form validation schema.
+ * Simpler than signup - just validates format, not complexity.
+ */
 export const signInSchema = z.object({
     email: z.string()
         .min(1, 'Email is required')
@@ -95,13 +121,19 @@ export const signInSchema = z.object({
 })
 
 // ============================================================================
-// SOCIAL MEDIA CONNECTION SCHEMAS (Enhanced)
+// SOCIAL MEDIA CONNECTION SCHEMAS
 // ============================================================================
 
+/**
+ * Social media platform connection schema.
+ * Validates username format and follower count.
+ * Removes @ symbol from usernames automatically.
+ */
 export const socialConnectSchema = z.object({
     platform: z.enum(['instagram', 'tiktok', 'linkedin'], {
         message: 'Invalid platform'
     }),
+    // Remove @ symbol if user includes it
     username: z.string()
         .min(1, 'Username is required')
         .max(100, 'Username is too long')
@@ -124,6 +156,7 @@ export const socialConnectSchema = z.object({
             }
             return result.sanitized
         }),
+    // Accept string or number, convert to number, validate range
     followers: z.union([
         z.string().optional().transform(val => val ? parseInt(val, 10) : 0),
         z.number().optional().default(0)
@@ -135,7 +168,8 @@ export const socialConnectSchema = z.object({
 // ============================================================================
 
 /**
- * Generic URL validation schema
+ * Generic URL validation with sanitization.
+ * Validates protocol, domain, and removes dangerous characters.
  */
 export const urlSchema = z.string()
     .max(2048, 'URL is too long')
@@ -154,7 +188,8 @@ export const urlSchema = z.string()
     .optional()
 
 /**
- * LinkedIn URL validation
+ * LinkedIn profile URL validation.
+ * Ensures URL matches linkedin.com domain pattern.
  */
 export const linkedinUrlSchema = z.string()
     .max(2048, 'LinkedIn URL is too long')
@@ -174,7 +209,8 @@ export const linkedinUrlSchema = z.string()
     .optional()
 
 /**
- * Twitter/X URL validation
+ * Twitter/X profile URL validation.
+ * Accepts both twitter.com and x.com domains.
  */
 export const twitterUrlSchema = z.string()
     .max(2048, 'Twitter URL is too long')
@@ -194,7 +230,8 @@ export const twitterUrlSchema = z.string()
     .optional()
 
 /**
- * Personal website URL validation
+ * Personal website URL validation.
+ * Accepts any valid HTTP/HTTPS URL.
  */
 export const websiteUrlSchema = z.string()
     .max(2048, 'Website URL is too long')
@@ -214,7 +251,8 @@ export const websiteUrlSchema = z.string()
     .optional()
 
 /**
- * Google Scholar URL validation
+ * Google Scholar profile URL validation.
+ * Ensures URL matches scholar.google.com pattern.
  */
 export const googleScholarUrlSchema = z.string()
     .max(2048, 'Google Scholar URL is too long')
@@ -234,7 +272,8 @@ export const googleScholarUrlSchema = z.string()
     .optional()
 
 /**
- * ResearchGate URL validation
+ * ResearchGate profile URL validation.
+ * Ensures URL matches researchgate.net pattern.
  */
 export const researchGateUrlSchema = z.string()
     .max(2048, 'ResearchGate URL is too long')
@@ -253,7 +292,10 @@ export const researchGateUrlSchema = z.string()
     .nullable()
     .optional()
 
-// Combined social URLs schema for profile updates
+/**
+ * Combined social URLs schema for profile updates.
+ * All URLs are optional and nullable.
+ */
 export const socialUrlsSchema = z.object({
     linkedin: linkedinUrlSchema,
     twitter: twitterUrlSchema,
@@ -267,7 +309,8 @@ export const socialUrlsSchema = z.object({
 // ============================================================================
 
 /**
- * File metadata validation schema (for API routes)
+ * File upload metadata validation for API routes.
+ * Validates filename, type, and size before processing upload.
  */
 export const fileUploadSchema = z.object({
     name: z.string()
@@ -277,6 +320,7 @@ export const fileUploadSchema = z.object({
             (name) => !containsSqlInjection(name),
             'Invalid filename'
         ),
+    // Only allow JPEG, PNG, WEBP for security
     type: z.enum(['image/jpeg', 'image/png', 'image/webp'], {
         message: 'Invalid file type. Allowed: JPEG, PNG, WEBP'
     }),
@@ -286,7 +330,8 @@ export const fileUploadSchema = z.object({
 })
 
 /**
- * Avatar upload schema (smaller size limit)
+ * Avatar upload schema with smaller size limit than general files.
+ * Avatars limited to 2MB vs 10MB for other files.
  */
 export const avatarUploadSchema = fileUploadSchema.extend({
     size: z.number()
@@ -299,7 +344,8 @@ export const avatarUploadSchema = fileUploadSchema.extend({
 // ============================================================================
 
 /**
- * Safe JSON string schema with prototype pollution protection
+ * Safe JSON string parsing with prototype pollution protection.
+ * Rejects __proto__, constructor, and prototype keys.
  */
 export const safeJsonStringSchema = z.string()
     .max(10000, 'JSON data is too large')
@@ -321,7 +367,8 @@ export const safeJsonStringSchema = z.string()
 
 
 /**
- * Custom field values schema
+ * Custom field value schema for extensible user data.
+ * Supports string, number, boolean, and string array values.
  */
 export const customFieldValueSchema = z.object({
     fieldId: z.string().cuid(),
@@ -333,6 +380,9 @@ export const customFieldValueSchema = z.object({
     ])
 })
 
+/**
+ * Array of custom field values with maximum limit to prevent DoS.
+ */
 export const customFieldValuesSchema = z.array(customFieldValueSchema)
     .max(100, 'Too many custom field values')
 
@@ -341,7 +391,8 @@ export const customFieldValuesSchema = z.array(customFieldValueSchema)
 // ============================================================================
 
 /**
- * Name field schema with enhanced sanitization
+ * Name field with HTML tag removal and XSS protection.
+ * Allows letters, spaces, hyphens, apostrophes only.
  */
 export const nameFieldSchema = z.string()
     .min(2, 'Name must be at least 2 characters')
@@ -359,7 +410,8 @@ export const nameFieldSchema = z.string()
     })
 
 /**
- * Bio field schema with enhanced sanitization
+ * Bio field with newline support but HTML tag removal.
+ * Allows basic punctuation and formatting.
  */
 export const bioFieldSchema = z.string()
     .max(1000, 'Bio is too long')
@@ -379,7 +431,7 @@ export const bioFieldSchema = z.string()
     .optional()
 
 /**
- * Role/Position field schema
+ * Role/position field for job titles and academic positions.
  */
 export const roleFieldSchema = z.string()
     .max(100, 'Role is too long')
@@ -404,7 +456,7 @@ export const roleFieldSchema = z.string()
     .optional()
 
 /**
- * Field of study schema
+ * Field of study for academic disciplines and research areas.
  */
 export const fieldOfStudySchema = z.string()
     .max(200, 'Field of study is too long')
@@ -433,7 +485,7 @@ export const fieldOfStudySchema = z.string()
 // ============================================================================
 
 /**
- * Profile update schema
+ * Profile update schema for basic profile information.
  */
 export const profileUpdateSchema = z.object({
     name: nameFieldSchema,
@@ -449,6 +501,7 @@ export const profileUpdateSchema = z.object({
 // TYPE EXPORTS
 // ============================================================================
 
+// TypeScript types inferred from Zod schemas for type safety
 export type SignUpInput = z.infer<typeof signUpSchema>
 export type SignInInput = z.infer<typeof signInSchema>
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>

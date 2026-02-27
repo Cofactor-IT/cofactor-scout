@@ -1,3 +1,9 @@
+/**
+ * Support Widget Component
+ * 
+ * Draggable floating button for user feedback and support.
+ * Allows users to submit help requests, bug reports, feature suggestions, and comments.
+ */
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -16,10 +22,12 @@ export function SupportWidget() {
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
+  // Initialize widget position in bottom-right corner
   useEffect(() => {
     setPosition({ x: window.innerWidth - 100, y: window.innerHeight - 100 })
   }, [])
 
+  // Handle drag functionality
   useEffect(() => {
     if (!isDragging) return
 

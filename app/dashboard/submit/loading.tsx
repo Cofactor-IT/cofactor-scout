@@ -1,3 +1,8 @@
+/**
+ * Submit Form Loading State
+ * 
+ * Skeleton UI shown while submission form is loading.
+ */
 export default function SubmitLoading() {
     return (
         <div className="min-h-screen bg-[#FAFBFC]">

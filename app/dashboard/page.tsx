@@ -1,3 +1,13 @@
+/**
+ * page.tsx
+ * 
+ * Main dashboard page showing user's research submissions and statistics.
+ * Displays total submissions, pending review count, and approved count.
+ * 
+ * Server component that fetches user data and submissions.
+ * Redirects to signin if not authenticated.
+ */
+
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
@@ -17,12 +27,19 @@ export const metadata: Metadata = {
   description: 'View your research submissions, track their status, and manage your Cofactor Scout account.'
 }
 
+/**
+ * Fetches dashboard statistics and submissions for a user.
+ * 
+ * @param userId - User ID to fetch data for
+ * @returns Dashboard data including submissions and counts
+ */
 async function getDashboardData(userId: string) {
   const submissions = await prisma.researchSubmission.findMany({
     where: { userId, isDraft: false },
     orderBy: { createdAt: 'desc' },
   })
 
+  // Count submissions by status
   const totalSubmissions = submissions.length
   const pendingReview = submissions.filter(s => s.status === 'PENDING_RESEARCH' || s.status === 'VALIDATING').length
   const approved = submissions.filter(s => s.status === 'MATCH_MADE').length
@@ -30,7 +47,12 @@ async function getDashboardData(userId: string) {
   return { submissions, totalSubmissions, pendingReview, approved }
 }
 
+/**
+ * Dashboard page component.
+ * Shows welcome message, role badge, statistics cards, and submissions table.
+ */
 export default async function DashboardPage() {
+  // Require authentication
   const session = await getServerSession(authOptions)
   
   if (!session?.user) {
@@ -47,11 +69,13 @@ export default async function DashboardPage() {
 
   const { submissions, totalSubmissions, pendingReview, approved } = await getDashboardData(user.id)
 
+  // Extract display name and initials for UI
   const isScout = user.role === 'SCOUT'
   const displayName = user.fullName || 'User'
   const firstName = user.preferredName || user.firstName || displayName.split(' ')[0]
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || displayName.slice(0, 2).toUpperCase()
 
+  // Status badge configuration for submission table
   const statusConfig = {
     PENDING_RESEARCH: { label: 'Pending Research', bg: '#FEF3C7', text: '#92400E' },
     VALIDATING: { label: 'Validating', bg: '#DBEAFE', text: '#1E40AF' },

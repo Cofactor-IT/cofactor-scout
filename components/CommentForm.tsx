@@ -1,3 +1,9 @@
+/**
+ * Comment Form Component
+ * 
+ * Form for adding comments to research submissions.
+ * Shows user avatar and handles comment submission.
+ */
 'use client'
 
 import { useState } from 'react'

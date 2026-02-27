@@ -1,13 +1,23 @@
+/**
+ * System Settings
+ * 
+ * Cached retrieval of system-wide settings with automatic defaults.
+ * Uses Next.js unstable_cache for performance.
+ */
 import { prisma } from '@/lib/database/prisma'
 import { unstable_cache } from 'next/cache'
 
-// Use unstable_cache for performance, revalidating when settings change
+/**
+ * Get system settings with caching
+ * 
+ * @returns System settings object
+ */
 export const getSystemSettings = unstable_cache(
     async () => {
         // Try to find existing settings
         let settings = await prisma.systemSettings.findFirst()
 
-        // If not found, create default
+        // Create default settings if none exist
         if (!settings) {
             settings = await prisma.systemSettings.create({
                 data: {

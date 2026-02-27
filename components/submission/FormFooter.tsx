@@ -1,3 +1,9 @@
+/**
+ * Form Footer Component
+ * 
+ * Fixed footer for submission forms with save draft, cancel, and next actions.
+ * Responsive design with mobile-optimized button labels.
+ */
 import Link from 'next/link'
 
 interface FormFooterProps {

@@ -1,10 +1,15 @@
 /**
  * Component Utility Functions
- * Helper functions for common component operations
+ * 
+ * Helper functions for common component operations including
+ * date formatting, text truncation, and user display names.
  */
 
 /**
  * Get user initials from name
+ * 
+ * @param user - User object with name fields
+ * @returns Two-character initials
  */
 export function getInitials(user: {
   preferredName?: string | null
@@ -21,6 +26,10 @@ export function getInitials(user: {
 
 /**
  * Format date for display
+ * 
+ * @param date - Date to format
+ * @param format - Display format (short or long)
+ * @returns Formatted date string
  */
 export function formatDate(date: Date | string | null, format: 'short' | 'long' = 'short'): string {
   if (!date) return '-'
@@ -44,6 +53,9 @@ export function formatDate(date: Date | string | null, format: 'short' | 'long' 
 
 /**
  * Format relative time (e.g., "2 hours ago")
+ * 
+ * @param date - Date to format
+ * @returns Relative time string
  */
 export function formatRelativeTime(date: Date | string): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date
@@ -64,6 +76,10 @@ export function formatRelativeTime(date: Date | string): string {
 
 /**
  * Truncate text with ellipsis
+ * 
+ * @param text - Text to truncate
+ * @param maxLength - Maximum length before truncation
+ * @returns Truncated text with ellipsis if needed
  */
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
@@ -72,6 +88,9 @@ export function truncate(text: string, maxLength: number): string {
 
 /**
  * Format number with commas
+ * 
+ * @param num - Number to format
+ * @returns Formatted number string
  */
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat('en-US').format(num)
@@ -79,6 +98,9 @@ export function formatNumber(num: number): string {
 
 /**
  * Safe navigation - returns /not-found for invalid routes
+ * 
+ * @param router - Next.js router instance
+ * @param path - Path to navigate to
  */
 export function safeNavigate(router: any, path: string) {
   try {

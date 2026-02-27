@@ -1,3 +1,9 @@
+/**
+ * 404 Not Found Page
+ * 
+ * Displays when user navigates to non-existent route.
+ * Provides navigation back to homepage.
+ */
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Home, Search } from 'lucide-react'

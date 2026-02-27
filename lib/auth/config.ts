@@ -1,13 +1,36 @@
+/**
+ * config.ts
+ * 
+ * NextAuth.js configuration for authentication.
+ * Implements credentials-based auth with email verification,
+ * account lockout after failed attempts, and remember me functionality.
+ * 
+ * Security features:
+ * - Account locks after 5 failed login attempts for 15 minutes
+ * - Email verification required before login
+ * - Failed attempts reset on successful login
+ * - JWT sessions with configurable expiration
+ */
+
 import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/database/prisma"
 import { logger } from "@/lib/logger"
 import { Role } from "@prisma/client"
 
-// Account lockout configuration
+// ============================================
+// CONSTANTS
+// ============================================
+
+// Account locks after this many consecutive failed login attempts
 const MAX_LOGIN_ATTEMPTS = 5
+// Account remains locked for this duration after max attempts
 const LOCKOUT_DURATION_MINUTES = 15
 
+/**
+ * NextAuth configuration object.
+ * Defines authentication providers, callbacks, and session management.
+ */
 export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
@@ -17,6 +40,13 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" },
                 rememberMe: { label: "Remember Me", type: "text" }
             },
+            /**
+             * Validates user credentials and handles account lockout.
+             * Returns user object on success, null on failure.
+             * 
+             * @param credentials - Email, password, and rememberMe flag
+             * @returns User object or null
+             */
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null
 
@@ -24,7 +54,7 @@ export const authOptions: NextAuthOptions = {
                     where: { email: credentials.email }
                 })
 
-                // User not found - return null
+                // User not found - return null without revealing account existence
                 if (!user) {
                     return null
                 }
@@ -33,26 +63,26 @@ export const authOptions: NextAuthOptions = {
                     return null
                 }
 
-                // Check if account is locked
+                // Check if account is locked due to failed login attempts
                 if (user.lockedUntil && user.lockedUntil > new Date()) {
                     logger.warn('Login attempt on locked account', { email: user.email })
                     return null
                 }
 
-                // Check email verification BEFORE password check to prevent timing attacks
-                // and account enumeration
-                // Allow admin email to bypass verification for initial setup
+                // Require email verification before allowing login
+                // Admin email bypasses verification for initial setup
                 if (!user.emailVerified && user.email !== process.env.ADMIN_EMAIL) {
                     logger.warn('Login attempt with unverified email', { email: user.email })
                     // Return null to show generic error message
                     return null
                 }
 
+                // Verify password with bcrypt
                 const bcrypt = await import('bcryptjs')
                 const isValid = await bcrypt.compare(credentials.password, user.password)
 
                 if (!isValid) {
-                    // Increment failed login attempts
+                    // Increment failed login attempts counter
                     const attempts = (user.failedLoginAttempts || 0) + 1
                     const updateData: { failedLoginAttempts: number; lockedUntil?: Date } = {
                         failedLoginAttempts: attempts
@@ -72,7 +102,7 @@ export const authOptions: NextAuthOptions = {
                     return null
                 }
 
-                // Successful login - reset failed attempts
+                // Successful login - reset failed attempts and unlock account
                 if (user.failedLoginAttempts && user.failedLoginAttempts > 0) {
                     await prisma.user.update({
                         where: { id: user.id },
@@ -83,6 +113,7 @@ export const authOptions: NextAuthOptions = {
                     })
                 }
 
+                // Return user data for session
                 return {
                     id: user.id,
                     email: user.email,
@@ -95,31 +126,42 @@ export const authOptions: NextAuthOptions = {
         })
     ],
     callbacks: {
+        /**
+         * Enriches session with user ID and role from JWT token.
+         * Also sets Sentry user context for error tracking.
+         */
         async session({ session, token }) {
             if (session.user) {
+                // Add user ID and role to session for server-side access
                 session.user.id = token.id as string
                 session.user.role = token.role
+                // Set Sentry user context for error tracking
                 const { setSentryUser } = await import('@/instrumentation/sentry')
                 setSentryUser(token.id as string, session.user.email || '', token.role as string)
             }
             return session
         },
+        /**
+         * Enriches JWT token with user data and sets expiration based on rememberMe.
+         * Remember me: 30 days, otherwise: 1 day.
+         */
         async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = user.id
                 token.role = user.role
                 token.rememberMe = user.rememberMe
-                // Set token expiration based on rememberMe
-                const maxAge = user.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 // 30 days or 1 day
+                // Set token expiration: 30 days if remember me, 1 day otherwise
+                const maxAge = user.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24
                 token.exp = Math.floor(Date.now() / 1000) + maxAge
             }
             return token
         },
-        // Redirect to sign-up page if user doesn't exist
+        /**
+         * Sign in callback to handle authentication failures.
+         * Returns false if credentials are invalid.
+         */
         async signIn({ user, account }) {
-            // user is defined only when sign in is successful
-            // If we get here with credentials provider but no user, redirect to signup
-            // Fix: Operator precedence issue (!user && account...)
+            // If credentials provider but no user, authentication failed
             if (!user && (account?.provider === 'credentials')) {
                 return Promise.resolve(false) // This will cause an error
             }
@@ -132,7 +174,9 @@ export const authOptions: NextAuthOptions = {
     },
     session: {
         strategy: "jwt",
-        maxAge: 60 * 60 * 24 * 30, // 30 days max (will be overridden by JWT callback)
+        // Default max age, overridden by JWT callback based on rememberMe
+        maxAge: 60 * 60 * 24 * 30,
     },
+    // Secret key for signing JWT tokens
     secret: process.env.NEXTAUTH_SECRET
 }

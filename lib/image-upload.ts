@@ -1,3 +1,17 @@
+/**
+ * Image Upload Utilities
+ * 
+ * Client-side image compression and processing for profile pictures.
+ * Compresses images to max 400x400 with quality adjustment to meet size limits.
+ */
+
+/**
+ * Compress image file to data URL
+ * 
+ * @param file - Image file to compress
+ * @param maxSizeKB - Maximum size in KB (default 200KB)
+ * @returns Base64 data URL of compressed image
+ */
 export async function compressImage(file: File, maxSizeKB: number = 200): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -9,7 +23,7 @@ export async function compressImage(file: File, maxSizeKB: number = 200): Promis
         const ctx = canvas.getContext('2d')
         if (!ctx) return reject(new Error('Canvas not supported'))
         
-        // Calculate dimensions (max 400x400 for profile pics)
+        // Calculate dimensions (max 400x400)
         let width = img.width
         let height = img.height
         const maxDim = 400
@@ -26,7 +40,7 @@ export async function compressImage(file: File, maxSizeKB: number = 200): Promis
         canvas.height = height
         ctx.drawImage(img, 0, 0, width, height)
         
-        // Compress with quality adjustment
+        // Iteratively reduce quality until size target met
         let quality = 0.9
         const compress = () => {
           const dataUrl = canvas.toDataURL('image/jpeg', quality)

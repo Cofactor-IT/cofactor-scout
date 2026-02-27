@@ -1,3 +1,9 @@
+/**
+ * Password Reset Email Sent Page
+ * 
+ * Confirmation page shown after user requests password reset.
+ * Instructs user to check email for reset link.
+ */
 import Link from 'next/link'
 import { AuthNavbar } from '@/components/ui/auth-navbar'
 import { Mail } from 'lucide-react'

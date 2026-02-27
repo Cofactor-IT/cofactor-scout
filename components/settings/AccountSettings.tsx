@@ -1,3 +1,16 @@
+/**
+ * AccountSettings.tsx
+ * 
+ * Account settings component for managing personal information and password.
+ * 
+ * Features:
+ * - Edit first name, last name, preferred name
+ * - Email display (read-only, contact support to change)
+ * - Change password with current password verification
+ * - Confirmation modals for all changes
+ * - Success/error notifications
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -7,6 +20,9 @@ import { PasswordInput } from '@/components/ui/password-input'
 import { Modal } from '@/components/ui/modal'
 import { updateAccount, changePassword } from '@/actions/settings.actions'
 
+/**
+ * Props for AccountSettings component.
+ */
 interface AccountSettingsProps {
   user: {
     email: string
@@ -17,6 +33,10 @@ interface AccountSettingsProps {
   }
 }
 
+/**
+ * Account settings component with personal info and password management.
+ * Client component with local state for form data and modals.
+ */
 export function AccountSettings({ user }: AccountSettingsProps) {
   const [formData, setFormData] = useState({
     firstName: user.firstName || '',
@@ -39,6 +59,10 @@ export function AccountSettings({ user }: AccountSettingsProps) {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
+  /**
+   * Handles password change with validation.
+   * Checks that new password and confirmation match.
+   */
   const handlePasswordChange = async () => {
     setPasswordError('')
     
@@ -64,6 +88,9 @@ export function AccountSettings({ user }: AccountSettingsProps) {
     setLoading(false)
   }
 
+  /**
+   * Saves account changes after modal confirmation.
+   */
   const handleSave = async () => {
     setShowModal(false)
     setLoading(true)
