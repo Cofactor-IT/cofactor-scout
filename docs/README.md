@@ -155,6 +155,12 @@ Every documentation file must have:
 - [BUGS.md](./features/scout-application/BUGS.md) — Known issues
 - [CHANGELOG.md](./features/scout-application/CHANGELOG.md) — History
 
+### Cookie Consent
+- [PRIMER.md](./features/cookie-consent/PRIMER.md) — How it works
+- [TECHNICAL.md](./features/cookie-consent/TECHNICAL.md) — Implementation
+- [BUGS.md](./features/cookie-consent/BUGS.md) — Known issues
+- [CHANGELOG.md](./features/cookie-consent/CHANGELOG.md) — History
+
 ### Design System
 - [DESIGN_GUIDELINES.md](./pm-notes/DESIGN_GUIDELINES.md) — Complete design system
 - [ANIMATION_GUIDELINES.md](./pm-notes/ANIMATION_GUIDELINES.md) — Animation patterns
