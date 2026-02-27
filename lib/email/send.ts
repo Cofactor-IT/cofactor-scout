@@ -45,6 +45,14 @@ interface SendEmailOptions {
 }
 
 /**
+ * Sanitize email header fields to prevent header injection attacks.
+ * Removes CRLF characters that could be used to inject additional headers.
+ */
+function sanitizeEmailHeader(input: string): string {
+    return input.replace(/[\r\n]/g, '').trim()
+}
+
+/**
  * Core email sending function with SMTP configuration check.
  * Handles error logging and skips sending if SMTP not configured.
  * 
@@ -76,13 +84,13 @@ async function sendEmail({ to, template, metadata }: SendEmailOptions): Promise<
 
     const mailOptions: Record<string, unknown> = {
         from: getFromAddress(),
-        to,
-        subject: template.subject,
+        to: sanitizeEmailHeader(to),
+        subject: sanitizeEmailHeader(template.subject),
         text: template.text,
         html: template.html,
     }
     if (template.replyTo) {
-        mailOptions.replyTo = template.replyTo
+        mailOptions.replyTo = sanitizeEmailHeader(template.replyTo)
     }
 
     try {
