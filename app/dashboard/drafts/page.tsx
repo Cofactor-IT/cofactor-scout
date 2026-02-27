@@ -1,3 +1,9 @@
+/**
+ * Drafts Page
+ * 
+ * Displays user's draft submissions with statistics and management options.
+ * Allows users to continue editing, delete individual drafts, or clear all drafts.
+ */
 import { requireAuth } from '@/lib/auth/session'
 import { prisma } from '@/lib/database/prisma'
 import Link from 'next/link'
@@ -46,6 +52,7 @@ export default async function DraftsPage() {
     const displayName = user.fullName || 'User'
     const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || displayName.slice(0, 2).toUpperCase()
 
+    // Server action to delete single draft
     async function deleteDraft(formData: FormData) {
         'use server'
         const id = formData.get('id') as string
@@ -53,6 +60,7 @@ export default async function DraftsPage() {
         redirect('/dashboard/drafts')
     }
 
+    // Server action to clear all user's drafts
     async function clearAllDrafts() {
         'use server'
         const session = await requireAuth()
@@ -112,7 +120,7 @@ export default async function DraftsPage() {
             </section>
 
             {/* Drafts Table */}
-            <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] flex-1 overflow-y-auto">
+            <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] pb-[80px] flex-1 overflow-y-auto">
                 <DraftsTable 
                     drafts={drafts}
                     deleteDraft={deleteDraft}

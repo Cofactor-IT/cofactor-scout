@@ -1,3 +1,13 @@
+/**
+ * page.tsx
+ * 
+ * Main dashboard page showing user's research submissions and statistics.
+ * Displays total submissions, pending review count, and approved count.
+ * 
+ * Server component that fetches user data and submissions.
+ * Redirects to signin if not authenticated.
+ */
+
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
@@ -9,13 +19,27 @@ import { Card } from '@/components/ui/card'
 import { PromotionBanner } from '@/components/ui/promotion-banner'
 import { DashboardNavbar } from '@/components/dashboard-navbar'
 import { SubmissionsTable } from '@/components/SubmissionsTable'
+import { FadeInOnLoad } from '@/components/ui/FadeInOnLoad'
+import type { Metadata } from 'next'
 
+export const metadata: Metadata = {
+  title: 'Dashboard | Cofactor Scout',
+  description: 'View your research submissions, track their status, and manage your Cofactor Scout account.'
+}
+
+/**
+ * Fetches dashboard statistics and submissions for a user.
+ * 
+ * @param userId - User ID to fetch data for
+ * @returns Dashboard data including submissions and counts
+ */
 async function getDashboardData(userId: string) {
   const submissions = await prisma.researchSubmission.findMany({
     where: { userId, isDraft: false },
     orderBy: { createdAt: 'desc' },
   })
 
+  // Count submissions by status
   const totalSubmissions = submissions.length
   const pendingReview = submissions.filter(s => s.status === 'PENDING_RESEARCH' || s.status === 'VALIDATING').length
   const approved = submissions.filter(s => s.status === 'MATCH_MADE').length
@@ -23,7 +47,12 @@ async function getDashboardData(userId: string) {
   return { submissions, totalSubmissions, pendingReview, approved }
 }
 
+/**
+ * Dashboard page component.
+ * Shows welcome message, role badge, statistics cards, and submissions table.
+ */
 export default async function DashboardPage() {
+  // Require authentication
   const session = await getServerSession(authOptions)
   
   if (!session?.user) {
@@ -40,11 +69,13 @@ export default async function DashboardPage() {
 
   const { submissions, totalSubmissions, pendingReview, approved } = await getDashboardData(user.id)
 
+  // Extract display name and initials for UI
   const isScout = user.role === 'SCOUT'
   const displayName = user.fullName || 'User'
   const firstName = user.preferredName || user.firstName || displayName.split(' ')[0]
   const initials = `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || displayName.slice(0, 2).toUpperCase()
 
+  // Status badge configuration for submission table
   const statusConfig = {
     PENDING_RESEARCH: { label: 'Pending Research', bg: '#FEF3C7', text: '#92400E' },
     VALIDATING: { label: 'Validating', bg: '#DBEAFE', text: '#1E40AF' },
@@ -84,23 +115,29 @@ export default async function DashboardPage() {
       {/* Statistics Cards */}
       <section className="bg-[#FAFBFC] h-auto md:h-[180px] flex items-center px-4 md:px-8 lg:px-[120px] flex-shrink-0 py-6 md:py-0">
         <div className="flex gap-[20px] md:gap-[40px] w-full overflow-x-auto md:overflow-x-visible pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
-          <Card className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 h-[145px] flex flex-col justify-center px-[24px] shadow-sm flex-shrink-0">
-            <FileText className="w-[27px] h-[27px] mb-[10px] text-[#0D7377]" strokeWidth={1.5} />
-            <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{totalSubmissions}</div>
-            <div className="text-[14px] text-[#6B7280]">Total Submissions</div>
-          </Card>
+          <FadeInOnLoad delay={0} className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 flex-shrink-0">
+            <Card className="h-[145px] flex flex-col justify-center px-[24px] shadow-sm">
+              <FileText className="w-[27px] h-[27px] mb-[10px] text-[#0D7377]" strokeWidth={1.5} />
+              <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{totalSubmissions}</div>
+              <div className="text-[14px] text-[#6B7280]">Total Submissions</div>
+            </Card>
+          </FadeInOnLoad>
 
-          <Card className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 h-[145px] flex flex-col justify-center px-[24px] shadow-sm flex-shrink-0">
-            <Clock className="w-[27px] h-[27px] mb-[10px] text-[#F59E0B]" strokeWidth={1.5} />
-            <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{pendingReview}</div>
-            <div className="text-[14px] text-[#6B7280]">Pending Review</div>
-          </Card>
+          <FadeInOnLoad delay={0.1} className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 flex-shrink-0">
+            <Card className="h-[145px] flex flex-col justify-center px-[24px] shadow-sm">
+              <Clock className="w-[27px] h-[27px] mb-[10px] text-[#F59E0B]" strokeWidth={1.5} />
+              <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{pendingReview}</div>
+              <div className="text-[14px] text-[#6B7280]">Pending Review</div>
+            </Card>
+          </FadeInOnLoad>
 
-          <Card className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 h-[145px] flex flex-col justify-center px-[24px] shadow-sm flex-shrink-0">
-            <CheckCircle className="w-[27px] h-[27px] mb-[10px] text-[#2D7D46]" strokeWidth={1.5} />
-            <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{approved}</div>
-            <div className="text-[14px] text-[#6B7280]">Approved</div>
-          </Card>
+          <FadeInOnLoad delay={0.2} className="min-w-[280px] md:min-w-0 md:w-full md:flex-1 flex-shrink-0">
+            <Card className="h-[145px] flex flex-col justify-center px-[24px] shadow-sm">
+              <CheckCircle className="w-[27px] h-[27px] mb-[10px] text-[#2D7D46]" strokeWidth={1.5} />
+              <div className="text-[41px] font-bold mb-[3px] text-[#1B2A4A] font-sans">{approved}</div>
+              <div className="text-[14px] text-[#6B7280]">Approved</div>
+            </Card>
+          </FadeInOnLoad>
         </div>
       </section>
 
@@ -115,12 +152,12 @@ export default async function DashboardPage() {
       </section>
 
       {/* Promotion Banner */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0" style={{ display: 'none' }}>
         <PromotionBanner />
       </div>
 
       {/* Submissions Table */}
-      <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] flex-1 overflow-y-auto">
+      <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] pb-[80px] flex-1 overflow-y-auto">
         <SubmissionsTable 
           submissions={submissions}
           statusConfig={statusConfig}

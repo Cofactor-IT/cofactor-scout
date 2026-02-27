@@ -1,3 +1,9 @@
+/**
+ * Profile Settings Actions
+ * 
+ * Server actions for updating user profile information including name, bio, links, and password.
+ * Includes content moderation and input sanitization.
+ */
 'use server'
 
 import { prisma } from '@/lib/database/prisma'
@@ -22,6 +28,9 @@ import { ValidationError, NotFoundError, AuthenticationError } from '@/lib/error
 
 /**
  * Sanitize and validate name field
+ * 
+ * @param rawName - User-provided name
+ * @returns Validation result with sanitized name or error
  */
 function validateAndSanitizeName(rawName: string | null) {
     if (!rawName) {
@@ -46,6 +55,10 @@ function validateAndSanitizeName(rawName: string | null) {
 
 /**
  * Validate and sanitize bio field with content moderation
+ * 
+ * @param rawBio - User-provided bio text
+ * @param userId - User ID for logging
+ * @returns Validation result with sanitized bio or error
  */
 async function validateAndSanitizeBio(rawBio: string | null, userId: string) {
     if (rawBio === null || rawBio === '') {
@@ -67,7 +80,7 @@ async function validateAndSanitizeBio(rawBio: string | null, userId: string) {
 
     const sanitizedBio = sanitization.sanitized
 
-    // Content moderation check
+    // Check for profanity, hate speech, and PII
     const contentValidation = validateContent(sanitizedBio, {
         minLength: 0,
         maxLength: 1000,
@@ -98,6 +111,12 @@ async function validateAndSanitizeBio(rawBio: string | null, userId: string) {
 
 /**
  * Validate password change
+ * 
+ * @param currentPassword - User's current password
+ * @param newPassword - Desired new password
+ * @param userId - User ID
+ * @returns True if validation passes
+ * @throws ValidationError if validation fails
  */
 async function validatePasswordChange(
     currentPassword: string,
@@ -141,7 +160,10 @@ async function validateUniversityChange() {
 }
 
 /**
- * Get authenticated user ID
+ * Get authenticated user ID from session
+ * 
+ * @returns User ID
+ * @throws AuthenticationError if not authenticated
  */
 async function getAuthenticatedUserId() {
     const session = await getServerSession(authOptions)
@@ -153,6 +175,10 @@ async function getAuthenticatedUserId() {
 
 /**
  * Update user's basic profile information
+ * 
+ * @param fullName - User's full name
+ * @param bio - User's bio (optional)
+ * @returns Success status or error message
  */
 export async function updateUserProfile(
     fullName: string,
@@ -173,7 +199,7 @@ export async function updateUserProfile(
             return { success: false, error: bioValidation.error || 'Invalid bio' }
         }
 
-        // Split name into first and last
+        // Split name into first and last for database storage
         const nameParts = nameValidation.sanitized.trim().split(/\s+/)
         const firstName = nameParts[0] || ''
         const lastName = nameParts.slice(1).join(' ') || ''
@@ -201,6 +227,10 @@ export async function updateUserProfile(
 
 /**
  * Change user's password
+ * 
+ * @param currentPassword - Current password for verification
+ * @param newPassword - New password (min 8 characters)
+ * @returns Success status or error message
  */
 export async function changePassword(
     currentPassword: string,
@@ -229,6 +259,10 @@ export async function changePassword(
 
 /**
  * Request email verification resend
+ * 
+ * @returns Success status or error message
+ * @throws AuthenticationError if not authenticated
+ * @throws ValidationError if email already verified
  */
 export async function resendVerification() {
     const session = await getServerSession(authOptions)
@@ -251,9 +285,9 @@ export async function resendVerification() {
         throw new ValidationError('Email is already verified')
     }
 
-    const { sendVerificationEmail } = await import('@/lib/email/send')
     const token = userRecord.verificationToken
 
+    // Generate new token if none exists
     if (!token) {
         const verificationToken = crypto.randomUUID()
         const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -265,11 +299,13 @@ export async function resendVerification() {
 
         const email = userRecord.email ?? ''
         const fullName = userRecord.fullName ?? ''
+        const { sendVerificationEmail } = await import('@/lib/email/send')
         sendVerificationEmail(email, fullName, verificationToken)
             .catch(err => logger.error('Failed to send verification email', { error: err }))
     } else {
         const email = userRecord.email ?? ''
         const fullName = userRecord.fullName ?? ''
+        const { sendVerificationEmail } = await import('@/lib/email/send')
         sendVerificationEmail(email, fullName, token)
             .catch(err => logger.error('Failed to send verification email', { error: err }))
     }
@@ -294,10 +330,11 @@ export async function removeSecondaryUniversity() {
 }
 
 /**
- * Toggle public profile visibility
- */
-/**
  * Update user's linking info (LinkedIn, Website)
+ * 
+ * @param linkedinUrl - LinkedIn profile URL
+ * @param personalWebsite - Personal website URL
+ * @returns Success status or error message
  */
 export async function updateProfileLinks(linkedinUrl: string, personalWebsite: string) {
     const userId = await getAuthenticatedUserId()
@@ -325,6 +362,10 @@ export async function updateProfileLinks(linkedinUrl: string, personalWebsite: s
 
 /**
  * Delete user account
+ * 
+ * @param currentPassword - Password for verification
+ * @returns Success status
+ * @throws ValidationError if password incorrect
  */
 export async function deleteAccount(currentPassword: string) {
     const userId = await getAuthenticatedUserId()

@@ -1,92 +1,23 @@
 'use client'
 
-import { useActionState } from 'react'
-import { signUp } from '@/actions/auth.actions'
+import { Suspense } from 'react'
 import Link from 'next/link'
-import { Eye, EyeOff, Plus, Check, X } from 'lucide-react'
-import { useState, useEffect } from 'react'
 import { AuthNavbar } from '@/components/ui/auth-navbar'
 import { useRouter } from 'next/navigation'
 import { CookieConsentTrigger } from '@/components/cookie-consent/Trigger'
+import { SignUpForm } from './SignUpForm'
 
 export default function SignUpPage() {
-  const router = useRouter()
-  const [state, formAction] = useActionState(signUp, undefined)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-
-  useEffect(() => {
-    if (state?.success) {
-      router.push('/auth/signin?message=' + encodeURIComponent(state.success))
-    }
-  }, [state, router])
-
-  const requirements = [
-    { label: 'At least 8 characters', met: password.length >= 8 },
-    { label: 'Contains uppercase letter', met: /[A-Z]/.test(password) },
-    { label: 'Contains lowercase letter', met: /[a-z]/.test(password) },
-    { label: 'Contains number', met: /[0-9]/.test(password) },
-    { label: 'Contains special character', met: /[^A-Za-z0-9]/.test(password) },
-  ]
-
   return (
-    <div className="min-h-screen bg-[#FAFBFC]">
+    <div className="min-h-screen bg-[#FAFBFC] pt-[78px]">
       <AuthNavbar />
 
-      <div className="flex items-center justify-center min-h-[calc(100vh-158px)] px-4">
-        <div className="w-full max-w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-[40px]">
-          {/* Header */}
-          <h1 className="text-[32px] font-bold text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
-            Create Your Account
-          </h1>
-          <p className="text-[14px] text-[#6B7280] mb-[24px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
-            Join Cofactor Scout to start submitting research leads
-          </p>
-
-          {/* Error/Success Messages */}
-          {state?.error && (
-            <div className="mb-[20px] p-[10px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px] text-[#EF4444] text-[13px]">
-              {state.error}
-            </div>
-          )}
-          {state?.success && (
-            <div className="mb-[20px] p-[10px] bg-[#D1FAE5] border border-[#2D7D46] rounded-[4px] text-[#2D7D46] text-[13px]">
-              {state.success}
-            </div>
-          )}
-
-          {/* Form */}
-          <form action={formAction} className="space-y-[20px]">
-            {/* Name */}
-            <div>
-              <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                placeholder="Enter your full name"
-                required
-                className="w-full h-[42px] px-[14px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
-                style={{ fontFamily: 'var(--font-merriweather)' }}
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-[13px] font-medium text-[#1B2A4A] mb-[6px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                placeholder="you@university.edu"
-                required
-                className="w-full h-[42px] px-[14px] bg-white border-2 border-[#E5E7EB] rounded-[4px] text-[14px] text-[#1B2A4A] placeholder:text-[#6B7280] focus:outline-none focus:border-[#0D7377]"
-                style={{ fontFamily: 'var(--font-merriweather)' }}
-              />
+      <div className="flex items-center justify-center min-h-[calc(100vh-158px)] px-4 py-4 pb-16">
+        <Suspense fallback={
+          <div className="w-full max-w-[500px] bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-[48px]">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-[#E5E7EB] rounded w-3/4"></div>
+              <div className="h-4 bg-[#E5E7EB] rounded w-1/2"></div>
             </div>
 
             {/* Password */}

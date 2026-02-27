@@ -1,3 +1,14 @@
+/**
+ * auth.actions.ts
+ * 
+ * Server Actions for authentication flows including sign up, email verification,
+ * password reset, and account security.
+ * 
+ * All actions validate input with Zod before processing.
+ * Uses constant-time responses to prevent account enumeration attacks.
+ * Rate limiting is disabled in MVP but infrastructure remains for future use.
+ */
+
 'use server'
 
 import { prisma } from '@/lib/database/prisma'
@@ -10,7 +21,11 @@ import { randomBytes } from 'crypto'
 // import { RateLimitError, ValidationError } from '@/lib/errors'
 import { ValidationError } from '@/lib/errors'
 
-// Account enumeration prevention delay
+// ============================================
+// CONSTANTS
+// ============================================
+
+// Minimum response time to prevent timing attacks that reveal account existence
 const ACCOUNT_ENUMERATION_DELAY = 1000
 
 // RATE LIMITING - DISABLED FOR NOW
@@ -42,8 +57,15 @@ const ACCOUNT_ENUMERATION_DELAY = 1000
 //     return attempt.count <= config.limit
 // }
 
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
 /**
- * Generate secure random token
+ * Generates a cryptographically secure random token for email verification
+ * and password reset flows.
+ * 
+ * @returns 64-character hexadecimal string (32 bytes)
  */
 function generateSecureToken(): string {
     return randomBytes(32).toString('hex')
@@ -52,29 +74,42 @@ function generateSecureToken(): string {
 
 
 /**
- * Determine user role based on email domain
+ * Determines user role based on email domain.
+ * Currently returns CONTRIBUTOR for all users.
+ * Future: Could check domain against whitelist for auto-SCOUT assignment.
+ * 
+ * @param email - User's email address
+ * @returns Role object with CONTRIBUTOR, SCOUT, or ADMIN
  */
 async function determineUserRole(email: string): Promise<{
     role: 'CONTRIBUTOR' | 'SCOUT' | 'ADMIN'
 }> {
-    // Default role for all new users
+    // Default role for all new users - Scout status requires application
     return { role: 'CONTRIBUTOR' }
 }
 
 /**
- * Determine university based on email domain and form data
+ * Extracts university name from form data.
+ * Currently uses user-provided value. Future: Could auto-detect from email domain.
+ * 
+ * @param email - User's email address (unused in current implementation)
+ * @param formData - Form submission containing universityName field
+ * @returns University name string or null if not provided
  */
 async function determineUniversity(
     email: string,
     formData: FormData
 ): Promise<string | null> {
-    // University field is just a string in User model
     const universityName = formData.get('universityName') as string | null
     return universityName?.trim() || null
 }
 
 /**
- * Split full name into first and last name
+ * Splits full name into first and last name components.
+ * Handles single names by leaving lastName empty.
+ * 
+ * @param fullName - User's full name as single string
+ * @returns Object with firstName and lastName properties
  */
 function splitName(fullName: string): { firstName: string; lastName: string } {
     const parts = fullName.trim().split(/\s+/)
@@ -87,7 +122,14 @@ function splitName(fullName: string): { firstName: string; lastName: string } {
 }
 
 /**
- * Create user
+ * Creates a new user account with email verification token.
+ * Sends verification and welcome emails after account creation.
+ * 
+ * @param userData - Validated signup form data from Zod schema
+ * @param hashedPassword - Bcrypt hashed password (never store plain text)
+ * @param role - User role (CONTRIBUTOR, SCOUT, or ADMIN)
+ * @param university - University name or null
+ * @throws {Error} If database operation fails
  */
 async function createUser(
     userData: SignUpInput,
@@ -96,6 +138,7 @@ async function createUser(
     university: string | null
 ): Promise<void> {
     const verificationToken = generateSecureToken()
+    // Verification link expires after 24 hours
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
     const { firstName, lastName } = splitName(userData.name)
 
@@ -114,7 +157,7 @@ async function createUser(
         select: { id: true }
     })
 
-    // Send verification email synchronously
+    // Send emails synchronously to ensure delivery before response
     const { sendVerificationEmail, sendWelcomeEmail } = await import('@/lib/email/send')
     logger.info('Attempting to send verification email', { email: userData.email })
     try {
@@ -140,7 +183,11 @@ async function createUser(
 }
 
 /**
- * Enforce constant timing delay for security
+ * Enforces constant-time response to prevent timing attacks.
+ * Ensures all responses take at least ACCOUNT_ENUMERATION_DELAY ms,
+ * preventing attackers from determining if an email exists in the system.
+ * 
+ * @param startTime - Timestamp when operation started (from Date.now())
  */
 async function enforceTimingDelay(startTime: number): Promise<void> {
     const elapsed = Date.now() - startTime
@@ -149,8 +196,18 @@ async function enforceTimingDelay(startTime: number): Promise<void> {
     }
 }
 
+// ============================================
+// EXPORTED SERVER ACTIONS
+// ============================================
+
 /**
- * Main signup function - refactored into smaller, testable steps
+ * Creates a new user account with email verification.
+ * Handles both regular signups and scout application signups.
+ * Uses constant-time responses to prevent account enumeration.
+ * 
+ * @param prevState - Previous form state (unused, required by useActionState)
+ * @param formData - Form data containing email, password, name, and optional fields
+ * @returns Success message or error message
  */
 export async function signUp(
     prevState: { error?: string; success?: string } | undefined,
@@ -159,7 +216,7 @@ export async function signUp(
     const startTime = Date.now()
 
     try {
-        // Extract and validate email first for rate limiting
+        // Normalize email to prevent duplicate accounts (User@Gmail.com vs user@gmail.com)
         const email = (formData.get('email') as string)?.toLowerCase().trim()
 
         if (!email) {
@@ -189,7 +246,7 @@ export async function signUp(
 
         const { email: validatedEmail, password, name } = validationResult.data
 
-        // Check for existing user
+        // Check for existing user but don't reveal this to client (security)
         const existingUser = await prisma.user.findUnique({
             where: { email: validatedEmail },
             select: { id: true }
@@ -205,21 +262,85 @@ export async function signUp(
         // Determine university
         const university = await determineUniversity(validatedEmail, formData)
 
+        // Scout applications include additional profile fields
+        const isScoutApp = formData.get('scoutApplication') === 'true'
+
         // Create user only if doesn't exist
         if (!existingUser) {
+            // Use bcrypt with cost factor 10 for password hashing
             const hashedPassword = await bcrypt.hash(password, 10)
 
-            await createUser(
-                validationResult.data,
-                hashedPassword,
-                role,
-                university
-            )
+            if (isScoutApp) {
+                // Scout applications create account with PENDING status and additional fields
+                const verificationToken = generateSecureToken()
+                const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+                const { firstName, lastName } = splitName(name)
+
+                await prisma.user.create({
+                    data: {
+                        email: validatedEmail,
+                        fullName: name,
+                        firstName,
+                        lastName,
+                        password: hashedPassword,
+                        role,
+                        verificationToken,
+                        verificationExpires,
+                        university,
+                        department: formData.get('department') as string,
+                        linkedinUrl: (formData.get('linkedinUrl') as string) || null,
+                        userRole: formData.get('userRole') as any,
+                        userRoleOther: formData.get('userRole') === 'OTHER' ? (formData.get('userRoleOther') as string) : null,
+                        researchAreas: formData.get('researchAreas') as string,
+                        whyScout: formData.get('whyScout') as string,
+                        howSourceLeads: formData.get('howSourceLeads') as string,
+                        scoutApplicationStatus: 'PENDING',
+                        scoutApplicationDate: new Date()
+                    }
+                })
+
+                // Send verification email
+                const { sendVerificationEmail } = await import('@/lib/email/send')
+                try {
+                    await sendVerificationEmail(validatedEmail, name, verificationToken)
+                    logger.info('Verification email sent successfully', { email: validatedEmail })
+                } catch (err) {
+                    logger.error('Failed to send verification email', { email: validatedEmail, error: err })
+                }
+
+                // Send scout application emails
+                const { sendScoutApplicationConfirmationEmail, sendScoutApplicationNotificationEmail } = await import('@/lib/email/send')
+                try {
+                    await sendScoutApplicationConfirmationEmail(validatedEmail, name)
+                    await sendScoutApplicationNotificationEmail(
+                        name,
+                        validatedEmail,
+                        university || 'Not specified',
+                        formData.get('department') as string,
+                        formData.get('userRole') as string,
+                        formData.get('researchAreas') as string,
+                        new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                    )
+                    logger.info('Scout application emails sent', { email: validatedEmail })
+                } catch (err) {
+                    logger.error('Failed to send scout application emails', { email: validatedEmail, error: err })
+                }
+
+                logger.info('Scout application account created', { email: validatedEmail })
+            } else {
+                await createUser(
+                    validationResult.data,
+                    hashedPassword,
+                    role,
+                    university
+                )
+            }
         }
 
-        // Enforce timing delay
+        // Always enforce timing delay before response
         await enforceTimingDelay(startTime)
 
+        // Return same message whether account exists or not (security)
         if (existingUser) {
             return { success: 'If an account exists with this email, a verification link has been sent.' }
         }
@@ -244,7 +365,12 @@ export async function signUp(
 }
 
 /**
- * Request password reset
+ * Initiates password reset flow by generating token and sending email.
+ * Uses constant-time response to prevent account enumeration.
+ * 
+ * @param prevState - Previous form state (unused, required by useActionState)
+ * @param formData - Form data containing email address
+ * @returns Generic success message (never reveals if account exists)
  */
 export async function requestPasswordReset(
     prevState: { error?: string; success?: string } | undefined,
@@ -271,8 +397,10 @@ export async function requestPasswordReset(
 
         if (user) {
             const resetToken = generateSecureToken()
+            // Reset token expires after 1 hour
             const expires = new Date(Date.now() + 60 * 60 * 1000)
 
+            // Delete any existing reset tokens for this user
             await prisma.passwordReset.deleteMany({ where: { userId: user.id } })
             await prisma.passwordReset.create({
                 data: { token: resetToken, userId: user.id, expires }
@@ -301,7 +429,12 @@ export async function requestPasswordReset(
 }
 
 /**
- * Reset password with token
+ * Completes password reset using token from email.
+ * Validates token, checks expiration, and updates password.
+ * 
+ * @param prevState - Previous form state (unused, required by useActionState)
+ * @param formData - Form data containing reset token and new password
+ * @returns Success or error message
  */
 export async function resetPassword(
     prevState: { error?: string; success?: string } | undefined,
@@ -320,7 +453,7 @@ export async function resetPassword(
     //     return { error: 'Too many attempts. Please request a new reset code.' }
     // }
 
-    // Validate password
+    // Validate password meets complexity requirements
     const passwordValidation = validatePasswordComplexity(password)
     if (!passwordValidation.valid) {
         return { error: passwordValidation.error }
@@ -336,6 +469,7 @@ export async function resetPassword(
             return { error: 'Invalid or expired reset code' }
         }
 
+        // Check if token has expired (1 hour limit)
         if (resetRecord.expires < new Date()) {
             await prisma.passwordReset.delete({ where: { id: resetRecord.id } })
             return { error: 'Reset code has expired' }
@@ -343,6 +477,7 @@ export async function resetPassword(
 
         const hashedPassword = await bcrypt.hash(password, 10)
 
+        // Update password and delete token atomically
         await prisma.$transaction([
             prisma.user.update({
                 where: { id: resetRecord.userId },
@@ -361,7 +496,11 @@ export async function resetPassword(
 }
 
 /**
- * Validate password complexity
+ * Validates password meets complexity requirements.
+ * Requirements: 8+ chars, uppercase, lowercase, number, special character.
+ * 
+ * @param password - Plain text password to validate
+ * @returns Object with valid flag and optional error message
  */
 function validatePasswordComplexity(password: string): { valid: true } | { valid: false; error: string } {
     if (password.length < 8) {
@@ -383,7 +522,13 @@ function validatePasswordComplexity(password: string): { valid: true } | { valid
 }
 
 /**
- * Resend verification email
+ * Resends email verification link to user.
+ * Only sends if account exists and is not already verified.
+ * Uses constant-time response to prevent account enumeration.
+ * 
+ * @param prevState - Previous form state (unused, required by useActionState)
+ * @param formData - Form data containing email address
+ * @returns Generic success message (never reveals if account exists)
  */
 export async function resendVerificationEmail(
     prevState: { error?: string; success?: string } | undefined,
@@ -408,8 +553,10 @@ export async function resendVerificationEmail(
             select: { id: true, email: true, fullName: true, emailVerified: true }
         })
 
+        // Only send if user exists and email not already verified
         if (user && !user.emailVerified) {
             const verificationToken = generateSecureToken()
+            // New verification link expires after 24 hours
             const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
             await prisma.user.update({

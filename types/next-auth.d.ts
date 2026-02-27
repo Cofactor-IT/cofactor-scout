@@ -1,3 +1,9 @@
+/**
+ * NextAuth Type Extensions
+ * 
+ * Extends NextAuth types to include custom user fields (role, emailVerified).
+ * Ensures type safety across authentication flow.
+ */
 import { DefaultSession } from "next-auth"
 import { Role } from "@prisma/client"
 

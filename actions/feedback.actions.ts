@@ -1,3 +1,9 @@
+/**
+ * Feedback Actions
+ * 
+ * Server actions for submitting user feedback (help requests, bug reports, feature requests).
+ * Sends emails to appropriate team members and confirmation to user.
+ */
 'use server'
 
 import { requireAuth } from '@/lib/auth/session'
@@ -16,6 +22,12 @@ const transporter = nodemailer.createTransport({
   },
 })
 
+/**
+ * Submits user feedback to the appropriate team
+ * 
+ * @param data - Feedback type and message
+ * @returns Success status or error message
+ */
 export async function submitFeedback(data: {
   type: 'help' | 'bug' | 'feature' | 'comment'
   message: string
@@ -43,6 +55,7 @@ export async function submitFeedback(data: {
       comment: 'General Comment'
     }
     
+    // Route feedback to appropriate team members
     const recipients = {
       help: ['team@cofactor.world'],
       bug: ['it@cofactor.world'],

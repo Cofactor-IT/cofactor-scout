@@ -1,3 +1,20 @@
+/**
+ * FormTextarea.tsx
+ * 
+ * Reusable textarea component for multi-line text input.
+ * Supports validation and helper text.
+ * 
+ * Features:
+ * - Required field indicator
+ * - Helper text display
+ * - Configurable row height
+ * - Focus state with teal border
+ * - Non-resizable for consistent layout
+ */
+
+/**
+ * Props for FormTextarea component.
+ */
 interface FormTextareaProps {
   label: string
   name: string
@@ -9,6 +26,19 @@ interface FormTextareaProps {
   rows?: number
 }
 
+/**
+ * Textarea component with label and validation.
+ * Uses design system colors and typography.
+ * 
+ * @param label - Textarea label text
+ * @param name - Textarea name attribute
+ * @param value - Controlled textarea value
+ * @param onChange - Value change handler
+ * @param required - Shows required indicator
+ * @param helperText - Helper text shown above textarea
+ * @param placeholder - Textarea placeholder
+ * @param rows - Number of visible text rows
+ */
 export function FormTextarea({
   label,
   name,

@@ -1,3 +1,9 @@
+/**
+ * Dashboard Navbar Component
+ * 
+ * Navigation bar for dashboard pages with user dropdown and page links.
+ * Responsive design with mobile menu.
+ */
 'use client'
 
 import { useState } from 'react'

@@ -1,7 +1,18 @@
+/**
+ * Cache Utilities
+ * 
+ * Redis-based caching layer with fallback when Redis unavailable.
+ * Provides get/set/delete operations with TTL support.
+ */
 import { Redis } from 'ioredis'
 
 let redis: Redis | null = null
 
+/**
+ * Get or initialize Redis client
+ * 
+ * @returns Redis client or null if unavailable
+ */
 function getRedisClient(): Redis | null {
     if (!redis && typeof process !== 'undefined' && process.env.REDIS_URL) {
         try {
@@ -9,12 +20,13 @@ function getRedisClient(): Redis | null {
                 maxRetriesPerRequest: 3,
                 connectTimeout: 5000,
                 retryStrategy: (times) => {
+                    // Exponential backoff with max 2s delay
                     const delay = Math.min(times * 50, 2000)
                     return delay
                 }
             })
 
-            // Error handling to prevent crashing the app
+            // Prevent app crashes on Redis errors
             redis.on('error', (err) => {
                 console.warn('Redis connection error:', err)
             })
@@ -27,12 +39,17 @@ function getRedisClient(): Redis | null {
 }
 
 interface CacheOptions {
-    ttl?: number // Time to live in seconds
-    tags?: string[] // Revalidation tags (for future use with Next.js cache)
+    /** Time to live in seconds */
+    ttl?: number
+    /** Revalidation tags (for future use with Next.js cache) */
+    tags?: string[]
 }
 
 /**
  * Get data from cache
+ * 
+ * @param key - Cache key
+ * @returns Cached data or null
  */
 export async function getCache<T>(key: string): Promise<T | null> {
     const client = getRedisClient()
@@ -50,6 +67,10 @@ export async function getCache<T>(key: string): Promise<T | null> {
 
 /**
  * Set data in cache
+ * 
+ * @param key - Cache key
+ * @param data - Data to cache
+ * @param options - Cache options (TTL, tags)
  */
 export async function setCache<T>(key: string, data: T, options?: CacheOptions): Promise<void> {
     const client = getRedisClient()
@@ -69,6 +90,8 @@ export async function setCache<T>(key: string, data: T, options?: CacheOptions):
 
 /**
  * Delete data from cache
+ * 
+ * @param key - Cache key
  */
 export async function deleteCache(key: string): Promise<void> {
     const client = getRedisClient()
@@ -83,6 +106,11 @@ export async function deleteCache(key: string): Promise<void> {
 
 /**
  * Get data from cache or fetch it if not present
+ * 
+ * @param key - Cache key
+ * @param fetchFn - Function to fetch data if not cached
+ * @param options - Cache options
+ * @returns Cached or freshly fetched data
  */
 export async function getOrSetCache<T>(
     key: string,
@@ -94,7 +122,7 @@ export async function getOrSetCache<T>(
 
     const data = await fetchFn()
 
-    // Don't cache null/undefined if that's not desired, but here we assume we cache the result
+    // Cache the result if not undefined
     if (data !== undefined) {
         await setCache(key, data, options)
     }

@@ -14,6 +14,7 @@ interface UserDropdownProps {
 
 export function UserDropdown({ displayName, role, initials, profilePictureUrl }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -26,6 +27,11 @@ export function UserDropdown({ displayName, role, initials, profilePictureUrl }:
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  async function handleSignOut() {
+    setIsSigningOut(true)
+    await signOut({ callbackUrl: '/' })
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -73,11 +79,21 @@ export function UserDropdown({ displayName, role, initials, profilePictureUrl }:
           <div className="h-[1px] bg-[#E5E7EB] my-[8px]" />
           
           <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="w-full flex items-center gap-[12px] px-[16px] py-[12px] h-[44px] text-[#EF4444] hover:bg-[#FEE2E2] transition-colors"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="w-full flex items-center gap-[12px] px-[16px] py-[12px] h-[44px] text-[#EF4444] hover:bg-[#FEE2E2] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <LogOut className="w-[18px] h-[18px]" />
-            <span className="text-[15px] font-normal">Sign Out</span>
+            {isSigningOut ? (
+              <>
+                <div className="w-[18px] h-[18px] border-2 border-[#EF4444]/30 border-t-[#EF4444] rounded-full animate-spin" />
+                <span className="text-[15px] font-normal">Signing out...</span>
+              </>
+            ) : (
+              <>
+                <LogOut className="w-[18px] h-[18px]" />
+                <span className="text-[15px] font-normal">Sign Out</span>
+              </>
+            )}
           </button>
         </div>
       )}

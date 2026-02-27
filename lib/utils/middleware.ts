@@ -1,5 +1,8 @@
 /**
- * Middleware helpers for standardized request handling
+ * Middleware Utilities
+ * 
+ * Helper functions for standardized request handling including rate limiting,
+ * authentication checks, and CSRF validation for API routes.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -14,6 +17,11 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
 /**
  * Standardized rate limiting wrapper for middleware
+ * 
+ * @param request - Next.js request
+ * @param identifier - Unique identifier (usually IP address)
+ * @param config - Rate limit configuration
+ * @returns 429 response if rate limited, null otherwise
  */
 export async function withRateLimit(
     request: NextRequest,
@@ -32,12 +40,18 @@ export async function withRateLimit(
 
 /**
  * Check rate limit using Redis if available, fallback to in-memory
+ * 
+ * @param identifier - Unique identifier
+ * @param limit - Maximum requests allowed
+ * @param windowMs - Time window in milliseconds
+ * @returns True if request allowed
  */
 async function checkRateLimitMiddleware(
     identifier: string,
     limit: number,
     windowMs: number
 ): Promise<boolean> {
+    // Try Redis first if configured
     if (process.env.REDIS_URL) {
         try {
             const result = await checkRateLimitRedis(identifier, { limit, window: windowMs })
@@ -51,7 +65,12 @@ async function checkRateLimitMiddleware(
 }
 
 /**
- * In-memory rate limiting (fallback)
+ * In-memory rate limiting (fallback when Redis unavailable)
+ * 
+ * @param identifier - Unique identifier
+ * @param limit - Maximum requests allowed
+ * @param windowMs - Time window in milliseconds
+ * @returns True if request allowed
  */
 function checkRateLimitInMemory(identifier: string, limit: number, windowMs: number): boolean {
     const now = Date.now()
@@ -83,8 +102,12 @@ export const rateLimiters = {
 
 /**
  * CSRF validation wrapper
- * Note: Next.js handles CSRF protection automatically for Server Actions
- * This is for custom API routes
+ * 
+ * Note: Next.js handles CSRF protection automatically for Server Actions.
+ * This is for custom API routes.
+ * 
+ * @param request - Next.js request
+ * @returns True if CSRF validation passes
  */
 export function validateCSRF(request: NextRequest): boolean {
     // In production, validate CSRF token from headers
@@ -103,6 +126,9 @@ export function validateCSRF(request: NextRequest): boolean {
 
 /**
  * Auth check wrapper for API routes
+ * 
+ * @param request - Next.js request
+ * @returns User object or 401 response
  */
 export async function requireAuthApi(request: NextRequest): Promise<{ user: { id: string; role: string } } | NextResponse> {
     const session = await getServerSession(authOptions)
@@ -116,6 +142,9 @@ export async function requireAuthApi(request: NextRequest): Promise<{ user: { id
 
 /**
  * Admin check wrapper for API routes
+ * 
+ * @param request - Next.js request
+ * @returns User object or 401/403 response
  */
 export async function requireAdminApi(request: NextRequest): Promise<{ user: { id: string; role: string } } | NextResponse> {
     const authResult = await requireAuthApi(request)
@@ -133,6 +162,9 @@ export async function requireAdminApi(request: NextRequest): Promise<{ user: { i
 
 /**
  * Combined middleware wrapper that applies rate limiting and auth checks
+ * 
+ * @param options - Middleware configuration
+ * @returns Middleware function
  */
 export function createApiMiddleware(options: {
     rateLimit?: (request: NextRequest) => Promise<NextResponse | null>

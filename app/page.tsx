@@ -1,3 +1,15 @@
+/**
+ * page.tsx
+ * 
+ * Landing page for Cofactor Scout platform.
+ * Explains the two-tier system (Contributor vs Scout) and submission workflow.
+ * 
+ * Key sections:
+ * - Hero with dual CTAs (Apply as Scout / Sign up as Contributor)
+ * - Choose Your Path comparison cards
+ * - How It Works 3-step process
+ */
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { Award, UserPlus, Send, SearchCheck, CircleDollarSign } from 'lucide-react'
@@ -5,40 +17,65 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import HeroLogo from '@/public/cofactor-scout-hero-logo.png'
 import { CookieConsentTrigger } from '@/components/cookie-consent/Trigger'
+import { FadeIn } from '@/components/ui/FadeIn'
+import { FadeInOnLoad } from '@/components/ui/FadeInOnLoad'
+import type { Metadata } from 'next'
 
+export const metadata: Metadata = {
+  title: 'Cofactor Scout | Discover Research. Earn Commission.',
+  description: 'Connect promising university research with venture capital. Find cutting-edge projects in your network, submit them to our team, and earn commission when we facilitate successful matches.'
+}
+
+/**
+ * Landing page component.
+ * Server component with static metadata for SEO.
+ */
 export default function LandingPage() {
     return (
         <div className="min-h-screen bg-white">
             {/* Hero Section */}
-            <section className="relative min-h-[500px] md:h-[600px] bg-[#1B2A4A] px-4 md:px-8 lg:px-[120px] py-12 md:py-0">
-                <Image
-                    src={HeroLogo}
-                    alt="Cofactor Scout"
-                    width={725}
-                    height={92}
-                    className="relative md:absolute left-0 md:left-[120px] top-0 md:top-[60px] w-[200px] md:w-[400px] lg:w-[725px] h-auto"
-                />
+            <section className="bg-[#1B2A4A] px-4 md:px-8 lg:px-[120px] py-12 md:py-16">
+                <div className="flex flex-col gap-8 md:gap-10 max-w-[1200px]">
+                    
+                    {/* Logo */}
+                    <Image
+                        src={HeroLogo}
+                        alt="Cofactor Scout"
+                        width={725}
+                        height={92}
+                        className="w-[200px] md:w-[400px] lg:w-[500px] h-auto"
+                    />
 
-                <h1 className="relative md:absolute left-0 md:left-[120px] top-[30px] md:top-[172px] max-w-full md:max-w-[1600px] text-white mt-1 md:mt-0">
-                    Discover Research. Connect Investors. Earn Commission
-                </h1>
+                    {/* Headline */}
+                    <FadeInOnLoad delay={0}>
+                        <h1 className="text-white w-full">
+                            Discover Research. Connect Investors. Earn Commission
+                        </h1>
+                    </FadeInOnLoad>
 
-                <p className="relative md:absolute left-0 md:left-[120px] top-auto md:top-[292px] max-w-full md:max-w-[1600px] body-large text-white mt-16 md:mt-0">
-                    Cofactor Scout connects promising university research with venture capital. Find cutting-edge projects in your network, submit them to our team, and earn commission when we facilitate successful matches.
-                </p>
+                    {/* Subheadline */}
+                    <FadeInOnLoad delay={0.15}>
+                        <p className="body-large text-[#E1E8ED] w-full">
+                            Cofactor Scout connects promising university research with venture capital. Find cutting-edge projects in your network, submit them to our team, and earn commission when we facilitate successful matches.
+                        </p>
+                    </FadeInOnLoad>
 
-                <div className="relative md:absolute left-0 md:left-[120px] top-auto md:top-[430px] flex flex-col md:flex-row gap-4 md:gap-[32px] mt-8 md:mt-0">
-                    <Link href="/scout/apply" className="w-full md:w-auto">
-                        <Button className="w-full md:w-[280px] h-[56px] md:h-[64px]">
-                            Apply to Become a Scout
-                        </Button>
-                    </Link>
+                    {/* Buttons */}
+                    <FadeInOnLoad delay={0.3}>
+                        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                            <Link href="/scout/apply">
+                                <Button className="w-full md:w-[280px] h-[56px] md:h-[64px]">
+                                    Apply to Become a Scout
+                                </Button>
+                            </Link>
+                            <Link href="/auth/signup">
+                                <Button className="w-full md:w-[280px] h-[56px] md:h-[64px]">
+                                    Sign up as Contributor
+                                </Button>   
+                            </Link>
+                        </div>
+                    </FadeInOnLoad>
 
-                    <Link href="/auth/signup" className="w-full md:w-auto">
-                        <Button className="w-full md:w-[280px] h-[56px] md:h-[64px]">
-                            Or sign up as Contributor
-                        </Button>
-                    </Link>
                 </div>
             </section>
 
@@ -54,7 +91,8 @@ export default function LandingPage() {
 
                 <div className="flex flex-col lg:flex-row justify-center gap-8 lg:gap-[120px] max-w-full lg:max-w-[1320px] mx-auto">
                     {/* Scout Card */}
-                    <Card className="w-full lg:w-[600px] p-8 md:p-[60px] flex flex-col">
+                    <FadeIn delay={0} className="w-full lg:w-[600px]">
+                        <Card className="w-full h-full p-8 md:p-[60px] flex flex-col">
                         <Award className="w-[60px] h-[60px] mb-[30px] text-[#C9A84C]" />
 
                         <h3 className="mb-[10px]">Scout</h3>
@@ -86,10 +124,12 @@ export default function LandingPage() {
                                 </Button>
                             </Link>
                         </div>
-                    </Card>
-
+                        </Card>
+                    </FadeIn>
+                    
                     {/* Contributor Card */}
-                    <Card className="w-full lg:w-[600px] p-8 md:p-[60px] flex flex-col">
+                    <FadeIn delay={0.15} className="w-full lg:w-[600px]">
+                        <Card className="w-full h-full p-8 md:p-[60px] flex flex-col">
                         <UserPlus className="w-[60px] h-[60px] mb-[30px] text-[#6B7280]" />
 
                         <h3 className="mb-[10px]">Contributor</h3>
@@ -112,7 +152,8 @@ export default function LandingPage() {
                                 </Button>
                             </Link>
                         </div>
-                    </Card>
+                        </Card>
+                    </FadeIn>
                 </div>
             </section>
 
@@ -124,31 +165,37 @@ export default function LandingPage() {
 
                 <div className="flex flex-col md:flex-row justify-center gap-8 md:gap-[60px] max-w-full md:max-w-[1800px] mx-auto">
                     {/* Step 1 */}
-                    <Card className="w-full md:w-[540px] h-auto md:h-[200px] p-6 md:p-[30px] flex flex-col justify-between">
+                    <FadeIn delay={0} className="w-full md:w-[540px]">
+                        <Card className="w-full h-auto md:h-[200px] p-6 md:p-[30px] flex flex-col justify-between">
                         <div className="flex flex-col items-center">
                             <Send className="w-[40px] h-[40px] mb-[20px] text-[#0D7377]" />
                             <h4 className="text-[#0D7377]">1. Submit Research</h4>
                         </div>
                         <p className="body text-center">Find promising research in your network</p>
-                    </Card>
-
+                        </Card>
+                    </FadeIn>
+                    
                     {/* Step 2 */}
-                    <Card className="w-full md:w-[540px] h-auto md:h-[200px] p-6 md:p-[30px] flex flex-col justify-between">
+                    <FadeIn delay={0.15} className="w-full md:w-[540px]">
+                        <Card className="w-full h-auto md:h-[200px] p-6 md:p-[30px] flex flex-col justify-between">
                         <div className="flex flex-col items-center">
                             <SearchCheck className="w-[40px] h-[40px] mb-[20px] text-[#0D7377]" />
                             <h4 className="text-[#0D7377]">2. We Review</h4>
                         </div>
                         <p className="body text-center">Our team validates and connects with investors</p>
-                    </Card>
-
+                        </Card>
+                    </FadeIn>
+                    
                     {/* Step 3 */}
-                    <Card className="w-full md:w-[540px] h-auto md:h-[200px] p-6 md:p-[30px] flex flex-col justify-between">
+                    <FadeIn delay={0.3} className="w-full md:w-[540px]">
+                        <Card className="w-full h-auto md:h-[200px] p-6 md:p-[30px] flex flex-col justify-between">
                         <div className="flex flex-col items-center">
                             <CircleDollarSign className="w-[40px] h-[40px] mb-[20px] text-[#0D7377]" />
                             <h4 className="text-[#0D7377]">3. Get Paid</h4>
                         </div>
                         <p className="body text-center">Earn commission on successful matches</p>
-                    </Card>
+                        </Card>
+                    </FadeIn>
                 </div>
             </section>
 

@@ -1,5 +1,8 @@
 /**
- * Standardized API response helpers
+ * API Response Utilities
+ * 
+ * Standardized response helpers for API routes and server actions.
+ * Provides consistent success/error response formats.
  */
 
 import { AppError } from '@/lib/errors'
@@ -17,6 +20,13 @@ export interface ApiResponse<T = unknown> {
     }
 }
 
+/**
+ * Create a successful API response
+ * 
+ * @param data - Response data
+ * @param meta - Optional metadata
+ * @returns Standardized success response
+ */
 export function success<T>(data: T, meta?: Record<string, unknown>): ApiResponse<T> {
     return {
         success: true,
@@ -28,6 +38,13 @@ export function success<T>(data: T, meta?: Record<string, unknown>): ApiResponse
     }
 }
 
+/**
+ * Create an error API response
+ * 
+ * @param err - Error object or message
+ * @param code - Optional error code
+ * @returns Standardized error response
+ */
 export function error(err: AppError | string, code?: string): ApiResponse {
     if (err instanceof AppError) {
         return {
@@ -54,16 +71,32 @@ export function error(err: AppError | string, code?: string): ApiResponse {
     }
 }
 
+/**
+ * Create a successful action response (simplified format)
+ * 
+ * @param data - Optional response data
+ * @returns Success object
+ */
 export function actionSuccess<T>(data?: T): { success: true; data?: T } {
     return { success: true, ...(data !== undefined && { data }) }
 }
 
+/**
+ * Create an error action response (simplified format)
+ * 
+ * @param message - Error message
+ * @returns Error object
+ */
 export function actionError(message: string): { success: false; error: string } {
     return { success: false, error: message }
 }
 
 /**
  * Wrapper for async actions to standardize error handling
+ * 
+ * @param action - Async function to execute
+ * @param errorMessage - Default error message
+ * @returns Success or error response
  */
 export async function withActionHandling<T>(
     action: () => Promise<T>,
@@ -80,6 +113,11 @@ export async function withActionHandling<T>(
 
 /**
  * Wrapper for form actions with validation
+ * 
+ * @param formData - Form data to validate
+ * @param validator - Validation function
+ * @param action - Action to execute with validated data
+ * @returns Success or error response
  */
 export async function withFormHandling<T>(
     formData: FormData,

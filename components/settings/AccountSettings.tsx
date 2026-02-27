@@ -1,3 +1,16 @@
+/**
+ * AccountSettings.tsx
+ * 
+ * Account settings component for managing personal information and password.
+ * 
+ * Features:
+ * - Edit first name, last name, preferred name
+ * - Email display (read-only, contact support to change)
+ * - Change password with current password verification
+ * - Confirmation modals for all changes
+ * - Success/error notifications
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -9,6 +22,9 @@ import { updateAccount, changePassword } from '@/actions/settings.actions'
 import { CookieModal } from '@/components/cookie-consent/Modal'
 import { useEffect } from 'react'
 
+/**
+ * Props for AccountSettings component.
+ */
 interface AccountSettingsProps {
   user: {
     email: string
@@ -19,6 +35,10 @@ interface AccountSettingsProps {
   }
 }
 
+/**
+ * Account settings component with personal info and password management.
+ * Client component with local state for form data and modals.
+ */
 export function AccountSettings({ user }: AccountSettingsProps) {
   const [formData, setFormData] = useState({
     firstName: user.firstName || '',
@@ -41,29 +61,10 @@ export function AccountSettings({ user }: AccountSettingsProps) {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
-  const [showCookieModal, setShowCookieModal] = useState(false)
-  const [cookieConsent, setCookieConsent] = useState({ analytics: false, error: false, version: 1 })
-
-  useEffect(() => {
-    const match = document.cookie.match(new RegExp('(^| )cf_consent=([^;]+)'))
-    if (match) {
-      try {
-        setCookieConsent(JSON.parse(decodeURIComponent(match[2])))
-      } catch (e) { }
-    }
-  }, [])
-
-  const handleSaveCookie = (consent: { analytics: boolean, error: boolean, version: number }) => {
-    const maxAge = 60 * 60 * 24 * 182
-    document.cookie = `cf_consent=${encodeURIComponent(JSON.stringify(consent))}; path=/; max-age=${maxAge}; samesite=strict`
-    setShowCookieModal(false)
-    setCookieConsent(consent)
-    try {
-      fetch('/api/consent', { method: 'POST', body: JSON.stringify(consent) }).catch(() => { })
-    } catch (e) { }
-    window.location.reload()
-  }
-
+  /**
+   * Handles password change with validation.
+   * Checks that new password and confirmation match.
+   */
   const handlePasswordChange = async () => {
     setPasswordError('')
 
@@ -89,6 +90,9 @@ export function AccountSettings({ user }: AccountSettingsProps) {
     setLoading(false)
   }
 
+  /**
+   * Saves account changes after modal confirmation.
+   */
   const handleSave = async () => {
     setShowModal(false)
     setLoading(true)

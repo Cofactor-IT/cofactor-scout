@@ -1,8 +1,24 @@
+/**
+ * modal.tsx
+ * 
+ * Reusable modal dialog component with overlay.
+ * 
+ * Features:
+ * - Three size variants (sm, md, lg)
+ * - Close button and overlay click to dismiss
+ * - Optional footer for action buttons
+ * - Prevents body scroll when open
+ * - Responsive sizing and padding
+ */
+
 'use client'
 
 import { X } from 'lucide-react'
 import { useEffect } from 'react'
 
+/**
+ * Props for Modal component.
+ */
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
@@ -12,7 +28,19 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg'
 }
 
+/**
+ * Modal dialog component with overlay and close functionality.
+ * Locks body scroll when open.
+ * 
+ * @param isOpen - Controls modal visibility
+ * @param onClose - Close handler
+ * @param title - Modal title
+ * @param children - Modal content
+ * @param footer - Optional footer with action buttons
+ * @param size - Modal width (sm: 400px, md: 600px, lg: 800px)
+ */
 export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
+  // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'

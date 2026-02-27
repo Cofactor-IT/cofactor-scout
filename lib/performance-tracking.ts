@@ -1,9 +1,22 @@
+/**
+ * Performance Tracking
+ * 
+ * Wrapper functions for tracking API route and handler performance.
+ * Integrates with analytics to record request duration and status.
+ */
 import { trackApiRequest } from '@/lib/analytics'
 
 interface ErrorWithStatus extends Error {
     status?: number
 }
 
+/**
+ * Wrap handler with performance tracking
+ * 
+ * @param handler - Handler function to wrap
+ * @param routeName - Route name for tracking
+ * @returns Wrapped handler with performance tracking
+ */
 export function withPerformanceTracking<T extends (...args: unknown[]) => Promise<unknown>>(
     handler: T,
     routeName: string
@@ -27,6 +40,13 @@ export function withPerformanceTracking<T extends (...args: unknown[]) => Promis
     }) as T
 }
 
+/**
+ * Wrap route handler with performance tracking (assumes GET method)
+ * 
+ * @param handler - Handler function to wrap
+ * @param routeName - Route name for tracking
+ * @returns Wrapped handler with performance tracking
+ */
 export function withRouteTracking<T extends (...args: unknown[]) => Promise<unknown>>(
     handler: T,
     routeName: string
