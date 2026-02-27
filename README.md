@@ -24,6 +24,7 @@ Cofactor Scout connects promising university research with venture capital inves
 - ✅ **Scout Application**: Apply to become a verified Scout
 - 📧 **Email Notifications**: Verification, confirmations, status updates
 - 🔒 **Secure Authentication**: Email verification, account lockout, password reset
+- 🍪 **Cookie Consent**: GDPR-compliant consent management with granular controls
 
 ---
 
@@ -147,7 +148,8 @@ cofactor-scout/
 ├── components/               # React components
 │   ├── ui/                   # Reusable UI components
 │   ├── submission/           # Submission form components
-│   └── settings/             # Settings components
+│   ├── settings/             # Settings components
+│   └── cookie-consent/       # Cookie consent system
 │
 ├── lib/                      # Shared utilities
 │   ├── auth/                 # Authentication utilities
@@ -359,6 +361,7 @@ docker-compose down
 - ✅ Email notifications for security events
 - ✅ Structured logging
 - ✅ Error monitoring (Sentry)
+- ✅ GDPR-compliant cookie consent
 
 ### Planned Security Features
 - [ ] Two-factor authentication (schema ready)
@@ -367,6 +370,61 @@ docker-compose down
 - [ ] Advanced anomaly detection
 
 See [AUTHENTICATION.md](./docs/technical/AUTHENTICATION.md) for complete security documentation.
+
+---
+
+## Cookie Consent & Privacy
+
+### GDPR Compliance
+
+Cofactor Scout includes a comprehensive cookie consent system that complies with GDPR requirements:
+
+**Features:**
+- 🍪 First-visit banner with Accept/Reject/Customize options
+- ⚙️ Granular controls for analytics and error monitoring
+- 💾 Persistent storage (365-day cookie + database audit trail)
+- 🔄 User can update preferences anytime via footer or settings
+- 📊 Consent logging for compliance audits
+
+**Cookie Categories:**
+
+| Category | Purpose | Provider | Default | Requires Consent |
+|----------|---------|----------|---------|------------------|
+| **Essential** | Authentication, security, basic functionality | Cofactor | Always On | No |
+| **Analytics** | Track page views and user behavior | Vercel | OFF | Yes |
+| **Error Monitoring** | Detect and fix bugs | Sentry | OFF | Yes |
+
+**Implementation:**
+```
+components/cookie-consent/
+├── types.ts          # Shared TypeScript types
+├── constants.ts      # Cookie name, expiration, version
+├── utils.ts          # Read/write cookie, backend logging
+├── Banner.tsx        # First-visit banner
+├── Modal.tsx         # Preference customization modal
+└── Trigger.tsx       # Footer "Cookie Settings" button
+
+app/api/consent/
+└── route.ts          # POST endpoint for consent logging
+```
+
+**User Experience:**
+1. **First Visit**: Banner appears at bottom with Accept All / Reject All / Customize
+2. **Customization**: Modal with toggles for each cookie category
+3. **Returning Users**: "Cookie Settings" link in footer to update preferences
+4. **Settings Page**: "Manage Cookie Preferences" button in Privacy section
+
+**Data Storage:**
+- **Cookie**: `cf_consent` (365 days, HTTP-only, Secure, SameSite=Strict)
+- **Database**: `ConsentRecord` table logs all consent events with user ID, timestamp, IP, user agent
+
+**Folder Naming:**
+The folder is named `cookie-consent` (not `cookie-banner`) because it handles the entire consent system:
+- Banner component (first visit)
+- Modal component (customization)
+- Trigger component (settings button)
+- Backend API (consent logging)
+- Shared utilities and types
 
 ---
 
