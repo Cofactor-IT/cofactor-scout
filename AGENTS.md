@@ -25,8 +25,7 @@ This file is automatically read by AI coding assistants (Cursor, Claude Code) at
 
 **User Roles:**
 - **CONTRIBUTOR** (default): Submit research immediately, standard commission, gray badge
-- **SCOUT** (verified): Apply → Admin approves → Higher commission + priority review + green badge
-- **ADMIN** (system): Full platform access, can approve scout applications, manage users
+- **SCOUT** (verified): Apply → Cofactor team approves → Higher commission + priority review + green badge
 
 **Production URL:** https://scout.cofactor.world
 
@@ -768,409 +767,49 @@ export async function deleteSubmission(id: string) {
 
 ---
 
-## Summary
+## 13. How Changes Should Be Made and Recorded
 
-**10 Core Rules:**
+### Branch Naming
+- `feature/xxx` — new features
+- `fix/xxx` — bug fixes
+- `chore/xxx` — dependencies, config, non-code changes
+- `docs/xxx` — documentation only
+- Always branch from main
+- Never commit directly to main
+- Delete branch after merge
 
-1. **requireAuth() first** in every Server Action
-2. **Zod validation second** before database
-3. **userId from session** never from client
-4. **3-layer pattern** Components → Actions → Queries
-5. **Functions under 20 lines** extract sub-functions
-6. **No `any` types** use `unknown` and narrow
-7. **Typography classes** never hardcode font sizes
-8. **Reuse components** check ui/, submission/, settings/ first
-9. **Check ownership** before read/update/delete
-10. **No Prisma outside** lib/database/queries/
+### Commit Message Format
+`type(scope): description`
+
+Types: feat, fix, chore, docs, style, refactor, test
+Rules: present tense, max 72 chars, no period at end
+
+Real examples:
+- feat(submissions): add 3-step submission form
+- fix(dashboard): correct hero section padding
+- chore(deps): add framer-motion
+- docs(auth): add TECHNICAL.md
+- fix(auth): resolve merge conflict on signup page
+
+### Before Opening a PR
+- [ ] CODE_STANDARDS.md rules followed
+- [ ] JSDoc comments on every exported function
+- [ ] No console.logs
+- [ ] No any types
+- [ ] Tested locally end to end
+- [ ] Loading states work
+- [ ] Error states work
+- [ ] Mobile checked
+- [ ] No unnecessary files created
+
+### Recording Changes
+- Update `docs/features/[feature]/CHANGELOG.md` for every feature change
+- Update `docs/features/[feature]/BUGS.md` when fixing a bug (include root cause and fix)
+- Create a new ADR in `docs/decisions/` when making an architectural decision
+- Update `docs/features/[feature]/TECHNICAL.md` if implementation changed significantly
 
 ---
 
 **Questions?** Read CODE_STANDARDS.md in docs/pm-notes/
 
-**Last Updated:** 2026-02-26 Rules
-
-- **4px** for all cards, inputs, containers
-- **9999px** (rounded-full) for all buttons, badges, avatars
-
-```tsx
-// ✅ Cards
-<Card style={{ borderRadius: '4px' }}>
-
-// ✅ Buttons
-<Button className="rounded-full">
-
-// ✅ Badges
-<div className="rounded-full">
-```
-
-### Spacing
-
-```tsx
-// Page padding
-className="px-4 md:px-8 lg:px-[120px]"
-
-// Section padding
-className="py-12 md:py-[80px]"
-
-// Card padding
-className="p-6 md:p-[48px]"
-```
-
----
-
-## 7. Component Usage Rules
-
-### Available Components (components/ui/)
-
-**Button** — Primary and secondary variants
-```tsx
-<Button variant="primary">Submit</Button>
-<Button variant="secondary">Cancel</Button>
-```
-
-**Card** — Container with border and background
-```tsx
-<Card className="p-6">Content</Card>
-```
-
-**FadeIn** — Scroll-triggered animation
-```tsx
-<FadeIn delay={0.15}>
-  <Card>Animates when scrolled into view</Card>
-</FadeIn>
-```
-
-**FadeInOnLoad** — Page load animation
-```tsx
-<FadeInOnLoad delay={0.3}>
-  <h1>Animates on page load</h1>
-</FadeInOnLoad>
-```
-
-**Input, Textarea, Label** — Form fields
-```tsx
-<Label htmlFor="email">Email</Label>
-<Input id="email" type="email" />
-<Textarea id="bio" rows={4} />
-```
-
-### Rule: Never Recreate Existing Components
-
-Before creating a new component, check `components/ui/` first. Reuse what exists.
-
----
-
-## 8. Commenting Requirements
-
-### File-Level JSDoc (Every File)
-
-```typescript
-/**
- * submission.actions.ts
- * 
- * Server Actions for research submission management including drafts,
- * submission, retrieval, and deletion.
- * 
- * All actions verify user authentication and ownership before operations.
- * Submissions go through draft -> submitted workflow with email notifications.
- */
-```
-
-### Function JSDoc (Every Exported Function)
-
-```typescript
-/**
- * Saves or updates a research submission draft.
- * Validates for duplicate research topics before saving.
- * Cleans enum fields by converting empty strings to null.
- * 
- * @param data - Draft data including all submission fields
- * @param data.id - Draft ID for updates, 'new' for creation
- * @returns Success status and draft ID, or error message
- * @throws {Error} If user is not authenticated
- */
-export async function saveDraft(data: any) {
-  // Implementation
-}
-```
-
-### Inline Comments (Only for Non-Obvious Logic)
-
-```typescript
-// ✅ GOOD: Explains WHY
-// Email normalized to lowercase to prevent duplicate accounts
-email: z.string().toLowerCase().trim()
-
-// ✅ GOOD: Explains business rule
-// Account locks after 5 failed attempts for 15 minutes
-if (attempts >= MAX_LOGIN_ATTEMPTS) {
-  updateData.lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000)
-}
-
-// ❌ BAD: States the obvious
-// Increment the counter
-counter++
-```
-
-### Section Dividers (Files Over 100 Lines)
-
-```typescript
-// ============================================
-// CONSTANTS
-// ============================================
-
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
-
-// ============================================
-// EXPORTED SERVER ACTIONS
-// ============================================
-```
-
----
-
-## 9. Security Rules (NO EXCEPTIONS)
-
-### Every Server Action Must:
-
-```typescript
-export async function anyServerAction(data: any) {
-  // 1. requireAuth() is ALWAYS first
-  const session = await requireAuth()
-  
-  // 2. Zod validation before any database call
-  const validated = schema.parse(data)
-  
-  // 3. userId from session, NEVER from client
-  const userId = session.id // ✅ CORRECT
-  const userId = data.userId // ❌ NEVER DO THIS
-  
-  // 4. Check resource ownership
-  const resource = await findResourceById(validated.id)
-  if (resource.userId !== session.id) {
-    throw new Error('Unauthorized')
-  }
-  
-  // 5. No raw user input touches database
-  await updateResource(validated) // ✅ Validated
-  await updateResource(data) // ❌ Raw input
-}
-```
-
-### Real Example from Codebase:
-
-```typescript
-// actions/submission.actions.ts
-export async function saveDraft(data: any) {
-  const session = await requireAuth() // 1. Auth first
-  
-  try {
-    const { id, ...restData } = data
-    
-    // 2. Validate for duplicates
-    if (restData.researchTopic) {
-      const existingSubmission = await prisma.researchSubmission.findFirst({
-        where: {
-          userId: session.id, // 3. userId from session
-          researchTopic: restData.researchTopic,
-          NOT: id ? { id } : undefined
-        }
-      })
-      
-      if (existingSubmission) {
-        return { success: false, error: 'Duplicate submission' }
-      }
-    }
-    
-    // 4. Check ownership for updates
-    if (id && id !== 'new') {
-      submission = await prisma.researchSubmission.update({
-        where: { id: id },
-        data: cleanData
-      })
-    }
-  } catch (error) {
-    return { success: false, error: 'Failed to save draft' }
-  }
-}
-```
-
----
-
-## 10. Database Rules
-
-### Never Write Prisma Outside lib/database/queries/
-
-**❌ WRONG:**
-```typescript
-// actions/submission.actions.ts
-export async function saveDraft(data: any) {
-  const submission = await prisma.researchSubmission.create({ data }) // NO!
-}
-```
-
-**✅ CORRECT:**
-```typescript
-// actions/submission.actions.ts
-export async function saveDraft(data: any) {
-  const session = await requireAuth()
-  const validated = schema.parse(data)
-  return await createDraftSubmission(session.id, validated) // Call query function
-}
-
-// lib/database/queries/submissions.ts
-export async function createDraftSubmission(userId: string, data: DraftData) {
-  return await prisma.researchSubmission.create({
-    data: { userId, isDraft: true, ...data }
-  })
-}
-```
-
-### Always Scope to userId
-
-```typescript
-// ✅ CORRECT: User can only see their own data
-export async function findSubmissionsByUserId(userId: string) {
-  return await prisma.researchSubmission.findMany({
-    where: { userId, isDraft: false },
-    orderBy: { submittedAt: 'desc' }
-  })
-}
-```
-
-### Always Use select to Limit Fields
-
-```typescript
-// ❌ BAD: Returns everything including password
-const user = await prisma.user.findUnique({ where: { id } })
-
-// ✅ GOOD: Only returns needed fields
-const user = await prisma.user.findUnique({
-  where: { id },
-  select: { id: true, email: true, fullName: true }
-})
-```
-
-### Never Return password Field
-
-```typescript
-// ✅ CORRECT: Exclude password
-select: { id: true, email: true, fullName: true }
-
-// ❌ NEVER include password
-select: { id: true, email: true, password: true }
-```
-
-### Use Transactions for Multi-Step Operations
-
-```typescript
-await prisma.$transaction([
-  prisma.researchSubmission.update({
-    where: { id: data.id },
-    data: { isDraft: false, submittedAt: new Date() }
-  }),
-  prisma.user.update({
-    where: { id: session.id },
-    data: { totalSubmissions: { increment: 1 } }
-  })
-])
-```
-
----
-
-## 11. What NOT To Do
-
-### Anti-Patterns from CODE_STANDARDS.md
-
-- ❌ No `any` types (use `unknown` and narrow)
-- ❌ No functions over 20 lines (extract sub-functions)
-- ❌ No Prisma in components or Server Actions
-- ❌ No hardcoded colors (use CSS variables)
-- ❌ No hardcoded font sizes (use typography classes)
-- ❌ No inline Framer Motion (use FadeIn/FadeInOnLoad)
-- ❌ No new API routes unless file upload or webhook
-- ❌ No recreating existing components
-- ❌ No speculative code for future features
-- ❌ No `console.log` committed to main
-- ❌ No commented-out code
-- ❌ No magic numbers (use named constants)
-- ❌ No userId from client input (always from session)
-
----
-
-## 12. Before Starting Any Task
-
-### Checklist for Every AI Session
-
-1. ✅ Read this file completely
-2. ✅ Check what already exists before creating anything
-   - Search `components/ui/` for existing components
-   - Search `actions/` for existing Server Actions
-   - Search `lib/database/queries/` for existing queries
-3. ✅ List files to be modified before touching anything
-4. ✅ Reuse existing components, actions, queries
-5. ✅ Only create what the current task actually needs
-6. ✅ Follow all rules above without exception
-
-### Example Workflow
-
-**Task:** "Add ability to delete a submission"
-
-**Before coding:**
-1. Check if `deleteSubmission` action exists in `actions/submission.actions.ts` ✓
-2. Check if delete query exists in `lib/database/queries/submissions.ts` ✗
-3. Check if Button component exists in `components/ui/button.tsx` ✓
-
-**Plan:**
-1. Add `deleteSubmission` Server Action to `actions/submission.actions.ts`
-2. Add `deleteSubmissionById` query to `lib/database/queries/submissions.ts`
-3. Use existing Button component for delete button
-4. Follow 3-layer pattern: Component → Server Action → Query Function
-
-**Implementation:**
-```typescript
-// Layer 3: Query (lib/database/queries/submissions.ts)
-export async function deleteSubmissionById(id: string, userId: string) {
-  return await prisma.researchSubmission.deleteMany({
-    where: { id, userId } // Verify ownership
-  })
-}
-
-// Layer 2: Server Action (actions/submission.actions.ts)
-export async function deleteSubmission(id: string) {
-  const session = await requireAuth() // 1. Auth first
-  if (!id) return { error: 'Invalid ID' } // 2. Validate
-  await deleteSubmissionById(id, session.id) // 3. Call query
-  revalidatePath('/dashboard')
-  return { success: true }
-}
-
-// Layer 1: Component (app/dashboard/page.tsx)
-<Button onClick={() => deleteSubmission(submission.id)}>
-  Delete
-</Button>
-```
-
----
-
-## Summary
-
-**10 Core Rules:**
-
-1. **requireAuth() first** in every Server Action
-2. **Zod validation second** before database
-3. **userId from session** never from client
-4. **3-layer pattern** Components → Actions → Queries
-5. **Functions under 20 lines** extract sub-functions
-6. **No `any` types** use `unknown` and narrow
-7. **Typography classes** never hardcode font sizes
-8. **Reuse components** check ui/ first
-9. **Check ownership** before read/update/delete
-10. **No Prisma outside** lib/database/queries/
-
----
-
-**Questions?** Read CODE_STANDARDS.md in docs/pm-notes/
-
-**Last Updated:** 2026-02-26
+**Last Updated:** 2026-02-27
