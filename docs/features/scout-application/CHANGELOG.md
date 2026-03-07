@@ -1,6 +1,17 @@
 # Scout Application - Changelog
 
-**Last Updated:** 2026-02-26
+**Last Updated:** 2026-03-06
+
+## [2026-03-06] Resume + Cover Letter Uploads
+
+### Added
+- Required resume upload on scout application form
+- Optional cover letter upload on scout application form
+- Server-side validation for document type (`.pdf`, `.doc`, `.docx`) and size (5MB max)
+- Persistence of uploaded scout application documents on user records
+- Temporary draft persistence for unauthenticated applications so files survive signup handoff
+- Resume and cover letter metadata in admin scout review list
+- Resume and cover letter metadata in scout application notification emails
 
 ## [2026-02-26] Initial Implementation
 

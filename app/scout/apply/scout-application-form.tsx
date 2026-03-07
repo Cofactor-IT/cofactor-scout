@@ -1,10 +1,11 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useEffect, useRef, useState, type DragEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, ChevronDown, Check, X, Clock, Send } from 'lucide-react'
 import { submitScoutApplication, sendScoutApplicationReminder } from '@/actions/scout.actions'
+import { Button } from '@/components/ui/button'
 
 interface ScoutApplicationPageProps {
     user: {
@@ -18,14 +19,18 @@ interface ScoutApplicationPageProps {
     } | null
 }
 
-const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
-
 export default function ScoutApplicationForm({ user, applicationStatus }: ScoutApplicationPageProps) {
     const router = useRouter()
     const [state, formAction] = useActionState(submitScoutApplication, undefined)
     const [linkedinUrl, setLinkedinUrl] = useState('')
     const [userRole, setUserRole] = useState('')
+    const [resumeFileName, setResumeFileName] = useState('')
+    const [coverLetterFileName, setCoverLetterFileName] = useState('')
+    const [resumeDragActive, setResumeDragActive] = useState(false)
+    const [coverLetterDragActive, setCoverLetterDragActive] = useState(false)
     const [reminderState, setReminderState] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false })
+    const resumeInputRef = useRef<HTMLInputElement>(null)
+    const coverLetterInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         if (state?.success === 'REDIRECT_TO_SIGNUP') {
@@ -51,13 +56,34 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
         }
     }
 
-    const canSendReminder = () => {
-        return true // Always allow sending reminder
+    const setDroppedFile = (input: HTMLInputElement | null, file: File) => {
+        if (!input) return
+        const transfer = new DataTransfer()
+        transfer.items.add(file)
+        input.files = transfer.files
+    }
+
+    const handleResumeDrop = (event: DragEvent<HTMLDivElement>) => {
+        event.preventDefault()
+        setResumeDragActive(false)
+        const file = event.dataTransfer.files?.[0]
+        if (!file) return
+        setDroppedFile(resumeInputRef.current, file)
+        setResumeFileName(file.name)
+    }
+
+    const handleCoverLetterDrop = (event: DragEvent<HTMLDivElement>) => {
+        event.preventDefault()
+        setCoverLetterDragActive(false)
+        const file = event.dataTransfer.files?.[0]
+        if (!file) return
+        setDroppedFile(coverLetterInputRef.current, file)
+        setCoverLetterFileName(file.name)
     }
 
     const getDaysSinceApplication = () => {
         if (!applicationStatus?.applicationDate) return 0
-        return Math.floor((Date.now() - new Date(applicationStatus.applicationDate).getTime()) / (24 * 60 * 60 * 1000))
+        return Math.floor((new Date().getTime() - new Date(applicationStatus.applicationDate).getTime()) / (24 * 60 * 60 * 1000))
     }
 
     const isLoggedIn = !!user
@@ -93,7 +119,7 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     Application Under Review
                                 </h2>
                                 <p className="text-[16px] text-[#6B7280] mb-4" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                                    Thank you for applying to become a Cofactor Scout! We've received your application and our team is reviewing it.
+                                    Thank you for applying to become a Cofactor Scout! We have received your application and our team is reviewing it.
                                 </p>
                                 <div className="bg-[#FAFBFC] p-4 rounded-[4px] mb-6">
                                     <p className="text-[14px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
@@ -120,15 +146,14 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                                     <p className="text-[14px] text-[#6B7280] mb-4" style={{ fontFamily: 'var(--font-merriweather)' }}>
                                         You can send a reminder to our team once per week. We typically respond within 3-5 business days.
                                     </p>
-                                    <button
+                                    <Button
                                         onClick={handleSendReminder}
+                                        className="h-[48px] px-[32px] gap-2 text-[16px] disabled:bg-[#E5E7EB] disabled:text-[#6B7280] disabled:cursor-not-allowed"
                                         disabled={reminderState.loading}
-                                        className="h-[48px] px-[32px] bg-[#0D7377] text-white rounded-full flex items-center gap-2 text-[16px] font-medium hover:bg-[#0a5a5d] disabled:bg-[#E5E7EB] disabled:text-[#6B7280] disabled:cursor-not-allowed transition-colors"
-                                        style={{ fontFamily: 'var(--font-rethink-sans)' }}
                                     >
                                         <Send size={18} />
                                         {reminderState.loading ? 'Sending...' : 'Send Reminder'}
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         </div>
@@ -150,20 +175,20 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                         Apply to Become a Scout
                     </h1>
                     <p className="text-[14px] md:text-[16px] text-[#6B7280]" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                        Scouts help us discover groundbreaking research and connect with innovative researchers. Share your background and tell us why you'd be a great fit.
+                        Scouts help us discover groundbreaking research and connect with innovative researchers. Share your background and tell us why you would be a great fit.
                     </p>
                 </div>
             </div>
 
             {/* Form */}
-            <div className="max-w-[900px] mx-auto px-4 md:px-8 lg:px-[48px] py-[48px] pb-[120px]">
+            <div className="max-w-[900px] mx-auto px-4 md:px-8 lg:px-[48px] py-[48px] pb-[220px] md:pb-[160px]">
                 {state?.error && (
                     <div className="mb-[24px] p-[12px] bg-[#FEE2E2] border border-[#EF4444] rounded-[4px] text-[#EF4444] text-[14px]">
                         {state.error}
                     </div>
                 )}
 
-                <form action={formAction} className="space-y-[32px]">
+                <form action={formAction} className="space-y-[32px]" encType="multipart/form-data">
                     {/* Section 1: About You */}
                     <div className="bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-8 lg:p-[48px]">
                         <h2 className="text-[24px] font-semibold text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
@@ -412,12 +437,109 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                         </div>
                     </div>
 
+                    {/* Section 3: Documents */}
+                    <div className="bg-white rounded-[4px] border border-[#E5E7EB] shadow-sm p-6 md:p-8 lg:p-[48px]">
+                        <h2 className="text-[24px] font-semibold text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                            Application Documents
+                        </h2>
+                        <p className="text-[14px] text-[#6B7280] mb-[24px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                            Upload your resume and an optional cover letter (PDF, DOC, or DOCX, max 5MB each)
+                        </p>
+                        <div className="border-t border-[#E5E7EB] mb-[24px]"></div>
+
+                        <div className="space-y-[24px]">
+                            <div>
+                                <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                                    Resume <span className="text-[#EF4444]">*</span>
+                                </label>
+                                <div
+                                    onDragOver={(event) => {
+                                        event.preventDefault()
+                                        setResumeDragActive(true)
+                                    }}
+                                    onDragLeave={() => setResumeDragActive(false)}
+                                    onDrop={handleResumeDrop}
+                                    className={`rounded-[4px] border-2 border-dashed p-6 transition-colors ${resumeDragActive ? 'border-[#0D7377] bg-[#ECFEFF]' : 'border-[#E5E7EB] bg-[#FAFBFC]'}`}
+                                >
+                                    <input
+                                        ref={resumeInputRef}
+                                        type="file"
+                                        name="resume"
+                                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                        required
+                                        onChange={(event) => setResumeFileName(event.target.files?.[0]?.name || '')}
+                                        className="hidden"
+                                    />
+                                    <p className="text-[14px] text-[#6B7280] text-center mb-4" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                                        Drag and drop your resume here
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <Button
+                                            type="button"
+                                            className="h-[44px] px-[24px] text-[14px]"
+                                            onClick={() => resumeInputRef.current?.click()}
+                                        >
+                                            Choose Resume File
+                                        </Button>
+                                    </div>
+                                </div>
+                                {resumeFileName && (
+                                    <p className="text-[12px] text-[#6B7280] mt-[8px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                                        Selected: {resumeFileName}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-[14px] font-medium text-[#1B2A4A] mb-[8px]" style={{ fontFamily: 'var(--font-rethink-sans)' }}>
+                                    Cover Letter <span className="text-[#6B7280] font-normal">(Optional)</span>
+                                </label>
+                                <div
+                                    onDragOver={(event) => {
+                                        event.preventDefault()
+                                        setCoverLetterDragActive(true)
+                                    }}
+                                    onDragLeave={() => setCoverLetterDragActive(false)}
+                                    onDrop={handleCoverLetterDrop}
+                                    className={`rounded-[4px] border-2 border-dashed p-6 transition-colors ${coverLetterDragActive ? 'border-[#1B2A4A] bg-[#F1F5F9]' : 'border-[#E5E7EB] bg-[#FAFBFC]'}`}
+                                >
+                                    <input
+                                        ref={coverLetterInputRef}
+                                        type="file"
+                                        name="coverLetter"
+                                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                        onChange={(event) => setCoverLetterFileName(event.target.files?.[0]?.name || '')}
+                                        className="hidden"
+                                    />
+                                    <p className="text-[14px] text-[#6B7280] text-center mb-4" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                                        Drag and drop your cover letter here
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            className="h-[44px] px-[24px] text-[14px]"
+                                            onClick={() => coverLetterInputRef.current?.click()}
+                                        >
+                                            Choose Cover Letter
+                                        </Button>
+                                    </div>
+                                </div>
+                                {coverLetterFileName && (
+                                    <p className="text-[12px] text-[#6B7280] mt-[8px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                                        Selected: {coverLetterFileName}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Footer */}
                     <div className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-[#E5E7EB] shadow-md px-4 md:px-8 lg:px-[48px] py-[16px] flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 z-10">
                         {isLoggedIn ? (
                             <Link
                                 href="/dashboard"
-                                className="w-full md:w-auto h-[48px] px-[32px] bg-white border-2 border-[#1B2A4A] text-[#1B2A4A] rounded-full flex items-center justify-center text-[16px] font-medium hover:bg-[#F9FAFB] transition-colors"
+                                className="button w-full md:w-auto h-[48px] px-[32px] bg-white border-2 border-[#1B2A4A] text-[#1B2A4A] rounded-full flex items-center justify-center text-[16px] font-medium hover:bg-[#F9FAFB] transition-colors"
                                 style={{ fontFamily: 'var(--font-rethink-sans)' }}
                             >
                                 Cancel
@@ -425,19 +547,18 @@ export default function ScoutApplicationForm({ user, applicationStatus }: ScoutA
                         ) : (
                             <Link
                                 href="/auth/signin"
-                                className="w-full md:w-auto h-[48px] px-[32px] bg-white border-2 border-[#1B2A4A] text-[#1B2A4A] rounded-full flex items-center justify-center text-[16px] font-medium hover:bg-[#F9FAFB] transition-colors"
+                                className="button w-full md:w-auto h-[48px] px-[32px] bg-white border-2 border-[#1B2A4A] text-[#1B2A4A] rounded-full flex items-center justify-center text-[16px] font-medium hover:bg-[#F9FAFB] transition-colors"
                                 style={{ fontFamily: 'var(--font-rethink-sans)' }}
                             >
                                 Sign In
                             </Link>
                         )}
-                        <button
+                        <Button
                             type="submit"
-                            className="w-full md:w-auto h-[56px] px-[48px] bg-[#0D7377] text-white rounded-full flex items-center justify-center text-[18px] font-medium hover:bg-[#0a5a5d] shadow-md transition-colors"
-                            style={{ fontFamily: 'var(--font-rethink-sans)', boxShadow: '0px 2px 4px rgba(13,115,119,0.2)' }}
+                            className="w-full md:w-auto h-[56px] px-[48px] text-[18px]"
                         >
                             Submit Application
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

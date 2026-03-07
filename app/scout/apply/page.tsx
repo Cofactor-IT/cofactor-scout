@@ -64,14 +64,20 @@ export default async function ScoutApplicationPage() {
 
     // Check if pending application has expired (>30 days)
     if (user.scoutApplicationStatus === 'PENDING' && user.scoutApplicationDate) {
-        const applicationAge = Date.now() - user.scoutApplicationDate.getTime()
+        const applicationAge = new Date().getTime() - user.scoutApplicationDate.getTime()
         if (applicationAge > ONE_MONTH_MS) {
             // Reset application status to allow reapplication
             await prisma.user.update({
                 where: { id: session.user.id },
                 data: {
                     scoutApplicationStatus: 'NOT_APPLIED',
-                    scoutApplicationDate: null
+                    scoutApplicationDate: null,
+                    scoutResumeFileName: null,
+                    scoutResumeMimeType: null,
+                    scoutResumeData: null,
+                    scoutCoverLetterFileName: null,
+                    scoutCoverLetterMimeType: null,
+                    scoutCoverLetterData: null
                 }
             })
             return <ScoutApplicationForm user={user} applicationStatus={null} />

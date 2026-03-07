@@ -33,6 +33,8 @@ export default async function AdminScoutsPage() {
             whyScout: true,
             howSourceLeads: true,
             linkedinUrl: true,
+            scoutResumeFileName: true,
+            scoutCoverLetterFileName: true,
             scoutApplicationDate: true
         }
     })

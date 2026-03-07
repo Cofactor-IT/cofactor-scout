@@ -157,6 +157,18 @@ model User {
   researchAreas          String?
   whyScout               String?
   howSourceLeads         String?
+  /// Uploaded resume file name for scout application
+  scoutResumeFileName    String?
+  /// MIME type for uploaded resume document
+  scoutResumeMimeType    String?
+  /// Binary resume document for admin review
+  scoutResumeData        Bytes?
+  /// Uploaded cover letter file name (optional)
+  scoutCoverLetterFileName String?
+  /// MIME type for uploaded cover letter document
+  scoutCoverLetterMimeType String?
+  /// Binary cover letter document for admin review
+  scoutCoverLetterData     Bytes?
   scoutApplicationStatus ScoutApplicationStatus @default(NOT_APPLIED)
   /// Date when scout application was submitted
   scoutApplicationDate   DateTime?
@@ -192,6 +204,34 @@ model User {
   @@index([role])
   @@index([scoutApplicationStatus])
   @@index([createdAt])
+}
+
+/// Temporary scout application data for unauthenticated users.
+/// Persisted through signup completion, then deleted.
+model ScoutApplicationDraft {
+  id                   String   @id @default(cuid())
+  token                String   @unique
+  name                 String
+  email                String
+  university           String
+  department           String
+  linkedinUrl          String?
+  userRole             UserRole
+  userRoleOther        String?
+  researchAreas        String
+  whyScout             String
+  howSourceLeads       String
+  resumeFileName       String
+  resumeMimeType       String
+  resumeData           Bytes
+  coverLetterFileName  String?
+  coverLetterMimeType  String?
+  coverLetterData      Bytes?
+  createdAt            DateTime @default(now())
+  expiresAt            DateTime
+
+  @@index([email])
+  @@index([expiresAt])
 }
 
 /// Research lead submission with 3-step form workflow.

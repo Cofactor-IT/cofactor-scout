@@ -1,7 +1,7 @@
 # Scout Application - Technical Documentation
 
 **Audience:** Developers  
-**Last Updated:** 2026-02-26
+**Last Updated:** 2026-03-06
 
 ## Implementation
 
@@ -20,8 +20,35 @@ model User {
   researchAreas          String?
   whyScout               String?
   howSourceLeads         String?
+  scoutResumeFileName    String?
+  scoutResumeMimeType    String?
+  scoutResumeData        Bytes?
+  scoutCoverLetterFileName String?
+  scoutCoverLetterMimeType String?
+  scoutCoverLetterData     Bytes?
   scoutApplicationStatus ScoutApplicationStatus @default(NOT_APPLIED)
   scoutApplicationDate   DateTime?
+}
+
+model ScoutApplicationDraft {
+  token               String   @unique
+  name                String
+  email               String
+  university          String
+  department          String
+  linkedinUrl         String?
+  userRole            UserRole
+  userRoleOther       String?
+  researchAreas       String
+  whyScout            String
+  howSourceLeads      String
+  resumeFileName      String
+  resumeMimeType      String
+  resumeData          Bytes
+  coverLetterFileName String?
+  coverLetterMimeType String?
+  coverLetterData     Bytes?
+  expiresAt           DateTime
 }
 
 enum ScoutApplicationStatus {
@@ -49,6 +76,9 @@ When `scoutApplication=true` in form data:
 
 ```typescript
 if (isScoutApp) {
+  // If scoutDraftToken is present, read application details and files
+  // from ScoutApplicationDraft created during /scout/apply submission.
+  // This allows unauthenticated users to upload files before signup.
   await prisma.user.create({
     data: {
       email: validatedEmail,
@@ -68,12 +98,33 @@ if (isScoutApp) {
       researchAreas: formData.get('researchAreas') as string,
       whyScout: formData.get('whyScout') as string,
       howSourceLeads: formData.get('howSourceLeads') as string,
+      scoutResumeFileName: draft.resumeFileName,
+      scoutResumeMimeType: draft.resumeMimeType,
+      scoutResumeData: draft.resumeData,
+      scoutCoverLetterFileName: draft.coverLetterFileName,
+      scoutCoverLetterMimeType: draft.coverLetterMimeType,
+      scoutCoverLetterData: draft.coverLetterData,
       scoutApplicationStatus: 'PENDING',
       scoutApplicationDate: new Date()
     }
   })
 }
 ```
+
+### Document Validation Rules
+
+- Resume is required for all scout applications.
+- Cover letter is optional.
+- Accepted formats: PDF, DOC, DOCX.
+- Maximum size: 5MB per file.
+
+### Unauthenticated Application Handoff
+
+1. `/scout/apply` receives multipart form data including uploaded documents.
+2. Server action validates fields and files.
+3. If user is unauthenticated, it stores all application data + files in `ScoutApplicationDraft` and returns a `draftToken`.
+4. Signup page includes `scoutDraftToken` hidden field.
+5. `signUp` consumes the draft, creates a pending scout user record, then deletes the draft.
 
 ### Email Notifications
 
@@ -87,6 +138,7 @@ if (isScoutApp) {
 - Subject: "New Scout Application"
 - Applicant details
 - University and department
+- Resume and cover letter filenames
 - Research areas
 - Link to review (future)
 

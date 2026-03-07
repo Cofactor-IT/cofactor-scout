@@ -38,10 +38,14 @@ export async function register() {
                 })
                 console.log('Admin user created successfully')
             }
-        } catch (error: any) {
-            // Handle case where database tables don't exist yet
-            if (error.code === 'P2021') {
-                console.log('Database tables not yet created. Admin user will be created after migrations run.')
+        } catch (error: unknown) {
+            const errorCode = typeof error === 'object' && error !== null && 'code' in error
+                ? String((error as { code: unknown }).code)
+                : undefined
+
+            // Handle case where database schema is not yet applied
+            if (errorCode === 'P2021' || errorCode === 'P2022') {
+                console.log('Database schema is behind code. Run Prisma migrations, then restart the app.')
                 return
             }
             console.error('Failed to create admin user:', error)

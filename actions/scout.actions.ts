@@ -5,17 +5,36 @@
  * Handles both authenticated and unauthenticated application flows.
  * 
  * Scout applications expire after 30 days, allowing users to reapply.
- * Reminder emails can be sent to team to follow up on pending applications.
+ * Includes resume (required) and cover letter (optional) uploads.
  */
 
 'use server'
 
-import { prisma } from '@/lib/database/prisma'
+import { UserRole } from '@prisma/client'
+import { randomBytes } from 'crypto'
 import { getServerSession } from 'next-auth'
+import { prisma } from '@/lib/database/prisma'
 import { authOptions } from '@/lib/auth/config'
 import { logger } from '@/lib/logger'
-import bcrypt from 'bcryptjs'
-import { randomBytes } from 'crypto'
+
+interface ScoutApplicationDraftRedirectData {
+    draftToken: string
+    name: string
+    email: string
+    university: string
+}
+
+interface ScoutApplicationResponse {
+    error?: string
+    success?: string
+    data?: ScoutApplicationDraftRedirectData
+}
+
+interface UploadedDocument {
+    fileName: string
+    mimeType: string
+    data: Buffer
+}
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -31,19 +50,76 @@ function generateSecureToken(): string {
 }
 
 /**
- * Splits full name into first and last name components.
- * 
- * @param fullName - User's full name as single string
- * @returns Object with firstName and lastName properties
+ * Reads non-empty file entry from form data.
  */
-function splitName(fullName: string): { firstName: string; lastName: string } {
-    const parts = fullName.trim().split(/\s+/)
-    if (parts.length === 1) {
-        return { firstName: parts[0], lastName: '' }
+function getUploadedFile(formData: FormData, key: string): File | null {
+    const entry = formData.get(key)
+    if (!entry || typeof entry === 'string') {
+        return null
     }
-    const firstName = parts[0]
-    const lastName = parts.slice(1).join(' ')
-    return { firstName, lastName }
+    if (entry.size === 0 || !entry.name) {
+        return null
+    }
+    return entry
+}
+
+/**
+ * Normalizes optional text field from FormData.
+ */
+function getOptionalText(formData: FormData, key: string): string | null {
+    const value = formData.get(key)
+    if (typeof value !== 'string') {
+        return null
+    }
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
+}
+
+/**
+ * Checks if the selected role maps to the UserRole enum.
+ */
+function isUserRole(value: string): value is UserRole {
+    return value in UserRole
+}
+
+/**
+ * Validates upload type and size for scout application documents.
+ */
+function getDocumentValidationError(file: File, label: string): string | null {
+    const extension = file.name.toLowerCase().split('.').pop()
+    const hasValidExtension = extension ? ALLOWED_FILE_EXTENSIONS.has(extension) : false
+    const hasValidMimeType = !file.type || ALLOWED_FILE_MIME_TYPES.has(file.type)
+
+    if (!hasValidExtension || !hasValidMimeType) {
+        return `${label} must be a PDF, DOC, or DOCX file`
+    }
+
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+        return `${label} must be 5MB or smaller`
+    }
+
+    return null
+}
+
+/**
+ * Converts uploaded file to binary document payload for persistence/email.
+ */
+async function toUploadedDocument(file: File): Promise<UploadedDocument> {
+    const data = Buffer.from(await file.arrayBuffer())
+    const extension = file.name.toLowerCase().split('.').pop()
+    const fallbackMimeType = extension === 'pdf'
+        ? 'application/pdf'
+        : extension === 'doc'
+            ? 'application/msword'
+            : extension === 'docx'
+                ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                : 'application/octet-stream'
+
+    return {
+        fileName: file.name,
+        mimeType: file.type || fallbackMimeType,
+        data
+    }
 }
 
 // ============================================
@@ -52,8 +128,18 @@ function splitName(fullName: string): { firstName: string; lastName: string } {
 
 // Scout applications expire after 30 days, allowing reapplication
 const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000
-// Minimum time between reminder emails (currently disabled)
-const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
+// Unauthenticated scout application drafts expire after 24 hours
+const DRAFT_EXPIRY_MS = 24 * 60 * 60 * 1000
+// Uploaded scout application documents are limited to 5MB each
+const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024
+// Supported document MIME types for scout application uploads
+const ALLOWED_FILE_MIME_TYPES = new Set([
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+])
+// Supported document extensions for scout application uploads
+const ALLOWED_FILE_EXTENSIONS = new Set(['pdf', 'doc', 'docx'])
 
 // ============================================
 // EXPORTED SERVER ACTIONS
@@ -141,29 +227,54 @@ export async function sendScoutApplicationReminder(): Promise<{ error?: string; 
  * @throws {Error} If database operation fails
  */
 export async function submitScoutApplication(
-    prevState: { error?: string; success?: string; data?: any } | undefined,
+    _prevState: ScoutApplicationResponse | undefined,
     formData: FormData
-): Promise<{ error?: string; success?: string; data?: any }> {
+): Promise<ScoutApplicationResponse> {
     try {
         const session = await getServerSession(authOptions)
 
         // Extract form data
-        const name = formData.get('name') as string
+        const name = getOptionalText(formData, 'name')
         // Normalize email to prevent duplicate accounts
-        const email = (formData.get('email') as string)?.toLowerCase().trim()
-        const university = formData.get('university') as string
-        const department = formData.get('department') as string
-        const linkedinUrl = formData.get('linkedinUrl') as string | null
-        const userRole = formData.get('userRole') as string
-        const userRoleOther = formData.get('userRoleOther') as string | null
-        const researchAreas = formData.get('researchAreas') as string
-        const whyScout = formData.get('whyScout') as string
-        const howSourceLeads = formData.get('howSourceLeads') as string
+        const email = getOptionalText(formData, 'email')?.toLowerCase()
+        const university = getOptionalText(formData, 'university')
+        const department = getOptionalText(formData, 'department')
+        const linkedinUrl = getOptionalText(formData, 'linkedinUrl')
+        const userRole = getOptionalText(formData, 'userRole')
+        const userRoleOther = getOptionalText(formData, 'userRoleOther')
+        const researchAreas = getOptionalText(formData, 'researchAreas')
+        const whyScout = getOptionalText(formData, 'whyScout')
+        const howSourceLeads = getOptionalText(formData, 'howSourceLeads')
+        const resumeFile = getUploadedFile(formData, 'resume')
+        const coverLetterFile = getUploadedFile(formData, 'coverLetter')
 
         // Validate required fields
         if (!name || !email || !university || !department || !userRole || !researchAreas || !whyScout || !howSourceLeads) {
             return { error: 'Please fill in all required fields' }
         }
+        if (!isUserRole(userRole)) {
+            return { error: 'Please select a valid role' }
+        }
+        if (userRole === 'OTHER' && !userRoleOther) {
+            return { error: 'Please specify your role' }
+        }
+        if (!resumeFile) {
+            return { error: 'Resume is required' }
+        }
+
+        const resumeError = getDocumentValidationError(resumeFile, 'Resume')
+        if (resumeError) {
+            return { error: resumeError }
+        }
+        if (coverLetterFile) {
+            const coverLetterError = getDocumentValidationError(coverLetterFile, 'Cover letter')
+            if (coverLetterError) {
+                return { error: coverLetterError }
+            }
+        }
+
+        const resume = await toUploadedDocument(resumeFile)
+        const coverLetter = coverLetterFile ? await toUploadedDocument(coverLetterFile) : null
 
         let userId: string
         let userFullName: string
@@ -193,11 +304,17 @@ export async function submitScoutApplication(
                     university,
                     department,
                     linkedinUrl: linkedinUrl || null,
-                    userRole: userRole as any,
+                    userRole,
                     userRoleOther: userRole === 'OTHER' ? userRoleOther : null,
                     researchAreas,
                     whyScout,
                     howSourceLeads,
+                    scoutResumeFileName: resume.fileName,
+                    scoutResumeMimeType: resume.mimeType,
+                    scoutResumeData: resume.data,
+                    scoutCoverLetterFileName: coverLetter?.fileName ?? null,
+                    scoutCoverLetterMimeType: coverLetter?.mimeType ?? null,
+                    scoutCoverLetterData: coverLetter?.data ?? null,
                     scoutApplicationStatus: 'PENDING',
                     scoutApplicationDate: new Date()
                 }
@@ -213,20 +330,48 @@ export async function submitScoutApplication(
                 return { error: 'An account with this email already exists. Please sign in first.' }
             }
 
-            // Return application data to be passed to signup page via URL
-            return { 
-                success: 'REDIRECT_TO_SIGNUP',
+            // Delete stale drafts for this email before creating a new one
+            await prisma.scoutApplicationDraft.deleteMany({
+                where: {
+                    OR: [
+                        { email },
+                        { expiresAt: { lt: new Date() } }
+                    ]
+                }
+            })
+
+            const draftToken = generateSecureToken()
+            await prisma.scoutApplicationDraft.create({
                 data: {
+                    token: draftToken,
                     name,
                     email,
                     university,
                     department,
                     linkedinUrl,
                     userRole,
-                    userRoleOther,
+                    userRoleOther: userRole === 'OTHER' ? userRoleOther : null,
                     researchAreas,
                     whyScout,
-                    howSourceLeads
+                    howSourceLeads,
+                    resumeFileName: resume.fileName,
+                    resumeMimeType: resume.mimeType,
+                    resumeData: resume.data,
+                    coverLetterFileName: coverLetter?.fileName ?? null,
+                    coverLetterMimeType: coverLetter?.mimeType ?? null,
+                    coverLetterData: coverLetter?.data ?? null,
+                    expiresAt: new Date(Date.now() + DRAFT_EXPIRY_MS)
+                }
+            })
+
+            // Return token + minimal display data for signup handoff
+            return {
+                success: 'REDIRECT_TO_SIGNUP',
+                data: {
+                    draftToken,
+                    name,
+                    email,
+                    university
                 }
             }
         }
@@ -248,6 +393,8 @@ export async function submitScoutApplication(
                 whyScout,
                 howSourceLeads,
                 linkedinUrl,
+                resume.fileName,
+                coverLetter?.fileName ?? null,
                 new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
             )
             logger.info('Scout application notification sent to team', { email })

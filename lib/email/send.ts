@@ -257,6 +257,8 @@ export async function sendArticleDeleteEmail(
  * @param department - Department name
  * @param userRole - Academic/professional role
  * @param researchAreas - Research areas of interest
+ * @param resumeFileName - Uploaded resume filename
+ * @param coverLetterFileName - Uploaded cover letter filename (optional)
  * @param applicationDate - Formatted application date
  */
 export async function sendScoutApplicationNotificationEmail(
@@ -269,6 +271,8 @@ export async function sendScoutApplicationNotificationEmail(
     whyScout: string,
     howSourceLeads: string,
     linkedinUrl: string | null,
+    resumeFileName: string,
+    coverLetterFileName: string | null,
     applicationDate: string
 ): Promise<void> {
     const settings = await prisma.systemSettings.findFirst()
@@ -288,6 +292,8 @@ export async function sendScoutApplicationNotificationEmail(
         whyScout,
         howSourceLeads,
         linkedinUrl,
+        resumeFileName,
+        coverLetterFileName,
         applicationDate
     })
 

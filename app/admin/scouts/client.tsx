@@ -5,7 +5,28 @@ import { approveScoutApplication, rejectScoutApplication } from '@/actions/admin
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-export function AdminScoutReviewClient({ applications }: { applications: any[] }) {
+interface AdminScoutApplication {
+    id: string
+    email: string
+    fullName: string
+    university: string | null
+    department: string | null
+    userRole: string | null
+    userRoleOther: string | null
+    researchAreas: string | null
+    whyScout: string | null
+    howSourceLeads: string | null
+    linkedinUrl: string | null
+    scoutResumeFileName: string | null
+    scoutCoverLetterFileName: string | null
+    scoutApplicationDate: Date | string | null
+}
+
+interface AdminScoutReviewClientProps {
+    applications: AdminScoutApplication[]
+}
+
+export function AdminScoutReviewClient({ applications }: AdminScoutReviewClientProps) {
     const [apps, setApps] = useState(applications)
     const [loadingId, setLoadingId] = useState<string | null>(null)
     const [rejectFeedback, setRejectFeedback] = useState<{ [key: string]: string }>({})
@@ -20,8 +41,9 @@ export function AdminScoutReviewClient({ applications }: { applications: any[] }
             } else {
                 alert(res.error || 'Failed to approve scout.')
             }
-        } catch (e: any) {
-            alert(e.message || 'Error')
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Error'
+            alert(message)
         }
         setLoadingId(null)
     }
@@ -37,8 +59,9 @@ export function AdminScoutReviewClient({ applications }: { applications: any[] }
             } else {
                 alert(res.error || 'Failed to reject scout.')
             }
-        } catch (e: any) {
-            alert(e.message || 'Error')
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Error'
+            alert(message)
         }
         setLoadingId(null)
     }
@@ -63,7 +86,7 @@ export function AdminScoutReviewClient({ applications }: { applications: any[] }
                                 <p className="text-sm text-gray-500 mt-1">
                                     <a href={`mailto:${app.email}`} className="hover:underline">{app.email}</a>
                                     {' • '}
-                                    Applied on {new Date(app.scoutApplicationDate).toLocaleDateString()}
+                                    Applied on {app.scoutApplicationDate ? new Date(app.scoutApplicationDate).toLocaleDateString() : 'Unknown date'}
                                 </p>
                             </div>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -80,6 +103,8 @@ export function AdminScoutReviewClient({ applications }: { applications: any[] }
                                     <li><strong>Department:</strong> {app.department}</li>
                                     <li><strong>Role:</strong> {app.userRole === 'OTHER' ? app.userRoleOther : app.userRole}</li>
                                     <li><strong>LinkedIn:</strong> {app.linkedinUrl ? <a href={app.linkedinUrl} target="_blank" rel="noreferrer" className="text-[#0D7377] hover:underline">Profile</a> : 'N/A'}</li>
+                                    <li><strong>Resume:</strong> {app.scoutResumeFileName || 'N/A'}</li>
+                                    <li><strong>Cover Letter:</strong> {app.scoutCoverLetterFileName || 'N/A'}</li>
                                 </ul>
                             </div>
                             <div>

@@ -250,10 +250,12 @@ interface ScoutApplicationNotificationData {
     whyScout: string
     howSourceLeads: string
     linkedinUrl?: string | null
+    resumeFileName: string
+    coverLetterFileName?: string | null
     applicationDate: string
 }
 
-export const scoutApplicationNotificationTemplate: TemplateFn<ScoutApplicationNotificationData> = ({ applicantName, applicantEmail, university, department, userRole, researchAreas, whyScout, howSourceLeads, linkedinUrl, applicationDate }) => {
+export const scoutApplicationNotificationTemplate: TemplateFn<ScoutApplicationNotificationData> = ({ applicantName, applicantEmail, university, department, userRole, researchAreas, whyScout, howSourceLeads, linkedinUrl, resumeFileName, coverLetterFileName, applicationDate }) => {
     const safeName = escapeHtml(applicantName)
     const safeEmail = escapeHtml(applicantEmail)
     const safeUni = escapeHtml(university)
@@ -263,12 +265,14 @@ export const scoutApplicationNotificationTemplate: TemplateFn<ScoutApplicationNo
     const safeWhy = escapeHtml(whyScout)
     const safeHow = escapeHtml(howSourceLeads)
     const safeLinkedin = linkedinUrl ? escapeHtml(linkedinUrl) : null
+    const safeResumeFileName = escapeHtml(resumeFileName)
+    const safeCoverLetterFileName = coverLetterFileName ? escapeHtml(coverLetterFileName) : null
     const safeDate = escapeHtml(applicationDate)
 
     return {
         subject: 'New Scout Application Received',
         replyTo: applicantEmail,
-        text: `New Scout Application\n\nApplicant: ${applicantName}\nEmail: ${applicantEmail}\nUniversity: ${university}\nDepartment: ${department}\nRole: ${userRole}\nResearch Areas: ${researchAreas}\nWhy Scout: ${whyScout}\nHow Source: ${howSourceLeads}\nLinkedIn: ${linkedinUrl || 'N/A'}\nSubmitted: ${applicationDate}\n\nReview the application in the admin dashboard.`,
+        text: `New Scout Application\n\nApplicant: ${applicantName}\nEmail: ${applicantEmail}\nUniversity: ${university}\nDepartment: ${department}\nRole: ${userRole}\nResearch Areas: ${researchAreas}\nWhy Scout: ${whyScout}\nHow Source: ${howSourceLeads}\nLinkedIn: ${linkedinUrl || 'N/A'}\nResume: ${resumeFileName}\nCover Letter: ${coverLetterFileName || 'N/A'}\nSubmitted: ${applicationDate}\n\nReview the application in the admin dashboard.`,
         html: `
         <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
             <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
@@ -285,6 +289,8 @@ export const scoutApplicationNotificationTemplate: TemplateFn<ScoutApplicationNo
                     <p style="margin: 8px 0;"><strong>Why Scout:</strong> ${safeWhy}</p>
                     <p style="margin: 8px 0;"><strong>How they source leads:</strong> ${safeHow}</p>
                     <p style="margin: 8px 0;"><strong>LinkedIn:</strong> ${safeLinkedin ? `<a href="${safeLinkedin}">${safeLinkedin}</a>` : 'N/A'}</p>
+                    <p style="margin: 8px 0;"><strong>Resume:</strong> ${safeResumeFileName}</p>
+                    <p style="margin: 8px 0;"><strong>Cover Letter:</strong> ${safeCoverLetterFileName || 'N/A'}</p>
                     <p style="margin: 8px 0;"><strong>Submitted:</strong> ${safeDate}</p>
                 </div>
                 <div style="text-align: center; margin: 30px 0;">

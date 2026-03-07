@@ -11,8 +11,8 @@
 
 'use server'
 
+import { UserRole } from '@prisma/client'
 import { prisma } from '@/lib/database/prisma'
-import { redirect } from 'next/navigation'
 import bcrypt from 'bcryptjs'
 import { signUpSchema, type SignUpInput } from '@/lib/validation/schemas'
 // import { RateLimits } from '@/lib/security/rate-limit'
@@ -81,7 +81,7 @@ function generateSecureToken(): string {
  * @param email - User's email address
  * @returns Role object with CONTRIBUTOR, SCOUT, or ADMIN
  */
-async function determineUserRole(email: string): Promise<{
+async function determineUserRole(): Promise<{
     role: 'CONTRIBUTOR' | 'SCOUT' | 'ADMIN'
 }> {
     // Default role for all new users - Scout status requires application
@@ -97,7 +97,6 @@ async function determineUserRole(email: string): Promise<{
  * @returns University name string or null if not provided
  */
 async function determineUniversity(
-    email: string,
     formData: FormData
 ): Promise<string | null> {
     const universityName = formData.get('universityName') as string | null
@@ -119,6 +118,25 @@ function splitName(fullName: string): { firstName: string; lastName: string } {
     const firstName = parts[0]
     const lastName = parts.slice(1).join(' ')
     return { firstName, lastName }
+}
+
+/**
+ * Returns trimmed text value from form data.
+ */
+function getTrimmedText(formData: FormData, key: string): string | null {
+    const value = formData.get(key)
+    if (typeof value !== 'string') {
+        return null
+    }
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
+}
+
+/**
+ * Checks whether a string is a valid UserRole enum value.
+ */
+function isUserRole(value: string): value is UserRole {
+    return value in UserRole
 }
 
 /**
@@ -257,13 +275,31 @@ export async function signUp(
         }
 
         // Determine role
-        const { role } = await determineUserRole(validatedEmail)
+        const { role } = await determineUserRole()
 
         // Determine university
-        const university = await determineUniversity(validatedEmail, formData)
+        const university = await determineUniversity(formData)
 
         // Scout applications include additional profile fields
         const isScoutApp = formData.get('scoutApplication') === 'true'
+        const scoutDraftToken = getTrimmedText(formData, 'scoutDraftToken')
+        const now = new Date()
+        const activeScoutDraft = isScoutApp && scoutDraftToken
+            ? await prisma.scoutApplicationDraft.findUnique({
+                where: { token: scoutDraftToken }
+            })
+            : null
+
+        if (isScoutApp && scoutDraftToken && !activeScoutDraft) {
+            return { error: 'Your scout application draft was not found. Please reapply.' }
+        }
+        if (activeScoutDraft && activeScoutDraft.expiresAt < now) {
+            await prisma.scoutApplicationDraft.delete({ where: { id: activeScoutDraft.id } })
+            return { error: 'Your scout application draft expired. Please reapply.' }
+        }
+        if (activeScoutDraft && activeScoutDraft.email.toLowerCase() !== validatedEmail) {
+            return { error: 'Scout application email does not match signup email.' }
+        }
 
         // Create user only if doesn't exist
         if (!existingUser) {
@@ -276,6 +312,33 @@ export async function signUp(
                 const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
                 const { firstName, lastName } = splitName(name)
 
+                const department = activeScoutDraft?.department ?? getTrimmedText(formData, 'department')
+                const linkedinUrl = activeScoutDraft?.linkedinUrl ?? getTrimmedText(formData, 'linkedinUrl')
+                const userRoleValue = activeScoutDraft?.userRole ?? getTrimmedText(formData, 'userRole')
+                const userRoleOther = activeScoutDraft?.userRoleOther ?? getTrimmedText(formData, 'userRoleOther')
+                const researchAreas = activeScoutDraft?.researchAreas ?? getTrimmedText(formData, 'researchAreas')
+                const whyScout = activeScoutDraft?.whyScout ?? getTrimmedText(formData, 'whyScout')
+                const howSourceLeads = activeScoutDraft?.howSourceLeads ?? getTrimmedText(formData, 'howSourceLeads')
+                const resumeFileName = activeScoutDraft?.resumeFileName ?? null
+                const resumeMimeType = activeScoutDraft?.resumeMimeType ?? null
+                const resumeData = activeScoutDraft?.resumeData ?? null
+                const coverLetterFileName = activeScoutDraft?.coverLetterFileName ?? null
+                const coverLetterMimeType = activeScoutDraft?.coverLetterMimeType ?? null
+                const coverLetterData = activeScoutDraft?.coverLetterData ?? null
+
+                if (!department || !userRoleValue || !researchAreas || !whyScout || !howSourceLeads) {
+                    return { error: 'Scout application details are incomplete. Please reapply.' }
+                }
+                if (!isUserRole(userRoleValue)) {
+                    return { error: 'Invalid role selected for scout application.' }
+                }
+                if (userRoleValue === 'OTHER' && !userRoleOther) {
+                    return { error: 'Please specify your role for scout application.' }
+                }
+                if (!resumeFileName || !resumeMimeType || !resumeData) {
+                    return { error: 'Resume is required for scout applications. Please reapply.' }
+                }
+
                 await prisma.user.create({
                     data: {
                         email: validatedEmail,
@@ -287,17 +350,29 @@ export async function signUp(
                         verificationToken,
                         verificationExpires,
                         university,
-                        department: formData.get('department') as string,
-                        linkedinUrl: (formData.get('linkedinUrl') as string) || null,
-                        userRole: formData.get('userRole') as any,
-                        userRoleOther: formData.get('userRole') === 'OTHER' ? (formData.get('userRoleOther') as string) : null,
-                        researchAreas: formData.get('researchAreas') as string,
-                        whyScout: formData.get('whyScout') as string,
-                        howSourceLeads: formData.get('howSourceLeads') as string,
+                        department,
+                        linkedinUrl: linkedinUrl || null,
+                        userRole: userRoleValue,
+                        userRoleOther: userRoleValue === 'OTHER' ? userRoleOther : null,
+                        researchAreas,
+                        whyScout,
+                        howSourceLeads,
+                        scoutResumeFileName: resumeFileName,
+                        scoutResumeMimeType: resumeMimeType,
+                        scoutResumeData: resumeData,
+                        scoutCoverLetterFileName: coverLetterFileName,
+                        scoutCoverLetterMimeType: coverLetterMimeType,
+                        scoutCoverLetterData: coverLetterData,
                         scoutApplicationStatus: 'PENDING',
                         scoutApplicationDate: new Date()
                     }
                 })
+
+                if (activeScoutDraft) {
+                    await prisma.scoutApplicationDraft.delete({
+                        where: { id: activeScoutDraft.id }
+                    })
+                }
 
                 // Send verification email
                 const { sendVerificationEmail } = await import('@/lib/email/send')
@@ -316,12 +391,14 @@ export async function signUp(
                         name,
                         validatedEmail,
                         university || 'Not specified',
-                        formData.get('department') as string,
-                        formData.get('userRole') as string,
-                        formData.get('researchAreas') as string,
-                        formData.get('whyScout') as string,
-                        formData.get('howSourceLeads') as string,
-                        (formData.get('linkedinUrl') as string) || null,
+                        department,
+                        userRoleValue,
+                        researchAreas,
+                        whyScout,
+                        howSourceLeads,
+                        linkedinUrl || null,
+                        resumeFileName,
+                        coverLetterFileName,
                         new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
                     )
                     logger.info('Scout application emails sent', { email: validatedEmail })

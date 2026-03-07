@@ -22,6 +22,20 @@ import { Eye, EyeOff, Plus, Check, X, Lock } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
+interface ScoutSignupData {
+  draftToken?: string
+  name?: string
+  email?: string
+  university?: string
+  department?: string
+  linkedinUrl?: string | null
+  userRole?: string
+  userRoleOther?: string | null
+  researchAreas?: string
+  whyScout?: string
+  howSourceLeads?: string
+}
+
 /**
  * Sign up form component with password validation.
  * Handles both regular signup and scout application completion.
@@ -37,7 +51,14 @@ export function SignUpForm() {
   
   // Parse scout application data from URL query params
   const scoutAppData = searchParams.get('scoutApp')
-  const scoutData = scoutAppData ? JSON.parse(decodeURIComponent(scoutAppData)) : null
+  let scoutData: ScoutSignupData | null = null
+  if (scoutAppData) {
+    try {
+      scoutData = JSON.parse(decodeURIComponent(scoutAppData)) as ScoutSignupData
+    } catch {
+      scoutData = null
+    }
+  }
 
   // Redirect to signin with success message after account creation
   useEffect(() => {
@@ -78,13 +99,15 @@ export function SignUpForm() {
         {scoutData && (
           <>
             <input type="hidden" name="scoutApplication" value="true" />
-            <input type="hidden" name="department" value={scoutData.department} />
+            <input type="hidden" name="scoutDraftToken" value={scoutData.draftToken || ''} />
+            {/* Legacy fallback for older scoutApp payloads */}
+            <input type="hidden" name="department" value={scoutData.department || ''} />
             <input type="hidden" name="linkedinUrl" value={scoutData.linkedinUrl || ''} />
-            <input type="hidden" name="userRole" value={scoutData.userRole} />
+            <input type="hidden" name="userRole" value={scoutData.userRole || ''} />
             <input type="hidden" name="userRoleOther" value={scoutData.userRoleOther || ''} />
-            <input type="hidden" name="researchAreas" value={scoutData.researchAreas} />
-            <input type="hidden" name="whyScout" value={scoutData.whyScout} />
-            <input type="hidden" name="howSourceLeads" value={scoutData.howSourceLeads} />
+            <input type="hidden" name="researchAreas" value={scoutData.researchAreas || ''} />
+            <input type="hidden" name="whyScout" value={scoutData.whyScout || ''} />
+            <input type="hidden" name="howSourceLeads" value={scoutData.howSourceLeads || ''} />
           </>
         )}
 
