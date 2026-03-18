@@ -163,7 +163,7 @@ export async function submitResearch(data: any) {
           sourceId: `submission-${existingSubmission.id}`,
         })
 
-        researcherId = researcher.id
+        researcherId = researcher.researcherId
       } catch (error) {
         logger.error('Failed to ingest researcher during submission', {
           submissionId: existingSubmission.id,
