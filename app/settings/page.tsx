@@ -14,6 +14,7 @@ import { requireAuth } from '@/lib/auth/session'
 import { prisma } from '@/lib/database/prisma'
 import { redirect } from 'next/navigation'
 import { DashboardNavbar } from '@/components/dashboard-navbar'
+import { SiteFooter } from '@/components/ui/SiteFooter'
 import { SettingsTabs } from '@/components/settings/SettingsTabs'
 import { AccountSettings } from '@/components/settings/AccountSettings'
 import { ProfileSettings } from '@/components/settings/ProfileSettings'
@@ -81,12 +82,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           
           <SettingsTabs activeTab={activeTab} />
           
-          <div className="mt-[40px] flex-1 overflow-y-auto pb-[120px]">
+          <div className="mt-[40px] flex-1 overflow-y-auto pb-[40px]">
             {activeTab === 'account' && <AccountSettings user={user} />}
             {activeTab === 'profile' && <ProfileSettings user={user} />}
           </div>
         </div>
       </div>
+
+      <SiteFooter />
     </div>
   )
 }

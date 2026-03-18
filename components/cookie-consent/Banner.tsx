@@ -50,14 +50,14 @@ export function CookieBanner() {
 
         recordConsentOnBackend(consent)
 
-        // Reload so Sentry and Analytics evaluate correctly
+        // Reload so Sentry evaluates the updated consent state
         window.location.reload()
     }
 
     /**
-     * Accepts all cookie categories.
+     * Accepts all optional data sharing (error monitoring).
      */
-    const acceptAll = () => handleSave({ analytics: true, error: true, version: CONSENT_VERSION })
+    const acceptAll = () => handleSave({ analytics: false, error: true, version: CONSENT_VERSION })
     
     /**
      * Rejects all non-essential cookie categories.
@@ -73,7 +73,9 @@ export function CookieBanner() {
                     <h4 className="mb-2">We value your privacy</h4>
 
                     <p className="body text-sm text-[#6B7280]">
-                        We use cookies to improve your experience. We use non-essential cookies for analytics (Vercel) and error monitoring (Sentry), which may transfer data according to their policies. You can choose to accept all, reject all non-essential, or customize your preferences. Review our <Link href="/privacy" className="underline hover:text-[#1B2A4A]" style={{ color: '#6B7280' }}>Privacy Policy</Link> for details.
+                        We use one strictly necessary cookie for authentication. We also send error diagnostic data to Sentry (USA) under Standard Contractual Clauses to help us identify and fix issues. You can opt out of error monitoring below. Review our{' '}
+                        <Link href="/privacy/policy" className="underline hover:text-[#1B2A4A]" style={{ color: '#6B7280' }}>Privacy Policy</Link>{' '}
+                        for details.
                     </p>
 
                 </div>
