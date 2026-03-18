@@ -20,6 +20,7 @@ import { PromotionBanner } from '@/components/ui/promotion-banner'
 import { DashboardNavbar } from '@/components/dashboard-navbar'
 import { SubmissionsTable } from '@/components/SubmissionsTable'
 import { FadeInOnLoad } from '@/components/ui/FadeInOnLoad'
+import { SiteFooter } from '@/components/ui/SiteFooter'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -157,12 +158,14 @@ export default async function DashboardPage() {
       </div>
 
       {/* Submissions Table */}
-      <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] pb-[80px] flex-1 overflow-y-auto">
-        <SubmissionsTable 
+      <section className="bg-white py-[40px] md:py-[60px] px-4 md:px-8 lg:px-[120px] pb-[40px] flex-1 overflow-y-auto">
+        <SubmissionsTable
           submissions={submissions}
           statusConfig={statusConfig}
         />
       </section>
+
+      <SiteFooter />
     </div>
   )
 }

@@ -127,8 +127,8 @@ export default withAuth(
             authorized: ({ token, req }) => {
                 const path = req.nextUrl.pathname
 
-                // Allow access to home page, auth pages, scout application, consent API, and submitted page for everyone
-                if (path === '/' || path.startsWith('/auth') || path.startsWith('/scout/apply') || path === '/api/consent') {
+                // Allow access to home page, auth pages, scout application, consent API, and privacy pages for everyone
+                if (path === '/' || path.startsWith('/auth') || path.startsWith('/scout/apply') || path === '/api/consent' || path.startsWith('/privacy')) {
                     return true
                 }
 

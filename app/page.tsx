@@ -200,15 +200,42 @@ export default function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer className="w-full h-[100px] bg-[#FAFBFC] flex items-center justify-center gap-6">
-                <p className="body text-center">
-                    <span className="text-[#6B7280]">Already have an account? </span>
-                    <Link href="/auth/signin" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
-                        Sign in
-                    </Link>
-                </p>
-                <div className="text-[#E5E7EB]">|</div>
-                <CookieConsentTrigger />
+            <footer className="w-full bg-[#FAFBFC] px-4 md:px-8 lg:px-[120px] py-6 md:py-8">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-[1200px] mx-auto">
+                    {/* Sign-in CTA */}
+                    <p className="body text-center md:text-left">
+                        <span className="text-[#6B7280]">Already have an account? </span>
+                        <Link href="/auth/signin" className="text-[#0D7377] underline hover:text-[#0a5a5d]">
+                            Sign in
+                        </Link>
+                    </p>
+
+                    {/* Privacy links */}
+                    <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                        <Link
+                            href="/privacy/policy"
+                            className="caption text-[#6B7280] hover:text-[#0D7377] transition-colors"
+                        >
+                            Privacy Policy
+                        </Link>
+                        <div className="hidden md:block text-[#E5E7EB]">|</div>
+                        <Link
+                            href="/privacy/researchers"
+                            className="caption text-[#6B7280] hover:text-[#0D7377] transition-colors"
+                        >
+                            Researcher Notice
+                        </Link>
+                        <div className="hidden md:block text-[#E5E7EB]">|</div>
+                        <Link
+                            href="/privacy/request"
+                            className="caption text-[#6B7280] hover:text-[#0D7377] transition-colors"
+                        >
+                            Submit a Request
+                        </Link>
+                        <div className="hidden md:block text-[#E5E7EB]">|</div>
+                        <CookieConsentTrigger />
+                    </div>
+                </div>
             </footer>
         </div>
     )

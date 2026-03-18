@@ -61,37 +61,17 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
 
                 <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
                     <p className="body text-sm text-[#6B7280]">
-                        We use cookies to ensure the basic functionalities of the website and to enhance your online experience.
-                        You can choose for each category to opt-in/out whenever you want.
+                        You can manage your preferences below. Strictly necessary cookies cannot be disabled — they are required for the site to function.
                     </p>
 
                     {/* Strictly Necessary */}
                     <div className="space-y-2 border border-[#E5E7EB] p-4 rounded-md bg-[#FAFBFC]">
                         <div className="flex justify-between items-start">
-                            <h4>Strictly Necessary Cookies</h4>
+                            <h4>Strictly Necessary</h4>
                             <span className="caption font-semibold bg-[#0D7377]/10 px-2 py-1 rounded" style={{ color: '#0D7377' }}>Always On</span>
                         </div>
                         <p className="body text-sm text-[#6B7280]">
-                            These cookies are essential for the proper functioning of the website, such as authentication and security features. They cannot be disabled.
-                        </p>
-                    </div>
-
-                    {/* Analytics */}
-                    <div className="space-y-2 border border-[#E5E7EB] p-4 rounded-md">
-                        <div className="flex justify-between items-start">
-                            <h4>Analytics Cookies</h4>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    className="sr-only peer"
-                                    checked={preferences.analytics}
-                                    onChange={(e) => setPreferences(prev => ({ ...prev, analytics: e.target.checked }))}
-                                />
-                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0D7377]"></div>
-                            </label>
-                        </div>
-                        <p className="body text-sm text-[#6B7280]">
-                            These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously (Vercel Analytics).
+                            One authentication cookie (Supabase) that keeps you logged in. Essential for the service — cannot be disabled.
                         </p>
                     </div>
 
@@ -110,7 +90,7 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
                             </label>
                         </div>
                         <p className="body text-sm text-[#6B7280]">
-                            These cookies allow us to monitor errors and performance issues so we can fix them quickly (Sentry).
+                            Diagnostic data (user ID, role, error context) is sent to Sentry in the USA under Standard Contractual Clauses to help us identify and fix issues. No cookies are set — this is a network transfer only.
                         </p>
                     </div>
                 </div>
