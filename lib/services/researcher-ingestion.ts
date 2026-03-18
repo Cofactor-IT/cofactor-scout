@@ -278,7 +278,13 @@ async function createNewResearcher(data: {
 /**
  * Queues Article 14 notification for new researcher with email.
  * Attempts queue first, falls back to synchronous send on failure.
- * Updates researcher record with job ID or sync result.
+ * Uses Prisma transaction to ensure DB consistency with queue enqueue.
+ * 
+ * Note: True atomicity between BullMQ and Prisma is not possible since
+ * they are separate systems. We handle this by:
+ * 1. Enqueueing job first (irreversible)
+ * 2. Updating DB within transaction (rollback on failure)
+ * 3. Throwing error if DB update fails after job enqueue (orphaned job logged)
  * 
  * @param researcherId - Researcher ID to notify
  * @param email - Researcher's institutional email
@@ -296,17 +302,29 @@ async function queueNotificationForResearcher(
   const job = await addArticle14Job(researcherId, email, fullName, source)
 
   if (job) {
-    await prisma.researcher.update({
-      where: { id: researcherId },
-      data: {
-        article14JobId: job.id?.toString(),
-      },
-    })
+    try {
+      await prisma.$transaction([
+        prisma.researcher.update({
+          where: { id: researcherId },
+          data: {
+            article14JobId: job.id?.toString(),
+          },
+        }),
+      ])
 
-    info('Article 14 notification job enqueued', {
-      researcherId,
-      jobId: job.id,
-    })
+      info('Article 14 notification job enqueued', {
+        researcherId,
+        jobId: job.id,
+      })
+    } catch (dbError) {
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError)
+      error('DB update failed after job enqueue - orphaned job may exist', {
+        researcherId,
+        jobId: job.id,
+        error: errorMessage,
+      })
+      throw new Error('Failed to update researcher after job enqueue')
+    }
   } else {
     await attemptSynchronousFallback(researcherId, email, fullName, institution)
   }
