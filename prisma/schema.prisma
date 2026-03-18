@@ -113,6 +113,25 @@ enum Relationship {
   OTHER
 }
 
+// Source from which researcher data was ingested
+enum ResearcherSource {
+  OPENALEX
+  ORCID
+  CROSSREF
+  PUBMED
+  SEMANTIC_SCHOLAR
+  PATENTSVIEW
+  MANUAL
+}
+
+// Status of Article 14 notification
+enum Article14Status {
+  NOT_REQUIRED
+  PENDING
+  SENT
+  FAILED
+}
+
 // ============================================
 // MODELS
 // ============================================
@@ -250,6 +269,8 @@ model ResearchSubmission {
   updatedAt   DateTime         @updatedAt
   /// Timestamp when draft was converted to submission
   submittedAt DateTime?
+  researcherId String?         
+  researcher   Researcher?      @relation(fields: [researcherId], references: [id], onDelete: SetNull)
 
   // Step 1 - Research Summary
   researchTopic         String?
@@ -291,6 +312,7 @@ model ResearchSubmission {
   @@index([status])
   @@index([isDraft])
   @@index([researcherEmail])
+  @@index([researcherId])
   @@index([createdAt])
   @@index([submittedAt])
 }
@@ -348,4 +370,51 @@ model ConsentRecord {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+// Researcher entity for GDPR Article 14 compliance tracking
+model Researcher {
+  id                    String           @id @default(cuid())
+
+  // Identity
+  fullName              String
+  firstName             String?
+  lastName              String?
+  institutionalEmail    String?          @unique
+  orcidId               String?          @unique
+  openAlexId            String?          @unique
+  semanticScholarId     String?          @unique
+
+  // Affiliation
+  institution           String?
+  department            String?
+
+  // Ingestion metadata
+  source                ResearcherSource
+  sourceId              String?          
+  rawData               Json?            
+  firstIngestedAt       DateTime         @default(now())
+  lastRefreshedAt       DateTime         @default(now())
+
+  // Article 14 GDPR notification tracking
+  article14Status       Article14Status  @default(NOT_REQUIRED)
+  article14NotifiedAt   DateTime?        
+  article14JobId        String?          
+  article14Attempts     Int              @default(0)
+  article14LastError    String?          
+
+  // Relations
+  submissions           ResearchSubmission[]
+
+  // Timestamps
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([institutionalEmail])
+  @@index([article14NotifiedAt])
+  @@index([article14Status])
+  @@index([source])
+  @@index([orcidId])
+  @@index([openAlexId])
+  @@index([firstIngestedAt])
 }

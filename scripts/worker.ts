@@ -16,8 +16,11 @@
 import { Worker, Job } from 'bullmq'
 import { getQueueConnection, closeQueueConnection } from '../lib/queues/connection'
 import { EmailJobData, EmailJobType } from '../lib/queues/email.queue'
+import { Article14JobData } from '../lib/queues/article14.queue'
 import { info, error, debug } from '../lib/logger'
 import nodemailer from 'nodemailer'
+import { sendArticle14Email } from '../lib/email/brevo'
+import { prisma } from '../lib/database/prisma'
 
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -31,6 +34,101 @@ const transporter = nodemailer.createTransport({
 
 function getAppUrl() {
     return process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'
+}
+
+/**
+ * Processes Article 14 notification job from queue.
+ * Sends notification email via Brevo and updates researcher status.
+ * Implements idempotency by skipping if already notified.
+ * 
+ * @param job - BullMQ job containing Article 14 notification data
+ * @throws {Error} Propagates errors for BullMQ retry handling
+ */
+async function processArticle14Job(job: Job<Article14JobData>): Promise<void> {
+    const { researcherId, email, researcherName, source, enqueuedAt } = job.data
+
+    debug('Processing Article 14 notification job', { jobId: job.id, researcherId, email })
+
+    try {
+        const researcher = await prisma.researcher.findUnique({
+            where: { id: researcherId },
+        })
+
+        if (!researcher) {
+            throw new Error(`Researcher not found: ${researcherId}`)
+        }
+
+        if (researcher.article14NotifiedAt) {
+            info('Article 14 notification already sent, skipping', { 
+                researcherId, 
+                notifiedAt: researcher.article14NotifiedAt 
+            })
+            return
+        }
+
+        const { success, messageId, error: emailError } = await sendArticle14Email(
+            email,
+            researcherName,
+            {
+                researcherName,
+                institution: researcher.institution || undefined,
+                ingestionDate: researcher.firstIngestedAt.toISOString().split('T')[0],
+            }
+        )
+
+        if (success) {
+            await prisma.researcher.update({
+                where: { id: researcherId },
+                data: {
+                    article14Status: 'SENT',
+                    article14NotifiedAt: new Date(),
+                    article14JobId: messageId || job.id?.toString(),
+                },
+            })
+
+            info('Article 14 notification sent successfully', { 
+                researcherId, 
+                messageId, 
+                jobId: job.id 
+            })
+        } else {
+            throw new Error(emailError || 'Failed to send Article 14 email')
+        }
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        error('Article 14 notification job failed', { 
+            researcherId, 
+            email, 
+            error: errorMessage 
+        })
+
+        const researcher = await prisma.researcher.findUnique({
+            where: { id: researcherId },
+        })
+
+        if (researcher) {
+            const attempts = job.attemptsMade + 1
+            const maxAttempts = job.opts.attempts || 3
+            const isFinalAttempt = attempts >= maxAttempts
+
+            await prisma.researcher.update({
+                where: { id: researcherId },
+                data: {
+                    article14Attempts: attempts,
+                    article14LastError: errorMessage,
+                    article14Status: isFinalAttempt ? 'FAILED' : 'PENDING',
+                },
+            })
+
+            info('Updated researcher Article 14 status', { 
+                researcherId, 
+                attempts, 
+                isFinalAttempt 
+            })
+        }
+
+        throw err
+    }
 }
 
 // Email processing functions
@@ -205,12 +303,32 @@ async function startWorkers() {
             error: err.message
         })
     })
-    info('Workers started successfully', { emailWorker: emailWorker.id })
+
+    // Article 14 Notification Worker
+    const article14Worker = new Worker<Article14JobData>('article14-notification', processArticle14Job, {
+        connection: redis,
+        concurrency: 2,
+    })
+
+    article14Worker.on('completed', (job) => {
+        info('Article 14 notification job completed', { jobId: job.id, researcherId: job.data.researcherId })
+    })
+
+    article14Worker.on('failed', (job, err) => {
+        error('Article 14 notification job failed permanently', {
+            jobId: job?.id,
+            researcherId: job?.data.researcherId,
+            error: err.message
+        })
+    })
+
+    info('Workers started successfully', { emailWorker: emailWorker.id, article14Worker: article14Worker.id })
 
     // Graceful shutdown
     process.on('SIGTERM', async () => {
         info('SIGTERM received, closing workers...')
         await emailWorker.close()
+        await article14Worker.close()
         await closeQueueConnection()
         process.exit(0)
     })
@@ -218,6 +336,7 @@ async function startWorkers() {
     process.on('SIGINT', async () => {
         info('SIGINT received, closing workers...')
         await emailWorker.close()
+        await article14Worker.close()
         await closeQueueConnection()
         process.exit(0)
     })
