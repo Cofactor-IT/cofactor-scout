@@ -114,14 +114,14 @@
   .body-large {
     font-family: var(--font-merriweather), serif;
     font-weight: 400;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.5;
     letter-spacing: 0;
   }
 
   @media (min-width: 1024px) {
     .body-large {
-      font-size: 22.5px;
+      font-size: 18px;
     }
   }
 
@@ -129,7 +129,7 @@
   body, p, .body {
     font-family: var(--font-merriweather), sans-serif;
     font-weight: 400;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.5;
     letter-spacing: 0;
     color: #1B2A4A;
@@ -137,7 +137,7 @@
 
   @media (min-width: 1024px) {
     body, p, .body {
-      font-size: 20px;
+      font-size: 16px;
     }
   }
 
@@ -145,14 +145,14 @@
   .body-bold {
     font-family: var(--font-merriweather), serif;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.5;
     letter-spacing: 0;
   }
 
   @media (min-width: 1024px) {
     .body-bold {
-      font-size: 20px;
+      font-size: 16px;
     }
   }
 
