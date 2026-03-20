@@ -16,6 +16,7 @@ import { revalidatePath } from 'next/cache'
 import nodemailer from 'nodemailer'
 import { isEmailConfigured, getFromAddress } from '@/lib/email/utils'
 import { logger } from '@/lib/logger'
+import { processResearcherIngestion } from '@/lib/services/researcher-ingestion'
 
 // ============================================
 // EMAIL CONFIGURATION
@@ -83,9 +84,9 @@ export async function saveDraft(data: any) {
       potentialApplications: restData.potentialApplications && restData.potentialApplications !== '' ? restData.potentialApplications : null,
       updatedAt: new Date()
     }
-    
+
     let submission
-    
+
     if (id && id !== 'new') {
       // Update existing draft
       submission = await prisma.researchSubmission.update({
@@ -98,7 +99,7 @@ export async function saveDraft(data: any) {
         data: {
           userId: session.id,
           isDraft: true,
-          ...cleanData
+          ...cleanData,
         }
       })
     }
@@ -136,20 +137,51 @@ export async function submitResearch(data: any) {
         userId: session.id,
         isDraft: true
       },
-      select: { id: true }
+      select: {
+        id: true,
+        researcherName: true,
+        researcherEmail: true,
+        researcherInstitution: true,
+        researcherDepartment: true,
+      }
     })
     
     if (!existingSubmission) {
       return { success: false, error: 'Draft not found or already submitted' }
     }
     
+    let researcherId: string | null = null
+
+    if (existingSubmission.researcherName) {
+      try {
+        const researcher = await processResearcherIngestion({
+          fullName: existingSubmission.researcherName,
+          institutionalEmail: existingSubmission.researcherEmail || undefined,
+          institution: existingSubmission.researcherInstitution || undefined,
+          department: existingSubmission.researcherDepartment || undefined,
+          source: 'MANUAL',
+          sourceId: `submission-${existingSubmission.id}`,
+        })
+
+        researcherId = researcher.researcherId
+      } catch (error) {
+        logger.error('Failed to ingest researcher during submission', {
+          submissionId: existingSubmission.id,
+          error: error instanceof Error ? error.message : String(error),
+        })
+
+        return { success: false, error: 'Failed to process researcher notification workflow' }
+      }
+    }
+
     // Mark draft as submitted and set initial status
     const submission = await prisma.researchSubmission.update({
       where: { id: data.id },
       data: {
         isDraft: false,
         submittedAt: new Date(),
-        status: 'PENDING_RESEARCH'
+        status: 'PENDING_RESEARCH',
+        ...(researcherId ? { researcherId } : {}),
       }
     })
     

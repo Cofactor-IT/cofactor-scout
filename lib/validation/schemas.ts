@@ -498,6 +498,51 @@ export const profileUpdateSchema = z.object({
 
 
 // ============================================================================
+// ARTICLE 14 ADMIN SCHEMAS
+// ============================================================================
+
+/**
+ * Article 14 status enum for validation
+ */
+const Article14StatusEnum = z.enum(['NOT_REQUIRED', 'PENDING', 'SENT', 'FAILED'])
+
+/**
+ * Researcher source enum for validation
+ */
+const ResearcherSourceEnum = z.enum(['OPENALEX', 'ORCID', 'CROSSREF', 'PUBMED', 'SEMANTIC_SCHOLAR', 'PATENTSVIEW', 'MANUAL'])
+
+/**
+ * Article 14 audit log query parameters.
+ * Validates pagination, filters, and search parameters.
+ */
+export const auditLogQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: Article14StatusEnum.optional(),
+  source: ResearcherSourceEnum.optional(),
+  search: z.string().trim().max(200).optional(),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+})
+
+/**
+ * Article 14 notification retry request.
+ * Validates researcher ID format.
+ */
+export const retryNotificationSchema = z.object({
+  researcherId: z.string().cuid('Invalid researcher ID format'),
+})
+
+/**
+ * Article 14 statistics query parameters.
+ * Validates optional source filter and date range.
+ */
+export const statsQuerySchema = z.object({
+  source: ResearcherSourceEnum.optional(),
+  days: z.coerce.number().int().min(1).max(365).default(30),
+})
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -507,3 +552,6 @@ export type SignInInput = z.infer<typeof signInSchema>
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>
 export type FileUploadInput = z.infer<typeof fileUploadSchema>
 export type CustomFieldValueInput = z.infer<typeof customFieldValueSchema>
+export type AuditLogQueryInput = z.infer<typeof auditLogQuerySchema>
+export type RetryNotificationInput = z.infer<typeof retryNotificationSchema>
+export type StatsQueryInput = z.infer<typeof statsQuerySchema>
