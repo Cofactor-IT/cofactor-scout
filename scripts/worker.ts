@@ -45,7 +45,7 @@ function getAppUrl() {
  * @throws {Error} Propagates errors for BullMQ retry handling
  */
 async function processArticle14Job(job: Job<Article14JobData>): Promise<void> {
-    const { researcherId, email, researcherName, source, enqueuedAt } = job.data
+    const { researcherId, email, researcherName, source } = job.data
 
     debug('Processing Article 14 notification job', { jobId: job.id, researcherId, email })
 
