@@ -1,5 +1,16 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { randomBytes } from 'crypto'
+import { describe, it, expect } from 'vitest'
 import bcrypt from 'bcryptjs'
+
+function expectInvalidPassword(
+  result: { valid: true } | { valid: false; error: string }
+): { valid: false; error: string } {
+  expect(result.valid).toBe(false)
+  if (result.valid) {
+    throw new Error('Expected invalid password result')
+  }
+  return result
+}
 
 describe('Password Security', () => {
   describe('bcrypt hashing', () => {
@@ -68,32 +79,27 @@ describe('Password Security', () => {
     })
 
     it('should reject passwords shorter than 8 characters', () => {
-      const result = validatePasswordComplexity('Short1!')
-      expect(result.valid).toBe(false)
+      const result = expectInvalidPassword(validatePasswordComplexity('Short1!'))
       expect(result.error).toBe('Password must be at least 8 characters')
     })
 
     it('should reject passwords without uppercase', () => {
-      const result = validatePasswordComplexity('password123!')
-      expect(result.valid).toBe(false)
+      const result = expectInvalidPassword(validatePasswordComplexity('password123!'))
       expect(result.error).toBe('Password must contain at least one uppercase letter')
     })
 
     it('should reject passwords without lowercase', () => {
-      const result = validatePasswordComplexity('PASSWORD123!')
-      expect(result.valid).toBe(false)
+      const result = expectInvalidPassword(validatePasswordComplexity('PASSWORD123!'))
       expect(result.error).toBe('Password must contain at least one lowercase letter')
     })
 
     it('should reject passwords without numbers', () => {
-      const result = validatePasswordComplexity('SecurePass!')
-      expect(result.valid).toBe(false)
+      const result = expectInvalidPassword(validatePasswordComplexity('SecurePass!'))
       expect(result.error).toBe('Password must contain at least one number')
     })
 
     it('should reject passwords without special characters', () => {
-      const result = validatePasswordComplexity('SecurePass123')
-      expect(result.valid).toBe(false)
+      const result = expectInvalidPassword(validatePasswordComplexity('SecurePass123'))
       expect(result.error).toBe('Password must contain at least one special character')
     })
 
@@ -163,8 +169,8 @@ describe('Password Security', () => {
     })
 
     it('should lock account after 5 failed attempts', () => {
-      let attempts = 4
-      let lockedUntil = null
+      const attempts = 4
+      const lockedUntil = null
 
       const result = simulateFailedLogin(attempts, lockedUntil)
       
@@ -196,8 +202,7 @@ describe('Password Security', () => {
 
   describe('Token generation', () => {
     function generateSecureToken(): string {
-      const crypto = require('crypto')
-      return crypto.randomBytes(32).toString('hex')
+      return randomBytes(32).toString('hex')
     }
 
     it('should generate 64-character hex tokens', () => {
@@ -220,9 +225,6 @@ describe('Password Security', () => {
 
   describe('Timing attack prevention', () => {
     it('should take similar time for valid and invalid emails', async () => {
-      const validEmail = 'user@example.com'
-      const invalidEmail = 'nonexistent@example.com'
-      
       const ACCOUNT_ENUMERATION_DELAY = 1000
       
       async function enforceTimingDelay(startTime: number): Promise<void> {
