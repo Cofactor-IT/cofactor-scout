@@ -18,9 +18,7 @@
 
 import { requireAdmin } from '@/lib/auth/session'
 import { 
-  getArticle14AuditLog, 
-  getFailedNotificationCount,
-  getPendingNotificationCount
+  getArticle14AuditLog
 } from '@/lib/services/article14-audit'
 import { addArticle14Job } from '@/lib/queues/article14.queue'
 import { prisma } from '@/lib/database/prisma'
