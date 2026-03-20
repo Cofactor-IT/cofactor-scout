@@ -68,20 +68,8 @@ interface IngestionResult {
 export async function processResearcherIngestion(
   data: ResearcherIngestionData
 ): Promise<IngestionResult> {
-  const {
-    fullName,
-    firstName,
-    lastName,
-    institutionalEmail,
-    institution,
-    department,
-    orcidId,
-    openAlexId,
-    semanticScholarId,
-    source,
-    sourceId,
-    rawData,
-  } = data
+  const normalized = normalizeIngestionData(data)
+  const { fullName, institutionalEmail, source } = normalized
 
   info('Processing researcher ingestion', {
     fullName,
@@ -90,60 +78,53 @@ export async function processResearcherIngestion(
   })
 
   try {
-    const existingResearcher = await findExistingResearcher({
-      institutionalEmail,
-      orcidId,
-      openAlexId,
-      semanticScholarId,
-    })
+    const existingResearcher = await findExistingResearcher(normalized)
 
     if (existingResearcher) {
-      await updateExistingResearcher(existingResearcher.id, {
-        firstName,
-        lastName,
-        institution,
-        department,
-        rawData,
-      })
-
-      info('Researcher already exists, updated lastRefreshedAt', {
-        researcherId: existingResearcher.id,
-        fullName,
-      })
-
+      const shouldQueue = await updateExistingResearcher(existingResearcher, normalized)
+      if (shouldQueue) {
+        await queueNotificationForResearcher(
+          existingResearcher.id,
+          normalized.institutionalEmail!,
+          normalized.fullName,
+          normalized.source,
+          normalized.institution
+        )
+      }
       return { researcherId: existingResearcher.id, wasCreated: false }
     }
 
-    const article14Status = institutionalEmail ? ('PENDING' as Article14Status) : ('NOT_REQUIRED' as Article14Status)
+    const createdResearcher = await createResearcher(normalized)
 
-    const newResearcher = await createNewResearcher({
-      fullName,
-      firstName,
-      lastName,
-      institutionalEmail,
-      institution,
-      department,
-      orcidId,
-      openAlexId,
-      semanticScholarId,
-      source,
-      sourceId,
-      rawData,
-      article14Status,
-    })
-
-    info('Created new researcher', {
-      researcherId: newResearcher.id,
-      fullName,
-      source,
-      article14Status,
-    })
-
-    if (institutionalEmail) {
-      await queueNotificationForResearcher(newResearcher.id, institutionalEmail, fullName, source, institution)
+    if (createdResearcher.wasCreated) {
+      info('Created new researcher', {
+        researcherId: createdResearcher.researcher.id,
+        fullName,
+        source,
+        article14Status: createdResearcher.researcher.article14Status,
+      })
+    } else {
+      info('Recovered existing researcher after unique conflict', {
+        researcherId: createdResearcher.researcher.id,
+        fullName,
+        source,
+      })
     }
 
-    return { researcherId: newResearcher.id, wasCreated: true }
+    if (normalized.institutionalEmail) {
+      await queueNotificationForResearcher(
+        createdResearcher.researcher.id,
+        normalized.institutionalEmail,
+        normalized.fullName,
+        normalized.source,
+        normalized.institution
+      )
+    }
+
+    return {
+      researcherId: createdResearcher.researcher.id,
+      wasCreated: createdResearcher.wasCreated,
+    }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)
     error('Error processing researcher ingestion', {
@@ -153,6 +134,27 @@ export async function processResearcherIngestion(
     })
     throw err
   }
+}
+
+function normalizeIngestionData(data: ResearcherIngestionData) {
+  return {
+    ...data,
+    fullName: data.fullName.trim(),
+    firstName: normalizeText(data.firstName),
+    lastName: normalizeText(data.lastName),
+    institutionalEmail: normalizeText(data.institutionalEmail)?.toLowerCase(),
+    institution: normalizeText(data.institution),
+    department: normalizeText(data.department),
+    orcidId: normalizeText(data.orcidId),
+    openAlexId: normalizeText(data.openAlexId),
+    semanticScholarId: normalizeText(data.semanticScholarId),
+    sourceId: normalizeText(data.sourceId),
+  }
+}
+
+function normalizeText(value?: string) {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
 }
 
 /**
@@ -168,6 +170,7 @@ async function findExistingResearcher(
     orcidId?: string
     openAlexId?: string
     semanticScholarId?: string
+    sourceId?: string
   }
 ) {
   const { institutionalEmail, orcidId, openAlexId, semanticScholarId } = identifiers
@@ -211,68 +214,87 @@ async function findExistingResearcher(
  * @param updateData - Fields to update (all optional)
  */
 async function updateExistingResearcher(
-  researcherId: string,
-  updateData: {
-    firstName?: string
-    lastName?: string
-    institution?: string
-    department?: string
-    rawData?: Prisma.InputJsonValue
-  }
+  existingResearcher: NonNullable<Awaited<ReturnType<typeof findExistingResearcher>>>,
+  updateData: ReturnType<typeof normalizeIngestionData>
 ) {
-  const { firstName, lastName, institution, department, rawData } = updateData
+  const { update, shouldQueue } = buildResearcherUpdate(existingResearcher, updateData)
 
   await prisma.researcher.update({
-    where: { id: researcherId },
-    data: {
-      lastRefreshedAt: new Date(),
-      ...(firstName && { firstName }),
-      ...(lastName && { lastName }),
-      ...(institution && { institution }),
-      ...(department && { department }),
-      ...(rawData && { rawData }),
-    },
+    where: { id: existingResearcher.id },
+    data: update,
   })
+
+  return shouldQueue
 }
 
-/**
- * Creates new researcher record with Article 14 status tracking.
- * 
- * @param data - Complete researcher creation data
- * @returns Created researcher record
- */
-async function createNewResearcher(data: {
-  fullName: string
-  firstName?: string
-  lastName?: string
-  institutionalEmail?: string
-  institution?: string
-  department?: string
-  orcidId?: string
-  openAlexId?: string
-  semanticScholarId?: string
-  source: ResearcherSource
-  sourceId?: string
-  rawData?: Prisma.InputJsonValue
-  article14Status: Article14Status
-}) {
-  return await prisma.researcher.create({
-    data: {
-      fullName: data.fullName,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      institutionalEmail: data.institutionalEmail,
-      institution: data.institution,
-      department: data.department,
-      orcidId: data.orcidId,
-      openAlexId: data.openAlexId,
-      semanticScholarId: data.semanticScholarId,
-      source: data.source,
-      sourceId: data.sourceId,
-      rawData: data.rawData,
-      article14Status: data.article14Status,
-    },
-  })
+function buildResearcherUpdate(
+  existingResearcher: NonNullable<Awaited<ReturnType<typeof findExistingResearcher>>>,
+  data: ReturnType<typeof normalizeIngestionData>
+) {
+  const emailWasAdded = !!data.institutionalEmail && !existingResearcher.institutionalEmail
+  const update = {
+    lastRefreshedAt: new Date(),
+    ...(data.firstName && !existingResearcher.firstName ? { firstName: data.firstName } : {}),
+    ...(data.lastName && !existingResearcher.lastName ? { lastName: data.lastName } : {}),
+    ...(data.institution && !existingResearcher.institution ? { institution: data.institution } : {}),
+    ...(data.department && !existingResearcher.department ? { department: data.department } : {}),
+    ...(data.institutionalEmail && !existingResearcher.institutionalEmail ? { institutionalEmail: data.institutionalEmail } : {}),
+    ...(data.orcidId && !existingResearcher.orcidId ? { orcidId: data.orcidId } : {}),
+    ...(data.openAlexId && !existingResearcher.openAlexId ? { openAlexId: data.openAlexId } : {}),
+    ...(data.semanticScholarId && !existingResearcher.semanticScholarId ? { semanticScholarId: data.semanticScholarId } : {}),
+    ...(data.sourceId && !existingResearcher.sourceId ? { sourceId: data.sourceId } : {}),
+    ...(data.rawData !== undefined ? { rawData: data.rawData } : {}),
+    ...(emailWasAdded && existingResearcher.article14Status === 'NOT_REQUIRED'
+      ? { article14Status: 'PENDING' as Article14Status, article14Attempts: 0, article14LastError: null, article14JobId: null }
+      : {}),
+  }
+
+  return {
+    update,
+    shouldQueue: emailWasAdded && existingResearcher.article14Status === 'NOT_REQUIRED',
+  }
+}
+
+async function createResearcher(data: ReturnType<typeof normalizeIngestionData>) {
+  try {
+    const researcher = await prisma.researcher.create({
+      data: {
+        fullName: data.fullName,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        institutionalEmail: data.institutionalEmail,
+        institution: data.institution,
+        department: data.department,
+        orcidId: data.orcidId,
+        openAlexId: data.openAlexId,
+        semanticScholarId: data.semanticScholarId,
+        source: data.source,
+        sourceId: data.sourceId,
+        rawData: data.rawData,
+        article14Status: data.institutionalEmail ? 'PENDING' : 'NOT_REQUIRED',
+      },
+    })
+    return { researcher, wasCreated: true }
+  } catch (err) {
+    if (!isUniqueConstraintError(err)) throw err
+    const existingResearcher = await findExistingResearcher(data)
+    if (!existingResearcher) throw err
+    const shouldQueue = await updateExistingResearcher(existingResearcher, data)
+    if (shouldQueue) {
+      await queueNotificationForResearcher(
+        existingResearcher.id,
+        data.institutionalEmail!,
+        data.fullName,
+        data.source,
+        data.institution
+      )
+    }
+    return { researcher: existingResearcher, wasCreated: false }
+  }
+}
+
+function isUniqueConstraintError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
 }
 
 /**
