@@ -14,6 +14,7 @@
  * @module
  */
 
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/database/prisma'
 
 type Article14Status = 'NOT_REQUIRED' | 'PENDING' | 'SENT' | 'FAILED'
@@ -22,6 +23,7 @@ type ResearcherSource = 'OPENALEX' | 'ORCID' | 'CROSSREF' | 'PUBMED' | 'SEMANTIC
 interface Article14AuditFilters {
   status?: Article14Status
   source?: ResearcherSource
+  search?: string
   from?: Date
   to?: Date
   page?: number
@@ -58,6 +60,36 @@ interface Article14ResearcherStatus {
   lastError: string | null
 }
 
+interface Article14StatsResult {
+  totalResearchers: number
+  notifiedResearchers: number
+  pendingResearchers: number
+  failedResearchers: number
+  noEmailResearchers: number
+  notifiedRate: string
+  sources: Array<{
+    source: ResearcherSource
+    count: number
+  }>
+}
+
+interface Article14StatsCounts {
+  totalResearchers: number
+  notifiedResearchers: number
+  pendingResearchers: number
+  failedResearchers: number
+  noEmailResearchers: number
+  sources: Array<{
+    source: ResearcherSource
+    count: number
+  }>
+}
+
+interface SourceCountRecord {
+  source: ResearcherSource
+  count: number
+}
+
 interface ResearcherSelectResult {
   id: string
   fullName: string
@@ -74,7 +106,7 @@ interface ResearcherSelectResult {
 
 /**
  * Retrieves Article 14 audit log with pagination and filtering.
- * Supports filtering by status, source, and date range. Results are
+ * Supports filtering by status, source, text search, and date range. Results are
  * ordered by ingestion date (newest first).
  * 
  * @param filters - Filter parameters for querying the audit log
@@ -92,13 +124,14 @@ export async function getArticle14AuditLog(
   const {
     status,
     source,
+    search,
     from,
     to,
     page = 1,
     pageSize = 50,
   } = filters
 
-  const where: Record<string, unknown> = {}
+  const where: Prisma.ResearcherWhereInput = {}
 
   if (status) {
     where.article14Status = status
@@ -106,6 +139,18 @@ export async function getArticle14AuditLog(
 
   if (source) {
     where.source = source
+  }
+
+  if (search) {
+    where.OR = [
+      { fullName: { contains: search, mode: 'insensitive' } },
+      { firstName: { contains: search, mode: 'insensitive' } },
+      { lastName: { contains: search, mode: 'insensitive' } },
+      { institutionalEmail: { contains: search, mode: 'insensitive' } },
+      { institution: { contains: search, mode: 'insensitive' } },
+      { department: { contains: search, mode: 'insensitive' } },
+      { article14LastError: { contains: search, mode: 'insensitive' } },
+    ]
   }
 
   if (from || to) {
@@ -239,6 +284,105 @@ export async function getPendingNotificationCount(): Promise<number> {
       article14Status: 'PENDING',
     },
   })
+}
+
+function buildStatsWhere(
+  source?: ResearcherSource,
+  days: number = 30
+): Prisma.ResearcherWhereInput {
+  const where: Prisma.ResearcherWhereInput = {}
+  const cutoff = new Date()
+
+  cutoff.setDate(cutoff.getDate() - days)
+  where.firstIngestedAt = { gte: cutoff }
+
+  if (source) {
+    where.source = source
+  }
+
+  return where
+}
+
+async function countResearchers(
+  where: Prisma.ResearcherWhereInput,
+  status: Article14Status
+): Promise<number> {
+  return await prisma.researcher.count({
+    where: {
+      ...where,
+      article14Status: status,
+    },
+  })
+}
+
+async function groupResearchersBySource(
+  where: Prisma.ResearcherWhereInput
+): Promise<SourceCountRecord[]> {
+  const researchers = await prisma.researcher.findMany({
+    where,
+    select: { source: true },
+  })
+  const counts = new Map<ResearcherSource, number>()
+  for (const researcher of researchers) {
+    counts.set(researcher.source, (counts.get(researcher.source) ?? 0) + 1)
+  }
+  return Array.from(counts.entries())
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count)
+}
+
+async function loadArticle14StatsData(
+  where: Prisma.ResearcherWhereInput
+): Promise<Article14StatsCounts> {
+  const [totalResearchers, notifiedResearchers, pendingResearchers, failedResearchers, noEmailResearchers, sources] = await Promise.all([
+    prisma.researcher.count({ where }),
+    countResearchers(where, 'SENT'),
+    countResearchers(where, 'PENDING'),
+    countResearchers(where, 'FAILED'),
+    countResearchers(where, 'NOT_REQUIRED'),
+    groupResearchersBySource(where),
+  ])
+
+  return {
+    totalResearchers,
+    notifiedResearchers,
+    pendingResearchers,
+    failedResearchers,
+    noEmailResearchers,
+    sources,
+  }
+}
+
+function formatArticle14Stats(
+  counts: Article14StatsCounts
+): Article14StatsResult {
+  const notifiedRate = counts.totalResearchers > 0
+    ? ((counts.notifiedResearchers / counts.totalResearchers) * 100).toFixed(1)
+    : '0.0'
+
+  return {
+    ...counts,
+    notifiedRate: `${notifiedRate}%`,
+  }
+}
+
+/**
+ * Retrieves filtered Article 14 statistics for the admin dashboard.
+ * Applies the same source and time-window filters to headline counts
+ * and source breakdown data so the results stay internally consistent.
+ * 
+ * @param filters - Optional statistics filters
+ * @param filters.source - Restrict results to a single ingestion source
+ * @param filters.days - Restrict results to researchers ingested within the last N days
+ * @returns Filtered statistics with counts, rate, and source breakdown
+ */
+export async function getArticle14AuditStats(filters: {
+  source?: ResearcherSource
+  days?: number
+} = {}): Promise<Article14StatsResult> {
+  return formatArticle14Stats(await loadArticle14StatsData(
+    buildStatsWhere(filters.source, filters.days ?? 30)
+  ))
 }
 
 /**

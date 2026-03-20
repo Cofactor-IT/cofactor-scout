@@ -110,7 +110,7 @@ export function formatSLAAlert(result: SLAMonitorResult): string {
 
   if (result.failedCount > 0) {
     message += `${result.failedCount} notification(s) failed and require manual review.\n`
-    message += 'Check the admin dashboard at /api/admin/article14 for details.\n'
+    message += 'Check the admin dashboard at /admin/scouts for details.\n'
   }
 
   message += '\nAction: Review and retry failed notifications, investigate pending near-SLA items.'

@@ -65,7 +65,7 @@ export async function GET(request: Request) {
             'Admin',
             'Article 14 SLA Alert: Action Required',
             alertMessage,
-            '/admin/article14'
+            '/admin/scouts'
           )
           logger.info('SLA alert email sent to admin', {
             pendingNearSLA: result.pendingNearSLA.length,

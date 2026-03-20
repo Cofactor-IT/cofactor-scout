@@ -56,7 +56,7 @@ interface IngestionResult {
  * 
  * Workflow:
  * 1. Check for existing researcher (deduplication)
- * 2. If exists: Update lastRefreshedAt and return
+ * 2. If exists: Merge new identifiers/contact data and queue notification if email was added
  * 3. If new: Create researcher record
  * 4. If new with email: Queue Article 14 notification
  * 5. If queue fails: Attempt synchronous fallback
@@ -170,7 +170,6 @@ async function findExistingResearcher(
     orcidId?: string
     openAlexId?: string
     semanticScholarId?: string
-    sourceId?: string
   }
 ) {
   const { institutionalEmail, orcidId, openAlexId, semanticScholarId } = identifiers

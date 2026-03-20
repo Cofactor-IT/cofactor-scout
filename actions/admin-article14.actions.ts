@@ -18,7 +18,8 @@
 
 import { requireAdmin } from '@/lib/auth/session'
 import { 
-  getArticle14AuditLog
+  getArticle14AuditLog,
+  getArticle14AuditStats,
 } from '@/lib/services/article14-audit'
 import { addArticle14Job } from '@/lib/queues/article14.queue'
 import { prisma } from '@/lib/database/prisma'
@@ -42,30 +43,15 @@ export async function getAuditLog(params: unknown) {
 
   try {
     const validated = auditLogQuerySchema.parse(params)
-
-    const filters: {
-      status?: 'NOT_REQUIRED' | 'PENDING' | 'SENT' | 'FAILED'
-      source?: 'OPENALEX' | 'ORCID' | 'CROSSREF' | 'PUBMED' | 'SEMANTIC_SCHOLAR' | 'PATENTSVIEW' | 'MANUAL'
-      from?: Date
-      to?: Date
-      page: number
-      pageSize: number
-    } = {
-      status: validated.status as any,
-      source: validated.source as any,
+    const result = await getArticle14AuditLog({
+      status: validated.status,
+      source: validated.source,
+      search: validated.search,
       page: validated.page,
       pageSize: validated.limit,
-    }
-
-    if (validated.from) {
-      filters.from = new Date(validated.from)
-    }
-
-    if (validated.to) {
-      filters.to = new Date(validated.to)
-    }
-
-    const result = await getArticle14AuditLog(filters)
+      ...(validated.from ? { from: new Date(validated.from) } : {}),
+      ...(validated.to ? { to: new Date(validated.to) } : {}),
+    })
 
     logger.info('Article 14 audit log retrieved', {
       adminId: admin.id,
@@ -195,65 +181,20 @@ export async function getAuditStats(params?: unknown) {
 
   try {
     const validated = params ? statsQuerySchema.parse(params) : statsQuerySchema.parse({})
-
-    const [
-      totalResearchers,
-      notifiedResearchers,
-      pendingResearchers,
-      failedResearchers,
-      noEmailResearchers,
-    ] = await Promise.all([
-      prisma.researcher.count(),
-      prisma.researcher.count({
-        where: { article14Status: 'SENT' },
-      }),
-      prisma.researcher.count({
-        where: { article14Status: 'PENDING' },
-      }),
-      prisma.researcher.count({
-        where: { article14Status: 'FAILED' },
-      }),
-      prisma.researcher.count({
-        where: { article14Status: 'NOT_REQUIRED' },
-      }),
-    ])
-
-    const notifiedRate = totalResearchers > 0
-      ? ((notifiedResearchers / totalResearchers) * 100).toFixed(1)
-      : '0.0'
-
-    const sources = await prisma.researcher.groupBy({
-      by: ['source'],
-      where: validated.source ? { source: validated.source as any } : undefined,
-      _count: {
-        _all: true,
-      },
+    const result = await getArticle14AuditStats({
+      source: validated.source,
+      days: validated.days,
     })
-
-    const sourceBreakdown = sources
-      .map((r) => ({
-        source: r.source,
-        count: r._count._all,
-      }))
-      .sort((a, b) => b.count - a.count)
 
     logger.info('Article 14 statistics retrieved', {
       adminId: admin.id,
-      total: totalResearchers,
-      notified: notifiedResearchers,
-      pending: pendingResearchers,
-      failed: failedResearchers,
+      total: result.totalResearchers,
+      notified: result.notifiedResearchers,
+      pending: result.pendingResearchers,
+      failed: result.failedResearchers,
     })
 
-    return {
-      totalResearchers,
-      notifiedResearchers,
-      pendingResearchers,
-      failedResearchers,
-      noEmailResearchers,
-      notifiedRate: `${notifiedRate}%`,
-      sources: sourceBreakdown,
-    }
+    return result
   } catch (error) {
     if (error instanceof Error && error.name === 'ZodError') {
       logger.warn('Invalid statistics query parameters', {
