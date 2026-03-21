@@ -670,3 +670,36 @@ export function sanitizeHtmlContent(html: string): string {
     // Simple HTML stripping for MVP
     return html.replace(/<[^>]*>/g, '')
 }
+
+/**
+ * Validates ORCID format and checksum.
+ * ORCID: 16-digit identifier with hyphen separators and checksum character.
+ * Format: 0000-0000-0000-0000 where last character is checksum (0-9 or X).
+ *
+ * @param orcid - ORCID identifier to validate
+ * @returns True if valid ORCID format and checksum
+ */
+export function isValidOrcid(orcid: string): boolean {
+    if (typeof orcid !== 'string') {
+        return false
+    }
+
+    const clean = orcid.replace(/-/g, '').toUpperCase()
+
+    if (!/^\d{15}[\dX]$/.test(clean)) {
+        return false
+    }
+
+    let sum = 0
+    for (let i = 0; i < 15; i++) {
+        const digit = parseInt(clean[i], 10)
+        if (isNaN(digit)) return false
+        sum += digit * (15 - i)
+    }
+
+    const remainder = sum % 11
+    const checkDigit = (12 - remainder) % 11
+    const expectedCheck = checkDigit === 10 ? 'X' : checkDigit.toString()
+
+    return clean[15] === expectedCheck
+}

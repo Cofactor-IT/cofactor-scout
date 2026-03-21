@@ -459,6 +459,32 @@ export async function sendNewSignInEmail(
     })
 }
 
+/**
+ * Sends acknowledgement email for data subject rights request.
+ * Includes request ID and type for user reference.
+ *
+ * @param toEmail - Requester's email address
+ * @param name - Requester's full name
+ * @param requestId - Generated request ID
+ * @param requestType - Type of request submitted
+ */
+export async function sendDataSubjectRequestAcknowledgementEmail(
+  toEmail: string,
+  name: string,
+  requestId: string,
+  requestType: string
+): Promise<void> {
+  const template = emailTemplates.dataSubjectRequestAcknowledgement({
+    name,
+    requestId,
+    requestType,
+  })
+  await sendEmail({
+    to: toEmail,
+    template,
+    metadata: { type: 'dataSubjectRequestAcknowledgement', requestId }
+  })
+}
 
 
 // Re-export utilities

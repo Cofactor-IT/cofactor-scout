@@ -507,6 +507,38 @@ export const scoutRejectionTemplate: TemplateFn<ScoutRejectionData> = ({ name, f
     }
 }
 
+interface DataSubjectRequestAcknowledgementData {
+  name: string
+  requestId: string
+  requestType: string
+}
+
+export const dataSubjectRequestAcknowledgementTemplate: TemplateFn<DataSubjectRequestAcknowledgementData> = ({ name, requestId, requestType }) => {
+  const safeName = escapeHtml(name)
+  const safeRequestId = escapeHtml(requestId)
+  const safeRequestType = escapeHtml(requestType)
+
+  return {
+    subject: 'Data Rights Request Received',
+    text: `Hi ${name},\n\nWe have received your data rights request (${requestType}).\n\nYour request ID is: ${requestId}\n\nWe will respond within one month as required by GDPR Article 12.\n\nIf you didn't submit this request, please contact us immediately at privacy@cofactor.world.\n\nBest,\nThe Cofactor Team`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #1B2A4A; max-width: 600px; margin: 0 auto; background-color: #FAFBFC; padding: 40px 20px;">
+        <div style="background-color: #ffffff; border-radius: 4px; padding: 40px; border: 1px solid #E5E7EB;">
+          <img src="${getAppUrl()}/cofactor-scout-navbar-logo.png" alt="Cofactor Scout" style="height: 30px; margin-bottom: 30px; display: block;" />
+          <h1 style="color: #0D7377; font-size: 28px; margin-bottom: 16px;">Data Rights Request Received</h1>
+          <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">Hi ${safeName},</p>
+          <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">We have received your data rights request (<strong>${safeRequestType}</strong>).</p>
+          <div style="background-color: #FAFBFC; padding: 16px; border-radius: 4px; margin-bottom: 24px;">
+            <p style="color: #1B2A4A; font-size: 14px; margin: 0;"><strong>Request ID:</strong> ${safeRequestId}</p>
+          </div>
+          <p style="color: #1B2A4A; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">We will respond within one month as required by GDPR Article 12.</p>
+          <p style="color: #6B7280; font-size: 14px; line-height: 1.6;">If you didn't submit this request, please contact us immediately at <a href="mailto:privacy@cofactor.world" style="color: #0D7377;">privacy@cofactor.world</a>.</p>
+        </div>
+      </div>
+    `
+  }
+}
+
 // Template registry for type-safe template access
 export const emailTemplates = {
     welcome: welcomeEmailTemplate,
@@ -525,7 +557,8 @@ export const emailTemplates = {
     scoutRejection: scoutRejectionTemplate,
     accountUpdate: accountUpdateTemplate,
     profileUpdate: profileUpdateTemplate,
-    newSignIn: newSignInTemplate
+    newSignIn: newSignInTemplate,
+    dataSubjectRequestAcknowledgement: dataSubjectRequestAcknowledgementTemplate
 } as const
 
 

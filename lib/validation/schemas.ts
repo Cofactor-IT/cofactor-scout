@@ -18,6 +18,7 @@ import {
     safeJsonParse,
     validateSocialStats,
     containsSqlInjection,
+    isValidOrcid,
     MAX_FILE_SIZE,
     MAX_AVATAR_SIZE,
     ALLOWED_IMAGE_TYPES
@@ -543,6 +544,42 @@ export const statsQuerySchema = z.object({
 })
 
 // ============================================================================
+// DATA SUBJECT REQUEST SCHEMAS
+// ============================================================================
+
+const DataSubjectRequestTypeEnum = z.enum([
+  'REMOVE_MY_DATA',
+  'OBJECT_TO_PROCESSING',
+  'CORRECT_MY_DATA',
+  'ACCESS_MY_DATA'
+])
+
+export const dataSubjectRequestSchema = z.object({
+  fullName: nameFieldSchema,
+  email: z.string()
+    .min(1, 'Email is required')
+    .email('Invalid email address')
+    .toLowerCase()
+    .trim()
+    .refine(email => !containsSqlInjection(email), 'Invalid email format'),
+  orcid: z.string()
+    .transform(orcid => orcid?.trim() || null)
+    .refine(
+      orcid => orcid === null || isValidOrcid(orcid),
+      'Invalid ORCID format. Expected: 0000-0000-0000-0000'
+    )
+    .optional()
+    .nullable(),
+  requestType: DataSubjectRequestTypeEnum,
+  context: z.string()
+    .max(2000, 'Context too long (max 2000 characters)')
+    .trim()
+    .transform(val => val || null)
+    .optional()
+    .nullable(),
+})
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -555,3 +592,4 @@ export type CustomFieldValueInput = z.infer<typeof customFieldValueSchema>
 export type AuditLogQueryInput = z.infer<typeof auditLogQuerySchema>
 export type RetryNotificationInput = z.infer<typeof retryNotificationSchema>
 export type StatsQueryInput = z.infer<typeof statsQuerySchema>
+export type DataSubjectRequestInput = z.infer<typeof dataSubjectRequestSchema>

@@ -132,6 +132,28 @@ enum Article14Status {
   FAILED
 }
 
+enum DataSubjectRequestType {
+  REMOVE_MY_DATA
+  OBJECT_TO_PROCESSING
+  CORRECT_MY_DATA
+  ACCESS_MY_DATA
+}
+
+enum DataSubjectRequestStatus {
+  PENDING
+  NOTIFIED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum DataRequestSource {
+  WEB_FORM
+  EMAIL
+  PHONE
+  OTHER
+}
+
 // ============================================
 // MODELS
 // ============================================
@@ -417,4 +439,58 @@ model Researcher {
   @@index([orcidId])
   @@index([openAlexId])
   @@index([firstIngestedAt])
+}
+
+/// Sequence tracker for human-readable request IDs (DSR-YYYY-NNNNN)
+model DataSubjectRequestSequence {
+  id      Int    @id @default(1)
+  year    Int    @unique
+  nextId  Int    @default(1)
+
+  @@index([year])
+}
+
+/// Data subject rights request for GDPR compliance.
+/// Stores requests for access, erasure, portability, rectification, and objection.
+model DataSubjectRequest {
+  id               String                      @id @default(cuid())
+  requestId         String                      @unique
+
+  // Requester identity
+  fullName         String
+  email            String
+  orcid            String?
+
+  // Request details
+  requestType      DataSubjectRequestType
+  context          String?
+  status           DataSubjectRequestStatus    @default(PENDING)
+  source           DataRequestSource           @default(WEB_FORM)
+
+  // Audit trail
+  receivedAt       DateTime                    @default(now())
+  notifiedAt       DateTime?
+  lastAccessedAt   DateTime?
+  lastAccessedBy   String?
+  respondedAt      DateTime?
+  response         String?
+  internalNotes    String?
+
+  // Retention tracking
+  completedAt      DateTime?
+  deletedAt        DateTime?
+  retentionExpiresAt DateTime?
+
+  // Timestamps
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([receivedAt])
+  @@index([status, receivedAt])
+  @@index([requestType])
+  @@index([orcid])
+  @@index([requestId])
+  @@index([retentionExpiresAt])
 }
