@@ -22,7 +22,7 @@ import {
   getArticle14AuditStats,
 } from '@/lib/services/article14-audit'
 import { addArticle14Job } from '@/lib/queues/article14.queue'
-import { prisma } from '@/lib/database/prisma'
+import { getResearcherById, resetResearcherArticle14Status } from '@/lib/database/queries/researchers'
 import { logger } from '@/lib/logger'
 import { 
   auditLogQuerySchema, 
@@ -87,9 +87,7 @@ export async function retryNotification(data: unknown) {
   try {
     const validated = retryNotificationSchema.parse(data)
 
-    const researcher = await prisma.researcher.findUnique({
-      where: { id: validated.researcherId },
-    })
+    const researcher = await getResearcherById(validated.researcherId)
 
     if (!researcher) {
       logger.warn('Retry failed: researcher not found', {
@@ -136,14 +134,7 @@ export async function retryNotification(data: unknown) {
       throw new Error('Failed to enqueue retry job')
     }
 
-    await prisma.researcher.update({
-      where: { id: validated.researcherId },
-      data: {
-        article14Status: 'PENDING',
-        article14Attempts: 0,
-        article14LastError: null,
-      },
-    })
+    await resetResearcherArticle14Status(validated.researcherId)
 
     logger.info('Article 14 notification retry enqueued', {
       adminId: admin.id,

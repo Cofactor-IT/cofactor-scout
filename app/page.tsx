@@ -102,7 +102,7 @@ export default function LandingPage() {
                             <p className="body-bold mb-[20px]">As a Scout:</p>
                             <div className="space-y-[10px] body">
                                 <p>✓ Priority review by Cofactor team</p>
-                                <p>✓ Green "Scout" badge on all submissions</p>
+                                <p>✓ Green &quot;Scout&quot; badge on all submissions</p>
                                 <p>✓ Part of official talent network</p>
                                 <p>✓ Higher commission rates</p>
                             </div>

@@ -29,7 +29,7 @@ export function CookieConsentTrigger() {
     useEffect(() => {
         const storedConsent = readConsentCookie()
         if (storedConsent) {
-            setCookieConsent(storedConsent)
+            setTimeout(() => setCookieConsent(storedConsent), 0)
         }
     }, [])
 

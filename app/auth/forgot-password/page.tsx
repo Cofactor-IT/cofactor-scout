@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
             Reset Password
           </h1>
           <p className="text-[16px] text-[#6B7280] mb-[32px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
-            Enter your email and we'll send you a reset code
+            Enter your email and we&apos;ll send you a reset code
           </p>
 
           {error && (

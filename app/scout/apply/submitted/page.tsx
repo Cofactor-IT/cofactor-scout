@@ -24,7 +24,7 @@ export default function ScoutApplicationSubmittedPage() {
                         Our team will review your application and get back to you within 3-5 business days.
                     </p>
                     <p className="text-[16px] text-[#6B7280] mb-[40px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                        We've sent a confirmation email to your inbox.
+                        We&apos;ve sent a confirmation email to your inbox.
                     </p>
 
                     <Link

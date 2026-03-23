@@ -12,8 +12,9 @@ export function PromotionBanner() {
     const dismissedUntil = localStorage.getItem('scoutBannerDismissed')
     if (dismissedUntil) {
       const dismissTime = parseInt(dismissedUntil)
+      // Use setTimeout to avoid synchronous setState during render
       if (Date.now() < dismissTime) {
-        setIsVisible(false)
+        setTimeout(() => setIsVisible(false), 0)
       } else {
         localStorage.removeItem('scoutBannerDismissed')
       }

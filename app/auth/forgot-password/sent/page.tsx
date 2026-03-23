@@ -25,7 +25,7 @@ export default function ForgotPasswordSentPage() {
             Check Your Email
           </h1>
           <p className="text-[16px] text-[#6B7280] mb-[32px]" style={{ fontFamily: 'var(--font-merriweather)' }}>
-            If an account exists with that email, we've sent you a password reset code. Check your inbox and follow the link to reset your password.
+            If an account exists with that email, we&apos;ve sent you a password reset code. Check your inbox and follow the link to reset your password.
           </p>
 
           <Link

@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 RUN npm ci --legacy-peer-deps
 
 # ========================================
@@ -29,6 +30,7 @@ RUN npx prisma generate
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://cofactor:password@db:5432/cofactor"
+ENV DIRECT_URL="postgresql://cofactor:password@db:5432/cofactor"
 
 # Accept Sentry build arguments
 ARG NEXT_PUBLIC_SENTRY_DSN
