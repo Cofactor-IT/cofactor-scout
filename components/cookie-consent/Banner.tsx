@@ -31,9 +31,9 @@ export function CookieBanner() {
     useEffect(() => {
         const storedConsent = readConsentCookie()
         if (storedConsent) {
-            setCurrentConsent(storedConsent)
+            setTimeout(() => setCurrentConsent(storedConsent), 0)
         } else {
-            setIsVisible(true)
+            setTimeout(() => setIsVisible(true), 0)
         }
     }, [])
 

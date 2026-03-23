@@ -34,7 +34,7 @@ export function CookieModal({ isOpen, onClose, onSave, initialState }: ModalProp
     // Reset when modal opens
     useEffect(() => {
         if (isOpen) {
-            setPreferences(initialState)
+            setTimeout(() => setPreferences(initialState), 0)
         }
     }, [isOpen, initialState])
 

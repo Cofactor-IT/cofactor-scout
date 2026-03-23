@@ -24,7 +24,9 @@ export function SupportWidget() {
 
   // Initialize widget position in bottom-right corner
   useEffect(() => {
-    setPosition({ x: window.innerWidth - 100, y: window.innerHeight - 100 })
+    setTimeout(() => {
+      setPosition({ x: window.innerWidth - 100, y: window.innerHeight - 100 })
+    }, 0)
   }, [])
 
   // Handle drag functionality
@@ -188,7 +190,7 @@ export function SupportWidget() {
                 <div className="flex flex-col items-center justify-center py-[40px]">
                   <CheckCircle className="w-[64px] h-[64px] text-[#2D7D46] mb-[16px]" />
                   <p className="text-[16px] text-[#1B2A4A] text-center">
-                    Thank you! We've received your feedback and sent you a confirmation email.
+                    Thank you! We&apos;ve received your feedback and sent you a confirmation email.
                   </p>
                 </div>
               ) : (

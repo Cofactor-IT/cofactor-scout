@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Local/editor history snapshots:
     ".history/**",
+    // Root scripts:
+    "*.js",
+    "scripts/*.js"
   ]),
   {
     rules: {

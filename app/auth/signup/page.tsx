@@ -31,7 +31,7 @@ export default function SignUpPage() {
       {/* Footer */}
       <footer className="fixed bottom-0 left-0 right-0 w-full h-[80px] bg-white border-t border-[#E5E7EB] flex items-center justify-center z-10 px-4 gap-6">
         <p className="body-small text-[#6B7280] text-center max-w-[600px]">
-          By continuing, you agree to Cofactor's Terms of Service and Privacy Policy.
+          By continuing, you agree to Cofactor&apos;s Terms of Service and Privacy Policy.
           Use of the platform constitutes acceptance of these agreements.
         </p>
         <div className="text-[#E5E7EB] hidden md:block">|</div>
