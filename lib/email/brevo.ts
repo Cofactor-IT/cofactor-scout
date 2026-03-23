@@ -21,6 +21,8 @@
 
 import { BrevoClient } from '@getbrevo/brevo'
 import { logger, maskEmail } from '@/lib/logger'
+import { emailTemplates } from '@/lib/email/templates'
+import { sendDataSubjectRequestAcknowledgementEmail } from '@/lib/email/send'
 
 interface Article14EmailParams {
   researcherName: string
@@ -172,6 +174,79 @@ export async function sendArticle14Email(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error('Failed to send Article 14 email via Brevo', {
+      to: maskEmail(to),
+      error: errorMessage,
+    }, error instanceof Error ? error : new Error(errorMessage))
+    return { success: false, error: errorMessage }
+  }
+}
+
+/**
+ * Sends Data Subject Rights (DSR) acknowledgement email via Brevo transactional API.
+ * Uses inline HTML content rather than a Brevo dashboard template ID.
+ * Falls back to nodemailer (SMTP) if Brevo is not configured.
+ * 
+ * @param to - Recipient email address
+ * @param name - Full name of requester
+ * @param requestId - Generated DSR request ID
+ * @param requestType - Human-readable request type
+ * @returns Send result with success status, message ID, or error
+ */
+export async function sendDataSubjectRequestAcknowledgementBrevoEmail(
+  to: string,
+  name: string,
+  requestId: string,
+  requestType: string
+): Promise<Article14SendResult> {
+  logger.info('sendDataSubjectRequestAcknowledgementBrevoEmail called', { to: maskEmail(to), requestId })
+
+  if (!isBrevoConfigured()) {
+    logger.info('Brevo not configured, falling back to SMTP for DSR acknowledgement', { to: maskEmail(to) })
+    try {
+      await sendDataSubjectRequestAcknowledgementEmail(to, name, requestId, requestType)
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: 'SMTP fallback failed' }
+    }
+  }
+
+  const client = getClient()
+  if (!client) {
+    const error = 'Failed to initialize Brevo client for DSR email'
+    logger.error(error, { to: maskEmail(to) })
+    return { success: false, error }
+  }
+
+  const senderEmail = getSenderEmail()
+  const senderName = getSenderName()
+  const template = emailTemplates.dataSubjectRequestAcknowledgement({ name, requestId, requestType })
+
+  const emailParams = {
+    sender: {
+      email: senderEmail,
+      name: senderName,
+    },
+    to: [{ email: to, name }],
+    subject: template.subject,
+    htmlContent: template.html,
+    textContent: template.text,
+  }
+
+  try {
+    const response = await client.transactionalEmails.sendTransacEmail(emailParams)
+    const messageId = response.messageId?.toString() || response.messageIds?.[0]
+
+    logger.info('DSR email sent successfully via Brevo', {
+      to: maskEmail(to),
+      messageId,
+    })
+    return {
+      success: true,
+      messageId,
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    logger.error('Failed to send DSR email via Brevo', {
       to: maskEmail(to),
       error: errorMessage,
     }, error instanceof Error ? error : new Error(errorMessage))

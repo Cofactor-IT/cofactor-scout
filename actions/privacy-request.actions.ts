@@ -13,38 +13,13 @@
 import { dataSubjectRequestSchema, type DataSubjectRequestInput } from '@/lib/validation/schemas'
 import { createDataSubjectRequest, findPendingRequestsByEmail, markRequestAsNotified } from '@/lib/database/queries/data-subject-requests'
 import { sendDataSubjectRequestAcknowledgementEmail } from '@/lib/email/send'
+import { sendDataSubjectRequestAcknowledgementBrevoEmail } from '@/lib/email/brevo'
+import { checkRateLimitRedis } from '@/lib/security/rate-limit-redis'
 import { revalidatePath } from 'next/cache'
 import { logger, maskEmail } from '@/lib/logger'
 
 const MAX_REQUESTS_PER_DAY = 3
-
-const requestHistory = new Map<string, { count: number; resetTime: number }>()
-
-/**
- * Checks if email is under rate limit.
- * Limits to 3 requests per day per email address.
- *
- * @param email - Email address to check
- * @returns True if under rate limit, false if exceeded
- */
-function checkRateLimit(email: string): boolean {
-  const now = Date.now()
-  const history = requestHistory.get(email)
-  const oneDayMs = 24 * 60 * 60 * 1000
-
-  if (!history || now > history.resetTime) {
-    requestHistory.set(email, { count: 1, resetTime: now + oneDayMs })
-    return true
-  }
-
-  if (history.count >= MAX_REQUESTS_PER_DAY) {
-    return false
-  }
-
-  history.count++
-  return true
-}
-
+const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000 // 24 hours
 /**
  * Submits a new data subject rights request.
  * No authentication required (public form).
@@ -64,8 +39,10 @@ export async function submitDataSubjectRequest(data: unknown) {
   }
 
   const input = validated.data as DataSubjectRequestInput
+  const forceSubmit = (data as { forceSubmit?: boolean })?.forceSubmit
 
-  if (!checkRateLimit(input.email)) {
+  const rateLimitResult = await checkRateLimitRedis(input.email, { limit: MAX_REQUESTS_PER_DAY, window: RATE_LIMIT_WINDOW_MS })
+  if (!rateLimitResult.success) {
     logger.warn('Rate limit exceeded for data subject request', { email: maskEmail(input.email) })
     return {
       success: false,
@@ -75,16 +52,18 @@ export async function submitDataSubjectRequest(data: unknown) {
     }
   }
 
-  const pendingRequests = await findPendingRequestsByEmail(input.email)
-  if (pendingRequests.length > 0) {
-    logger.warn('Duplicate data subject request detected', {
-      email: maskEmail(input.email),
-      existingCount: pendingRequests.length
-    })
-    return {
-      success: false,
-      warning: 'You have a pending request. We will respond within 30 days.',
-      duplicateRequestId: pendingRequests[0].requestId
+  if (!forceSubmit) {
+    const pendingRequests = await findPendingRequestsByEmail(input.email)
+    if (pendingRequests.length > 0) {
+      logger.warn('Duplicate data subject request detected', {
+        email: maskEmail(input.email),
+        existingCount: pendingRequests.length
+      })
+      return {
+        success: false,
+        warning: 'You have a pending request. We will respond within 30 days.',
+        duplicateRequestId: pendingRequests[0].requestId
+      }
     }
   }
 
@@ -110,7 +89,7 @@ export async function submitDataSubjectRequest(data: unknown) {
       ACCESS_MY_DATA: 'Request access to my data'
     }
 
-    await sendDataSubjectRequestAcknowledgementEmail(
+    await sendDataSubjectRequestAcknowledgementBrevoEmail(
       input.email,
       input.fullName,
       request.requestId,

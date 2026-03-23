@@ -82,9 +82,11 @@ export default async function PrivacyRequestConfirmPage({ searchParams }: PagePr
             </div>
 
             <div className="flex flex-col gap-4">
-              <Button variant="primary" onClick={() => window.location.href = '/privacy/request'}>
-                Submit Another Request
-              </Button>
+              <Link href="/privacy/request">
+                <Button variant="primary" className="w-full">
+                  Submit Another Request
+                </Button>
+              </Link>
               <Link href="/">
                 <Button variant="secondary" className="w-full">
                   Return to Home

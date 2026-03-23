@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Modal } from '@/components/ui/modal'
+import { FormSelect } from '@/components/submission/FormSelect'
 import { submitDataSubjectRequest } from '@/actions/privacy-request.actions'
 
 const REQUEST_TYPE_OPTIONS = [
@@ -72,7 +74,7 @@ export function DataSubjectRequestForm() {
     setShowDuplicateWarning(false)
     setDuplicateWarning(undefined)
     setLoading(true)
-    const result = await submitDataSubjectRequest(formData)
+    const result = await submitDataSubjectRequest({ ...formData, forceSubmit: true })
     if (result.success) {
       router.push(`/privacy/request/confirm?id=${result.requestId}`)
     } else if (result.errors) {
@@ -96,12 +98,12 @@ export function DataSubjectRequestForm() {
               type="text"
               value={formData.fullName}
               onChange={e => handleChange('fullName', e.target.value)}
-              className={getFieldError('fullName') ? 'border-[#DC2626]' : ''}
+              className={getFieldError('fullName') ? 'border-[var(--red)]' : ''}
               placeholder="Jane Doe"
               required
             />
             {getFieldError('fullName') && (
-              <p className="caption text-[#DC2626]">{getFieldError('fullName')}</p>
+              <p className="caption text-[var(--red)]">{getFieldError('fullName')}</p>
             )}
           </div>
 
@@ -112,12 +114,12 @@ export function DataSubjectRequestForm() {
               type="email"
               value={formData.email}
               onChange={e => handleChange('email', e.target.value)}
-              className={getFieldError('email') ? 'border-[#DC2626]' : ''}
+              className={getFieldError('email') ? 'border-[var(--red)]' : ''}
               placeholder="jane.doe@university.edu"
               required
             />
             {getFieldError('email') && (
-              <p className="caption text-[#DC2626]">{getFieldError('email')}</p>
+              <p className="caption text-[var(--red)]">{getFieldError('email')}</p>
             )}
           </div>
 
@@ -128,41 +130,27 @@ export function DataSubjectRequestForm() {
               type="text"
               value={formData.orcid}
               onChange={e => handleChange('orcid', e.target.value)}
-              className={getFieldError('orcid') ? 'border-[#DC2626]' : ''}
+              className={getFieldError('orcid') ? 'border-[var(--red)]' : ''}
               placeholder="0000-0000-0000-0000"
               maxLength={19}
             />
             {getFieldError('orcid') && (
-              <p className="caption text-[#DC2626]">{getFieldError('orcid')}</p>
+              <p className="caption text-[var(--red)]">{getFieldError('orcid')}</p>
             )}
             <p className="caption text-[var(--cool-gray)]">
               Format: 0000-0000-0000-0000
             </p>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="requestType" className="label">Request Type *</label>
-            <select
-              id="requestType"
-              value={formData.requestType}
-              onChange={e => handleChange('requestType', e.target.value)}
-              className={`bg-white border px-4 py-3 body focus:outline-none transition-colors ${
-                getFieldError('requestType') ? 'border-[#DC2626]' : 'border-[#E5E7EB] focus:border-[#0D7377]'
-              }`}
-              style={{ borderRadius: '4px' }}
-              required
-            >
-              <option value="">Select request type...</option>
-              {REQUEST_TYPE_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {getFieldError('requestType') && (
-              <p className="caption text-[#DC2626]">{getFieldError('requestType')}</p>
-            )}
-          </div>
+          <FormSelect
+            label="Request Type"
+            name="requestType"
+            value={formData.requestType}
+            onChange={value => handleChange('requestType', value)}
+            options={REQUEST_TYPE_OPTIONS}
+            required
+            error={getFieldError('requestType')}
+          />
 
           <div className="flex flex-col gap-2">
             <label htmlFor="context" className="label">Additional Context (Optional)</label>
@@ -170,12 +158,12 @@ export function DataSubjectRequestForm() {
               id="context"
               value={formData.context}
               onChange={e => handleChange('context', e.target.value)}
-              className={getFieldError('context') ? 'border-[#DC2626]' : ''}
+              className={getFieldError('context') ? 'border-[var(--red)]' : ''}
               placeholder="Provide any additional details about your request..."
               rows={4}
             />
             {getFieldError('context') && (
-              <p className="caption text-[#DC2626]">{getFieldError('context')}</p>
+              <p className="caption text-[var(--red)]">{getFieldError('context')}</p>
             )}
             <p className="caption text-[var(--cool-gray)]">
               Max 2000 characters
@@ -183,8 +171,8 @@ export function DataSubjectRequestForm() {
           </div>
 
           {errors.form && (
-            <div className="p-4 bg-[#FEE2E2] border border-[#EF4444] rounded-[4px]">
-              <p className="body text-[#EF4444]">{errors.form[0]}</p>
+            <div className="p-4 bg-[#FEE2E2] border border-[var(--red)] rounded-[4px]">
+              <p className="body text-[var(--red)]">{errors.form[0]}</p>
             </div>
           )}
 
@@ -199,30 +187,31 @@ export function DataSubjectRequestForm() {
         </form>
       </Card>
 
-      {showDuplicateWarning && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="p-6 max-w-md mx-4">
-            <h3 className="h3 mb-4">Duplicate Request Detected</h3>
-            <p className="body mb-6">{duplicateWarning}</p>
-            <p className="body mb-6">Do you still want to submit this request?</p>
-            <div className="flex gap-4">
-              <Button
-                variant="secondary"
-                onClick={() => setShowDuplicateWarning(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleDuplicateConfirm}
-                disabled={loading}
-              >
-                {loading ? 'Submitting...' : 'Submit Anyway'}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <Modal
+        isOpen={showDuplicateWarning}
+        onClose={() => setShowDuplicateWarning(false)}
+        title="Duplicate Request Detected"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setShowDuplicateWarning(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleDuplicateConfirm}
+              disabled={loading}
+            >
+              {loading ? 'Submitting...' : 'Submit Anyway'}
+            </Button>
+          </>
+        }
+      >
+        <p className="body mb-6">{duplicateWarning}</p>
+        <p className="body">Do you still want to submit this request?</p>
+      </Modal>
     </>
   )
 }

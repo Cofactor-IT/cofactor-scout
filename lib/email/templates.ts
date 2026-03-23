@@ -507,12 +507,25 @@ export const scoutRejectionTemplate: TemplateFn<ScoutRejectionData> = ({ name, f
     }
 }
 
+/**
+ * Template data for data subject request acknowledgement.
+ */
 interface DataSubjectRequestAcknowledgementData {
   name: string
   requestId: string
   requestType: string
 }
 
+/**
+ * Creates email template for data subject rights request acknowledgement.
+ * Reassures user that their request has been received and gives the 30-day timeline.
+ * 
+ * @param data - Template data
+ * @param data.name - Requester's full name
+ * @param data.requestId - Generated DSR request ID
+ * @param data.requestType - Type of request submitted
+ * @returns EmailTemplate object
+ */
 export const dataSubjectRequestAcknowledgementTemplate: TemplateFn<DataSubjectRequestAcknowledgementData> = ({ name, requestId, requestType }) => {
   const safeName = escapeHtml(name)
   const safeRequestId = escapeHtml(requestId)
